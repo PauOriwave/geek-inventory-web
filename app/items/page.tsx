@@ -1,6 +1,7 @@
 import Filters from "./Filters";
 import ItemActions from "./ItemActions";
 import AddItemForm from "./AddItemForm";
+import ImportCsvForm from "./ImportCsvForm";
 
 type Item = {
   id: string;
@@ -74,6 +75,7 @@ export default async function ItemsPage({
 
       <Filters />
       <AddItemForm />
+      <ImportCsvForm />
 
       <div style={{ marginTop: 16, overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
