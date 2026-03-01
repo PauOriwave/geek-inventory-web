@@ -1,4 +1,5 @@
 import Filters from "./Filters";
+import ItemActions from "./ItemActions";
 
 type Item = {
   id: string;
@@ -80,6 +81,7 @@ export default async function ItemsPage({
               <Th>Category</Th>
               <Th align="right">Price</Th>
               <Th align="right">Qty</Th>
+              <Th align="right">Actions</Th>
               <Th>Created</Th>
             </tr>
           </thead>
@@ -92,12 +94,13 @@ export default async function ItemsPage({
                 <Td align="right">{Number(it.estimatedPrice).toFixed(2)} €</Td>
                 <Td align="right">{it.quantity}</Td>
                 <Td>{new Date(it.createdAt).toLocaleString()}</Td>
+                <Td align="right"><ItemActions id={it.id} initialQty={it.quantity} /></Td>
               </tr>
             ))}
 
             {items.length === 0 && (
               <tr>
-                <td colSpan={5} style={{ padding: 12, color: "#6b7280" }}>
+                <td colSpan={6} style={{ padding: 12, color: "#6b7280" }}>
                   No items match these filters.
                 </td>
               </tr>
