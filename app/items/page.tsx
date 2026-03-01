@@ -1,3 +1,5 @@
+import Filters from "./Filters";
+
 type Item = {
   id: string;
   name: string;
@@ -5,6 +7,7 @@ type Item = {
   estimatedPrice: string | number;
   quantity: number;
   createdAt: string;
+  updatedAt: string;
 };
 
 type Summary = {
@@ -15,8 +18,8 @@ type Summary = {
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-async function getItems(): Promise<Item[]> {
-  const res = await fetch(`${API}/items`, { cache: "no-store" });
+async function getItems(queryString: string): Promise<Item[]> {
+  const res = await fetch(`${API}/items${queryString}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch items");
   return res.json();
 }
@@ -27,22 +30,49 @@ async function getSummary(): Promise<Summary> {
   return res.json();
 }
 
-export default async function ItemsPage() {
-  const [items, summary] = await Promise.all([getItems(), getSummary()]);
+export default async function ItemsPage({
+  searchParams
+}: {
+  // Next 16: searchParams puede venir como Promise
+  searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+}) {
+  const sp = searchParams instanceof Promise ? await searchParams : (searchParams ?? {});
+
+  const q = typeof sp.q === "string" ? sp.q : undefined;
+  const category = typeof sp.category === "string" ? sp.category : undefined;
+  const sort = typeof sp.sort === "string" ? sp.sort : undefined;
+  const minPrice = typeof sp.minPrice === "string" ? sp.minPrice : undefined;
+  const maxPrice = typeof sp.maxPrice === "string" ? sp.maxPrice : undefined;
+
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (category) params.set("category", category);
+  if (sort) params.set("sort", sort);
+  if (minPrice) params.set("minPrice", minPrice);
+  if (maxPrice) params.set("maxPrice", maxPrice);
+
+  const qs = params.toString();
+  const queryString = qs ? `?${qs}` : "";
+
+  const [items, summary] = await Promise.all([getItems(queryString), getSummary()]);
 
   return (
     <main style={{ padding: 24, fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>
-        Geek Inventory
-      </h1>
+      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Geek Inventory</h1>
 
-      <div style={{ display: "flex", gap: 12, marginBottom: 18, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
         <Stat label="Items" value={summary.totalItems} />
         <Stat label="Units" value={summary.totalUnits} />
         <Stat label="Total value" value={`${summary.totalValue.toFixed(2)} €`} />
       </div>
 
-      <div style={{ overflowX: "auto" }}>
+      <p style={{ color: "#6b7280", marginTop: 6 }}>
+        Showing {items.length} item(s)
+      </p>
+
+      <Filters />
+
+      <div style={{ marginTop: 16, overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
@@ -53,6 +83,7 @@ export default async function ItemsPage() {
               <Th>Created</Th>
             </tr>
           </thead>
+
           <tbody>
             {items.map((it) => (
               <tr key={it.id}>
@@ -63,6 +94,14 @@ export default async function ItemsPage() {
                 <Td>{new Date(it.createdAt).toLocaleString()}</Td>
               </tr>
             ))}
+
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ padding: 12, color: "#6b7280" }}>
+                  No items match these filters.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -72,12 +111,14 @@ export default async function ItemsPage() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div style={{
-      border: "1px solid #e5e7eb",
-      borderRadius: 12,
-      padding: "10px 12px",
-      minWidth: 140
-    }}>
+    <div
+      style={{
+        border: "1px solid #e5e7eb",
+        borderRadius: 12,
+        padding: "10px 12px",
+        minWidth: 140
+      }}
+    >
       <div style={{ fontSize: 12, color: "#6b7280" }}>{label}</div>
       <div style={{ fontSize: 18, fontWeight: 700 }}>{value}</div>
     </div>
@@ -86,13 +127,15 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 
 function Th({ children, align }: { children: React.ReactNode; align?: "left" | "right" }) {
   return (
-    <th style={{
-      textAlign: align ?? "left",
-      borderBottom: "1px solid #e5e7eb",
-      padding: 10,
-      fontSize: 12,
-      color: "#6b7280"
-    }}>
+    <th
+      style={{
+        textAlign: align ?? "left",
+        borderBottom: "1px solid #e5e7eb",
+        padding: 10,
+        fontSize: 12,
+        color: "#6b7280"
+      }}
+    >
       {children}
     </th>
   );
@@ -100,11 +143,13 @@ function Th({ children, align }: { children: React.ReactNode; align?: "left" | "
 
 function Td({ children, align }: { children: React.ReactNode; align?: "left" | "right" }) {
   return (
-    <td style={{
-      textAlign: align ?? "left",
-      borderBottom: "1px solid #f3f4f6",
-      padding: 10
-    }}>
+    <td
+      style={{
+        textAlign: align ?? "left",
+        borderBottom: "1px solid #f3f4f6",
+        padding: 10
+      }}
+    >
       {children}
     </td>
   );
