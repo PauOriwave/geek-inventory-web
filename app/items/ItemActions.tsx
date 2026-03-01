@@ -7,17 +7,20 @@ const API = process.env.NEXT_PUBLIC_API_URL!;
 
 export default function ItemActions({
   id,
-  initialQty
+  initialQty,
+  initialPrice
 }: {
   id: string;
   initialQty: number;
+  initialPrice: number;
 }) {
   const router = useRouter();
   const [qty, setQty] = useState<number>(initialQty);
+  const [price, setPrice] = useState<number>(initialPrice);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string>("");
 
-  async function saveQty() {
+  async function save() {
     setLoading(true);
     setMsg("");
 
@@ -25,7 +28,10 @@ export default function ItemActions({
       const res = await fetch(`${API}/items/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: qty })
+        body: JSON.stringify({
+          quantity: qty,
+          estimatedPrice: price
+        })
       });
 
       if (!res.ok) {
@@ -34,8 +40,8 @@ export default function ItemActions({
       }
 
       setMsg("✅");
-      router.refresh(); // refresca la lista server-side
-    } catch (e: any) {
+      router.refresh();
+    } catch (e) {
       setMsg("❌");
       console.error(e);
     } finally {
@@ -67,22 +73,42 @@ export default function ItemActions({
   }
 
   return (
-    <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "flex-end" }}>
-      <input
-        type="number"
-        min={1}
-        value={qty}
-        onChange={(e) => setQty(Number(e.target.value))}
-        style={{
-          width: 70,
-          padding: "6px 8px",
-          border: "1px solid #e5e7eb",
-          borderRadius: 10
-        }}
-      />
+    <div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap" }}>
+      <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#6b7280", fontSize: 12 }}>
+        Qty
+        <input
+          type="number"
+          min={1}
+          value={qty}
+          onChange={(e) => setQty(Number(e.target.value))}
+          style={{
+            width: 70,
+            padding: "6px 8px",
+            border: "1px solid #e5e7eb",
+            borderRadius: 10
+          }}
+        />
+      </label>
+
+      <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#6b7280", fontSize: 12 }}>
+        €
+        <input
+          type="number"
+          min={0}
+          step="0.01"
+          value={price}
+          onChange={(e) => setPrice(Number(e.target.value))}
+          style={{
+            width: 90,
+            padding: "6px 8px",
+            border: "1px solid #e5e7eb",
+            borderRadius: 10
+          }}
+        />
+      </label>
 
       <button
-        onClick={saveQty}
+        onClick={save}
         disabled={loading}
         style={{
           padding: "6px 10px",
@@ -91,7 +117,7 @@ export default function ItemActions({
           background: "white",
           cursor: loading ? "not-allowed" : "pointer"
         }}
-        title="Save quantity"
+        title="Save quantity + price"
       >
         Save
       </button>

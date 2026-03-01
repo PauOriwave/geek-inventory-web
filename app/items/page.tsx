@@ -1,5 +1,6 @@
 import Filters from "./Filters";
 import ItemActions from "./ItemActions";
+import AddItemForm from "./AddItemForm";
 
 type Item = {
   id: string;
@@ -72,6 +73,7 @@ export default async function ItemsPage({
       </p>
 
       <Filters />
+      <AddItemForm />
 
       <div style={{ marginTop: 16, overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -94,7 +96,7 @@ export default async function ItemsPage({
                 <Td align="right">{Number(it.estimatedPrice).toFixed(2)} €</Td>
                 <Td align="right">{it.quantity}</Td>
                 <Td>{new Date(it.createdAt).toLocaleString()}</Td>
-                <Td align="right"><ItemActions id={it.id} initialQty={it.quantity} /></Td>
+                <Td align="right"><ItemActions id={it.id} initialQty={it.quantity} initialPrice={Number(it.estimatedPrice)} /></Td>
               </tr>
             ))}
 
