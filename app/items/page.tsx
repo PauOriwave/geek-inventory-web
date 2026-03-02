@@ -34,8 +34,8 @@ async function getItems(queryString: string): Promise<ItemsResponse> {
   return res.json();
 }
 
-async function getSummary(): Promise<Summary> {
-  const res = await fetch(`${API}/stats/summary`, { cache: "no-store" });
+async function getSummary(queryString: string): Promise<Summary> {
+  const res = await fetch(`${API}/stats/summary${queryString}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch summary");
   return res.json();
 }
@@ -73,7 +73,7 @@ export default async function ItemsPage({
 
   const queryString = `?${params.toString()}`;
 
-  const [itemsRes, summary] = await Promise.all([getItems(queryString), getSummary()]);
+ const [itemsRes, summary] = await Promise.all([getItems(queryString), getSummary(queryString)]);
   const items = itemsRes.items;
 
   const totalPages = Math.max(1, Math.ceil(itemsRes.total / itemsRes.pageSize));
