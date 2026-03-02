@@ -1,7 +1,7 @@
+import type { ReactNode } from "react";
 import Filters from "./Filters";
-import ItemActions from "./ItemActions";
 import AddItemForm from "./AddItemForm";
-import ImportCsvForm from "./ImportCsvForm";
+import ItemActions from "./ItemActions";
 
 type Item = {
   id: string;
@@ -19,9 +19,16 @@ type Summary = {
   totalValue: number;
 };
 
+type ItemsResponse = {
+  items: Item[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-async function getItems(queryString: string): Promise<Item[]> {
+async function getItems(queryString: string): Promise<ItemsResponse> {
   const res = await fetch(`${API}/items${queryString}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch items");
   return res.json();
@@ -37,7 +44,9 @@ export default async function ItemsPage({
   searchParams
 }: {
   // Next 16: searchParams puede venir como Promise
-  searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+  searchParams?:
+    | Promise<Record<string, string | string[] | undefined>>
+    | Record<string, string | string[] | undefined>;
 }) {
   const sp = searchParams instanceof Promise ? await searchParams : (searchParams ?? {});
 
@@ -47,17 +56,40 @@ export default async function ItemsPage({
   const minPrice = typeof sp.minPrice === "string" ? sp.minPrice : undefined;
   const maxPrice = typeof sp.maxPrice === "string" ? sp.maxPrice : undefined;
 
+  const page = typeof sp.page === "string" ? Number(sp.page) : 1;
+  const pageSize = typeof sp.pageSize === "string" ? Number(sp.pageSize) : 25;
+
   const params = new URLSearchParams();
+
   if (q) params.set("q", q);
   if (category) params.set("category", category);
   if (sort) params.set("sort", sort);
   if (minPrice) params.set("minPrice", minPrice);
   if (maxPrice) params.set("maxPrice", maxPrice);
 
-  const qs = params.toString();
-  const queryString = qs ? `?${qs}` : "";
+  // defaults paginación
+  params.set("page", String(Number.isFinite(page) && page >= 1 ? page : 1));
+  params.set("pageSize", String(Number.isFinite(pageSize) && pageSize >= 5 ? pageSize : 25));
 
-  const [items, summary] = await Promise.all([getItems(queryString), getSummary()]);
+  const queryString = `?${params.toString()}`;
+
+  const [itemsRes, summary] = await Promise.all([getItems(queryString), getSummary()]);
+  const items = itemsRes.items;
+
+  const totalPages = Math.max(1, Math.ceil(itemsRes.total / itemsRes.pageSize));
+  const currentPage = Math.min(Math.max(1, itemsRes.page), totalPages);
+
+  const baseParams = Object.fromEntries(params.entries()); // incluye page/pageSize
+
+  const prevHref = `/items?${new URLSearchParams({
+    ...baseParams,
+    page: String(Math.max(1, currentPage - 1))
+  }).toString()}`;
+
+  const nextHref = `/items?${new URLSearchParams({
+    ...baseParams,
+    page: String(Math.min(totalPages, currentPage + 1))
+  }).toString()}`;
 
   return (
     <main style={{ padding: 24, fontFamily: "system-ui" }}>
@@ -70,12 +102,11 @@ export default async function ItemsPage({
       </div>
 
       <p style={{ color: "#6b7280", marginTop: 6 }}>
-        Showing {items.length} item(s)
+        Showing {items.length} item(s) on this page — {itemsRes.total} total
       </p>
 
       <Filters />
       <AddItemForm />
-      <ImportCsvForm />
 
       <div style={{ marginTop: 16, overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -85,8 +116,8 @@ export default async function ItemsPage({
               <Th>Category</Th>
               <Th align="right">Price</Th>
               <Th align="right">Qty</Th>
-              <Th align="right">Actions</Th>
               <Th>Created</Th>
+              <Th align="right">Actions</Th>
             </tr>
           </thead>
 
@@ -98,7 +129,13 @@ export default async function ItemsPage({
                 <Td align="right">{Number(it.estimatedPrice).toFixed(2)} €</Td>
                 <Td align="right">{it.quantity}</Td>
                 <Td>{new Date(it.createdAt).toLocaleString()}</Td>
-                <Td align="right"><ItemActions id={it.id} initialQty={it.quantity} initialPrice={Number(it.estimatedPrice)} /></Td>
+                <Td align="right">
+                  <ItemActions
+                    id={it.id}
+                    initialQty={it.quantity}
+                    initialPrice={Number(it.estimatedPrice)}
+                  />
+                </Td>
               </tr>
             ))}
 
@@ -111,6 +148,33 @@ export default async function ItemsPage({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 14 }}>
+        <a
+          href={prevHref}
+          style={{
+            pointerEvents: currentPage === 1 ? "none" : "auto",
+            opacity: currentPage === 1 ? 0.4 : 1
+          }}
+        >
+          Prev
+        </a>
+
+        <div style={{ color: "#6b7280" }}>
+          Page {currentPage} / {totalPages} — pageSize {itemsRes.pageSize}
+        </div>
+
+        <a
+          href={nextHref}
+          style={{
+            pointerEvents: currentPage === totalPages ? "none" : "auto",
+            opacity: currentPage === totalPages ? 0.4 : 1
+          }}
+        >
+          Next
+        </a>
       </div>
     </main>
   );
@@ -132,7 +196,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function Th({ children, align }: { children: React.ReactNode; align?: "left" | "right" }) {
+function Th({ children, align }: { children: ReactNode; align?: "left" | "right" }) {
   return (
     <th
       style={{
@@ -148,13 +212,14 @@ function Th({ children, align }: { children: React.ReactNode; align?: "left" | "
   );
 }
 
-function Td({ children, align }: { children: React.ReactNode; align?: "left" | "right" }) {
+function Td({ children, align }: { children: ReactNode; align?: "left" | "right" }) {
   return (
     <td
       style={{
         textAlign: align ?? "left",
         borderBottom: "1px solid #f3f4f6",
-        padding: 10
+        padding: 10,
+        verticalAlign: "top"
       }}
     >
       {children}

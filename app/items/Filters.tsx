@@ -24,14 +24,22 @@ export default function Filters() {
   const [sort, setSort] = useState(initialSort);
 
   function push(nextQ: string, nextCategory: string, nextSort: string) {
-    const params = new URLSearchParams();
-    if (nextQ.trim()) params.set("q", nextQ.trim());
-    if (nextCategory) params.set("category", nextCategory);
-    if (nextSort && nextSort !== "newest") params.set("sort", nextSort);
+  const params = new URLSearchParams();
 
-    const qs = params.toString();
-    router.push(qs ? `/items?${qs}` : "/items");
-  }
+  if (nextQ.trim()) params.set("q", nextQ.trim());
+  if (nextCategory) params.set("category", nextCategory);
+  if (nextSort && nextSort !== "newest") params.set("sort", nextSort);
+
+  // mantener pageSize si estaba en la URL
+  const currentPageSize = sp.get("pageSize");
+  if (currentPageSize) params.set("pageSize", currentPageSize);
+
+  // reset page
+  params.set("page", "1");
+
+  const qs = params.toString();
+  router.push(qs ? `/items?${qs}` : "/items");
+}
 
   return (
     <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 14 }}>
