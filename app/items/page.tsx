@@ -3,6 +3,8 @@ import Filters from "./Filters";
 import AddItemForm from "./AddItemForm";
 import ItemActions from "./ItemActions";
 import CategoryStats from "./CategoryStats";
+import ActiveFilters from "./ActiveFilters";
+
 
 type Item = {
   id: string;
@@ -95,7 +97,12 @@ export default async function ItemsPage({
   return (
     <main style={{ padding: 24, fontFamily: "system-ui" }}>
       <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Geek Inventory</h1>
-
+      <ActiveFilters
+      q={q}
+      category={category}
+      minPrice={minPrice}
+      maxPrice={maxPrice}
+      />
       <div style={{ display: "flex", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
         <Stat label="Items" value={summary.totalItems} />
         <Stat label="Units" value={summary.totalUnits} />
