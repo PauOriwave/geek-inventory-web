@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Filters from "./Filters";
 import AddItemForm from "./AddItemForm";
 import ItemActions from "./ItemActions";
+import CategoryStats from "./CategoryStats";
 
 type Item = {
   id: string;
@@ -73,7 +74,7 @@ export default async function ItemsPage({
 
   const queryString = `?${params.toString()}`;
 
- const [itemsRes, summary] = await Promise.all([getItems(queryString), getSummary(queryString)]);
+ const [itemsRes, summary] = await Promise.all([getItems(queryString), getSummary(queryString)]);       
   const items = itemsRes.items;
 
   const totalPages = Math.max(1, Math.ceil(itemsRes.total / itemsRes.pageSize));
@@ -104,7 +105,7 @@ export default async function ItemsPage({
       <p style={{ color: "#6b7280", marginTop: 6 }}>
         Showing {items.length} item(s) on this page — {itemsRes.total} total
       </p>
-
+      <CategoryStats />
       <Filters />
       <AddItemForm />
 
