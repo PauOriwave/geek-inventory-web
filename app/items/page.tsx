@@ -4,7 +4,7 @@ import AddItemForm from "./AddItemForm";
 import ItemActions from "./ItemActions";
 import CategoryStats from "./CategoryStats";
 import ActiveFilters from "./ActiveFilters";
-
+import TopItems from "./TopItems";
 
 type Item = {
   id: string;
@@ -46,7 +46,6 @@ async function getSummary(queryString: string): Promise<Summary> {
 export default async function ItemsPage({
   searchParams
 }: {
-  // Next 16: searchParams puede venir como Promise
   searchParams?:
     | Promise<Record<string, string | string[] | undefined>>
     | Record<string, string | string[] | undefined>;
@@ -70,19 +69,22 @@ export default async function ItemsPage({
   if (minPrice) params.set("minPrice", minPrice);
   if (maxPrice) params.set("maxPrice", maxPrice);
 
-  // defaults paginación
   params.set("page", String(Number.isFinite(page) && page >= 1 ? page : 1));
   params.set("pageSize", String(Number.isFinite(pageSize) && pageSize >= 5 ? pageSize : 25));
 
   const queryString = `?${params.toString()}`;
 
- const [itemsRes, summary] = await Promise.all([getItems(queryString), getSummary(queryString)]);       
+  const [itemsRes, summary] = await Promise.all([
+    getItems(queryString),
+    getSummary(queryString)
+  ]);
+
   const items = itemsRes.items;
 
   const totalPages = Math.max(1, Math.ceil(itemsRes.total / itemsRes.pageSize));
   const currentPage = Math.min(Math.max(1, itemsRes.page), totalPages);
 
-  const baseParams = Object.fromEntries(params.entries()); // incluye page/pageSize
+  const baseParams = Object.fromEntries(params.entries());
 
   const prevHref = `/items?${new URLSearchParams({
     ...baseParams,
@@ -96,26 +98,53 @@ export default async function ItemsPage({
 
   return (
     <main style={{ padding: 24, fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Geek Inventory</h1>
-      <ActiveFilters
-      q={q}
-      category={category}
-      minPrice={minPrice}
-      maxPrice={maxPrice}
-      />
-      <div style={{ display: "flex", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
-        <Stat label="Items" value={summary.totalItems} />
-        <Stat label="Units" value={summary.totalUnits} />
-        <Stat label="Total value" value={`${summary.totalValue.toFixed(2)} €`} />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 360px",
+          gap: 16,
+          alignItems: "start"
+        }}
+      >
+        {/* Left column */}
+        <div>
+          <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>
+            Geek Inventory
+          </h1>
+
+          <ActiveFilters
+            q={q}
+            category={category}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+          />
+
+          <div style={{ display: "flex", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+            <Stat label="Items" value={summary.totalItems} />
+            <Stat label="Units" value={summary.totalUnits} />
+            <Stat label="Total value" value={`${summary.totalValue.toFixed(2)} €`} />
+          </div>
+
+          <p style={{ color: "#6b7280", marginTop: 6 }}>
+            Showing {items.length} item(s) on this page — {itemsRes.total} total
+          </p>
+
+          <CategoryStats />
+        </div>
+
+        {/* Right column */}
+        <div style={{ position: "sticky", top: 16 }}>
+          <TopItems />
+        </div>
       </div>
 
-      <p style={{ color: "#6b7280", marginTop: 6 }}>
-        Showing {items.length} item(s) on this page — {itemsRes.total} total
-      </p>
-      <CategoryStats />
-      <Filters />
-      <AddItemForm />
+      {/* Controls */}
+      <div style={{ marginTop: 16 }}>
+        <Filters />
+        <AddItemForm />
+      </div>
 
+      {/* Table */}
       <div style={{ marginTop: 16, overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
