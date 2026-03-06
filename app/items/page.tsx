@@ -50,7 +50,7 @@ export default async function ItemsPage({
     | Promise<Record<string, string | string[] | undefined>>
     | Record<string, string | string[] | undefined>;
 }) {
-  const sp = searchParams instanceof Promise ? await searchParams : (searchParams ?? {});
+  const sp = searchParams instanceof Promise ? await searchParams : searchParams ?? {};
 
   const q = typeof sp.q === "string" ? sp.q : undefined;
   const category = typeof sp.category === "string" ? sp.category : undefined;
@@ -106,7 +106,6 @@ export default async function ItemsPage({
           alignItems: "start"
         }}
       >
-        {/* Left column */}
         <div>
           <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>
             Geek Inventory
@@ -119,7 +118,14 @@ export default async function ItemsPage({
             maxPrice={maxPrice}
           />
 
-          <div style={{ display: "flex", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 12,
+              marginBottom: 10,
+              flexWrap: "wrap"
+            }}
+          >
             <Stat label="Items" value={summary.totalItems} />
             <Stat label="Units" value={summary.totalUnits} />
             <Stat label="Total value" value={`${summary.totalValue.toFixed(2)} €`} />
@@ -132,19 +138,16 @@ export default async function ItemsPage({
           <CategoryStats />
         </div>
 
-        {/* Right column */}
         <div style={{ position: "sticky", top: 16 }}>
           <TopItems />
         </div>
       </div>
 
-      {/* Controls */}
       <div style={{ marginTop: 16 }}>
         <Filters />
         <AddItemForm />
       </div>
 
-      {/* Table */}
       <div style={{ marginTop: 16, overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
@@ -161,11 +164,27 @@ export default async function ItemsPage({
           <tbody>
             {items.map((it) => (
               <tr key={it.id}>
-                <Td>{it.name}</Td>
+                <Td>
+                  <a
+                    href={`/items/${it.id}`}
+                    style={{
+                      color: "#111827",
+                      textDecoration: "none",
+                      fontWeight: 700
+                    }}
+                  >
+                    {it.name}
+                  </a>
+                </Td>
+
                 <Td>{it.category}</Td>
+
                 <Td align="right">{Number(it.estimatedPrice).toFixed(2)} €</Td>
+
                 <Td align="right">{it.quantity}</Td>
+
                 <Td>{new Date(it.createdAt).toLocaleString()}</Td>
+
                 <Td align="right">
                   <ItemActions
                     id={it.id}
@@ -187,7 +206,6 @@ export default async function ItemsPage({
         </table>
       </div>
 
-      {/* Pagination */}
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 14 }}>
         <a
           href={prevHref}
@@ -233,7 +251,13 @@ function Stat({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function Th({ children, align }: { children: ReactNode; align?: "left" | "right" }) {
+function Th({
+  children,
+  align
+}: {
+  children: ReactNode;
+  align?: "left" | "right";
+}) {
   return (
     <th
       style={{
@@ -249,7 +273,13 @@ function Th({ children, align }: { children: ReactNode; align?: "left" | "right"
   );
 }
 
-function Td({ children, align }: { children: ReactNode; align?: "left" | "right" }) {
+function Td({
+  children,
+  align
+}: {
+  children: ReactNode;
+  align?: "left" | "right";
+}) {
   return (
     <td
       style={{
