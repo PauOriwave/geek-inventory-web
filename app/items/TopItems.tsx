@@ -10,8 +10,14 @@ type TopItem = {
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function getTopItems(): Promise<TopItem[]> {
-  const res = await fetch(`${API}/stats/top-items?limit=10`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to fetch top items");
+  const res = await fetch(`${API}/stats/top-items?limit=10`, {
+    cache: "no-store"
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch top items");
+  }
+
   return res.json();
 }
 
@@ -28,20 +34,38 @@ export default async function TopItems() {
         background: "white"
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline"
+        }}
+      >
         <div style={{ fontWeight: 800 }}>Top 10 items</div>
         <div style={{ fontSize: 12, color: "#6b7280" }}>by value</div>
       </div>
 
-      <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div
+        style={{
+          marginTop: 10,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8
+        }}
+      >
         {items.map((it, idx) => (
-          <div
+          <a
             key={it.id}
+            href={`/items/${it.id}`}
             style={{
               display: "grid",
               gridTemplateColumns: "24px 1fr auto",
               gap: 8,
-              alignItems: "center"
+              alignItems: "center",
+              textDecoration: "none",
+              color: "inherit",
+              padding: "6px 4px",
+              borderRadius: 8
             }}
           >
             <div style={{ color: "#6b7280", fontSize: 12 }}>{idx + 1}</div>
@@ -66,10 +90,12 @@ export default async function TopItems() {
             </div>
 
             <div style={{ fontWeight: 800 }}>{it.totalValue.toFixed(2)}€</div>
-          </div>
+          </a>
         ))}
 
-        {items.length === 0 && <div style={{ color: "#6b7280" }}>No items yet.</div>}
+        {items.length === 0 && (
+          <div style={{ color: "#6b7280" }}>No items yet.</div>
+        )}
       </div>
     </section>
   );
