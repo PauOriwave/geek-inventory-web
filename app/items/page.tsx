@@ -5,6 +5,7 @@ import ItemActions from "./ItemActions";
 import CategoryStats from "./CategoryStats";
 import ActiveFilters from "./ActiveFilters";
 import TopItems from "./TopItems";
+import { theme } from "../theme";
 
 type Item = {
   id: string;
@@ -62,7 +63,6 @@ export default async function ItemsPage({
   const pageSize = typeof sp.pageSize === "string" ? Number(sp.pageSize) : 25;
 
   const params = new URLSearchParams();
-
   if (q) params.set("q", q);
   if (category) params.set("category", category);
   if (sort) params.set("sort", sort);
@@ -80,7 +80,6 @@ export default async function ItemsPage({
   ]);
 
   const items = itemsRes.items;
-
   const totalPages = Math.max(1, Math.ceil(itemsRes.total / itemsRes.pageSize));
   const currentPage = Math.min(Math.max(1, itemsRes.page), totalPages);
 
@@ -97,20 +96,62 @@ export default async function ItemsPage({
   }).toString()}`;
 
   return (
-    <main style={{ padding: 24, fontFamily: "system-ui" }}>
+    <main
+      style={{
+        minHeight: "100vh",
+        background: theme.colors.bg,
+        color: theme.colors.text,
+        fontFamily: "system-ui",
+        padding: 24
+      }}
+    >
+      <div
+        style={{
+          background: theme.colors.black,
+          color: "white",
+          borderRadius: theme.radius.xl,
+          padding: "16px 20px",
+          marginBottom: 20,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          boxShadow: theme.shadow.card
+        }}
+      >
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 999,
+            background: theme.colors.gold,
+            color: theme.colors.black,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 800,
+            fontSize: 18
+          }}
+        >
+          D
+        </div>
+
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>DrakoryVault</div>
+          <div style={{ fontSize: 12, color: "#D1D5DB" }}>
+            The Universal Collection Tracker
+          </div>
+        </div>
+      </div>
+
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 360px",
+          gridTemplateColumns: "minmax(0, 1fr) 320px",
           gap: 16,
           alignItems: "start"
         }}
       >
         <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>
-            Geek Inventory
-          </h1>
-
           <ActiveFilters
             q={q}
             category={category}
@@ -120,10 +161,10 @@ export default async function ItemsPage({
 
           <div
             style={{
-              display: "flex",
+              display: "grid",
+              gridTemplateColumns: "repeat(3, minmax(140px, 1fr))",
               gap: 12,
-              marginBottom: 10,
-              flexWrap: "wrap"
+              marginBottom: 12
             }}
           >
             <Stat label="Items" value={summary.totalItems} />
@@ -131,7 +172,13 @@ export default async function ItemsPage({
             <Stat label="Total value" value={`${summary.totalValue.toFixed(2)} €`} />
           </div>
 
-          <p style={{ color: "#6b7280", marginTop: 6 }}>
+          <p
+            style={{
+              color: theme.colors.textMuted,
+              margin: "0 0 14px 0",
+              fontSize: 14
+            }}
+          >
             Showing {items.length} item(s) on this page — {itemsRes.total} total
           </p>
 
@@ -143,89 +190,134 @@ export default async function ItemsPage({
         </div>
       </div>
 
-      <div style={{ marginTop: 16 }}>
+      <div style={{ marginTop: 18 }}>
         <Filters />
+      </div>
+
+      <div style={{ marginTop: 12 }}>
         <AddItemForm />
       </div>
 
-      <div style={{ marginTop: 16, overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <Th>Name</Th>
-              <Th>Category</Th>
-              <Th align="right">Price</Th>
-              <Th align="right">Qty</Th>
-              <Th>Created</Th>
-              <Th align="right">Actions</Th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {items.map((it) => (
-              <tr key={it.id}>
-                <Td>
-                  <a
-                    href={`/items/${it.id}`}
-                    style={{
-                      color: "#111827",
-                      textDecoration: "none",
-                      fontWeight: 700
-                    }}
-                  >
-                    {it.name}
-                  </a>
-                </Td>
-
-                <Td>{it.category}</Td>
-
-                <Td align="right">{Number(it.estimatedPrice).toFixed(2)} €</Td>
-
-                <Td align="right">{it.quantity}</Td>
-
-                <Td>{new Date(it.createdAt).toLocaleString()}</Td>
-
-                <Td align="right">
-                  <ItemActions
-                    id={it.id}
-                    initialQty={it.quantity}
-                    initialPrice={Number(it.estimatedPrice)}
-                  />
-                </Td>
-              </tr>
-            ))}
-
-            {items.length === 0 && (
+      <section
+        style={{
+          marginTop: 18,
+          background: theme.colors.surface,
+          border: `1px solid ${theme.colors.border}`,
+          borderRadius: theme.radius.lg,
+          overflow: "hidden",
+          boxShadow: theme.shadow.card
+        }}
+      >
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
               <tr>
-                <td colSpan={6} style={{ padding: 12, color: "#6b7280" }}>
-                  No items match these filters.
-                </td>
+                <Th>Name</Th>
+                <Th>Category</Th>
+                <Th align="right">Price</Th>
+                <Th align="right">Qty</Th>
+                <Th>Created</Th>
+                <Th align="right">Actions</Th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
 
-      <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 14 }}>
+            <tbody>
+              {items.map((it) => (
+                <tr key={it.id}>
+                  <Td>
+                    <a
+                      href={`/items/${it.id}`}
+                      style={{
+                        color: theme.colors.text,
+                        textDecoration: "none",
+                        fontWeight: 700
+                      }}
+                    >
+                      {it.name}
+                    </a>
+                  </Td>
+
+                  <Td>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                        background: "#F3F4F6",
+                        fontSize: 12,
+                        color: theme.colors.textMuted
+                      }}
+                    >
+                      {it.category}
+                    </span>
+                  </Td>
+
+                  <Td align="right">{Number(it.estimatedPrice).toFixed(2)} €</Td>
+                  <Td align="right">{it.quantity}</Td>
+                  <Td>{new Date(it.createdAt).toLocaleString()}</Td>
+
+                  <Td align="right">
+                    <ItemActions
+                      id={it.id}
+                      initialQty={it.quantity}
+                      initialPrice={Number(it.estimatedPrice)}
+                    />
+                  </Td>
+                </tr>
+              ))}
+
+              {items.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ padding: 18, color: theme.colors.textMuted }}>
+                    No items match these filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          justifyContent: "center",
+          marginTop: 16
+        }}
+      >
         <a
           href={prevHref}
           style={{
             pointerEvents: currentPage === 1 ? "none" : "auto",
-            opacity: currentPage === 1 ? 0.4 : 1
+            opacity: currentPage === 1 ? 0.4 : 1,
+            textDecoration: "none",
+            color: theme.colors.text,
+            padding: "8px 12px",
+            borderRadius: theme.radius.sm,
+            border: `1px solid ${theme.colors.border}`,
+            background: theme.colors.surface
           }}
         >
           Prev
         </a>
 
-        <div style={{ color: "#6b7280" }}>
-          Page {currentPage} / {totalPages} — pageSize {itemsRes.pageSize}
+        <div style={{ color: theme.colors.textMuted, fontSize: 14 }}>
+          Page {currentPage} / {totalPages}
         </div>
 
         <a
           href={nextHref}
           style={{
             pointerEvents: currentPage === totalPages ? "none" : "auto",
-            opacity: currentPage === totalPages ? 0.4 : 1
+            opacity: currentPage === totalPages ? 0.4 : 1,
+            textDecoration: "none",
+            color: theme.colors.text,
+            padding: "8px 12px",
+            borderRadius: theme.radius.sm,
+            border: `1px solid ${theme.colors.border}`,
+            background: theme.colors.surface
           }}
         >
           Next
@@ -235,18 +327,42 @@ export default async function ItemsPage({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({
+  label,
+  value
+}: {
+  label: string;
+  value: string | number;
+}) {
   return (
     <div
       style={{
-        border: "1px solid #e5e7eb",
-        borderRadius: 12,
-        padding: "10px 12px",
-        minWidth: 140
+        background: theme.colors.surface,
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.lg,
+        padding: "14px 16px",
+        boxShadow: theme.shadow.soft
       }}
     >
-      <div style={{ fontSize: 12, color: "#6b7280" }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 700 }}>{value}</div>
+      <div
+        style={{
+          fontSize: 12,
+          color: theme.colors.textMuted,
+          marginBottom: 6
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize: 22,
+          fontWeight: 800,
+          color: theme.colors.gold
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -262,10 +378,11 @@ function Th({
     <th
       style={{
         textAlign: align ?? "left",
-        borderBottom: "1px solid #e5e7eb",
-        padding: 10,
+        padding: 12,
         fontSize: 12,
-        color: "#6b7280"
+        color: theme.colors.textMuted,
+        borderBottom: `1px solid ${theme.colors.border}`,
+        background: theme.colors.surfaceAlt
       }}
     >
       {children}
@@ -284,8 +401,9 @@ function Td({
     <td
       style={{
         textAlign: align ?? "left",
-        borderBottom: "1px solid #f3f4f6",
-        padding: 10,
+        padding: 12,
+        borderBottom: "1px solid #F3F4F6",
+        background: theme.colors.surface,
         verticalAlign: "top"
       }}
     >
