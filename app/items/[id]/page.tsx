@@ -1,3 +1,5 @@
+import { theme } from "../../theme";
+
 type Item = {
   id: string;
   name: string;
@@ -33,10 +35,11 @@ export default async function ItemDetailPage({
   return (
     <main
       style={{
+        minHeight: "100vh",
+        background: theme.colors.bg,
         padding: 24,
         fontFamily: "system-ui",
-        maxWidth: 900,
-        margin: "0 auto"
+        color: theme.colors.text
       }}
     >
       <a
@@ -45,25 +48,33 @@ export default async function ItemDetailPage({
           display: "inline-block",
           marginBottom: 16,
           textDecoration: "none",
-          color: "#2563eb"
+          color: theme.colors.link,
+          fontWeight: 700
         }}
       >
         ← Back to inventory
       </a>
 
-      <div
+      <section
         style={{
-          border: "1px solid #e5e7eb",
-          borderRadius: 16,
-          padding: 20,
-          background: "white"
+          maxWidth: 900,
+          margin: "0 auto",
+          background: theme.colors.surface,
+          border: `1px solid ${theme.colors.border}`,
+          borderRadius: theme.radius.xl,
+          padding: 22,
+          boxShadow: theme.shadow.card
         }}
       >
         <div
           style={{
+            display: "inline-block",
+            padding: "6px 10px",
+            borderRadius: 999,
+            background: "#F3F4F6",
+            color: theme.colors.textMuted,
             fontSize: 12,
-            color: "#6b7280",
-            marginBottom: 6
+            marginBottom: 10
           }}
         >
           {item.category}
@@ -86,53 +97,52 @@ export default async function ItemDetailPage({
             gap: 12
           }}
         >
-          <InfoCard
-            label="Price"
-            value={`${Number(item.estimatedPrice).toFixed(2)} €`}
-          />
+          <InfoCard label="Price" value={`${Number(item.estimatedPrice).toFixed(2)} €`} />
           <InfoCard label="Quantity" value={item.quantity} />
-          <InfoCard
-            label="Total value"
-            value={`${totalValue.toFixed(2)} €`}
-          />
+          <InfoCard label="Total value" value={`${totalValue.toFixed(2)} €`} highlight />
           <InfoCard label="Category" value={item.category} />
         </div>
 
         <div
           style={{
-            marginTop: 20,
-            color: "#6b7280",
-            fontSize: 14
+            marginTop: 22,
+            color: theme.colors.textMuted,
+            fontSize: 14,
+            lineHeight: 1.8
           }}
         >
           <div>Created: {new Date(item.createdAt).toLocaleString()}</div>
           <div>Updated: {new Date(item.updatedAt).toLocaleString()}</div>
           <div>ID: {item.id}</div>
         </div>
-      </div>
+      </section>
     </main>
   );
 }
 
 function InfoCard({
   label,
-  value
+  value,
+  highlight = false
 }: {
   label: string;
   value: string | number;
+  highlight?: boolean;
 }) {
   return (
     <div
       style={{
-        border: "1px solid #e5e7eb",
-        borderRadius: 12,
-        padding: 14
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.lg,
+        padding: 14,
+        background: theme.colors.surface,
+        boxShadow: theme.shadow.soft
       }}
     >
       <div
         style={{
           fontSize: 12,
-          color: "#6b7280",
+          color: theme.colors.textMuted,
           marginBottom: 6
         }}
       >
@@ -141,8 +151,9 @@ function InfoCard({
 
       <div
         style={{
-          fontSize: 20,
-          fontWeight: 800
+          fontSize: 22,
+          fontWeight: 800,
+          color: highlight ? theme.colors.gold : theme.colors.text
         }}
       >
         {value}

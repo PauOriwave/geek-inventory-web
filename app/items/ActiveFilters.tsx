@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { theme } from "../theme";
 
 export default function ActiveFilters({
   q,
@@ -15,7 +16,14 @@ export default function ActiveFilters({
   if (!hasFilters) return null;
 
   return (
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+    <div
+      style={{
+        display: "flex",
+        gap: 8,
+        flexWrap: "wrap",
+        marginBottom: 12
+      }}
+    >
       {category && <Chip label={`Category: ${category}`} />}
       {q && <Chip label={`Search: ${q}`} />}
       {minPrice && <Chip label={`Min: ${minPrice}`} />}
@@ -25,11 +33,12 @@ export default function ActiveFilters({
         href="/items"
         style={{
           padding: "6px 10px",
-          borderRadius: 20,
-          background: "#ef4444",
+          borderRadius: 999,
+          background: theme.colors.danger,
           color: "white",
           fontSize: 12,
-          textDecoration: "none"
+          textDecoration: "none",
+          fontWeight: 700
         }}
       >
         Clear all
@@ -43,9 +52,11 @@ function Chip({ label }: { label: string }) {
     <div
       style={{
         padding: "6px 10px",
-        borderRadius: 20,
-        background: "#e5e7eb",
-        fontSize: 12
+        borderRadius: 999,
+        background: "#F3F4F6",
+        color: theme.colors.text,
+        fontSize: 12,
+        border: `1px solid ${theme.colors.border}`
       }}
     >
       {label}

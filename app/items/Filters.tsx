@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { theme } from "../theme";
 
 const categories = ["", "videogame", "book", "comic", "tcg", "figure", "other"] as const;
 
@@ -24,90 +25,121 @@ export default function Filters() {
   const [sort, setSort] = useState(initialSort);
 
   function push(nextQ: string, nextCategory: string, nextSort: string) {
-  const params = new URLSearchParams();
+    const params = new URLSearchParams();
 
-  if (nextQ.trim()) params.set("q", nextQ.trim());
-  if (nextCategory) params.set("category", nextCategory);
-  if (nextSort && nextSort !== "newest") params.set("sort", nextSort);
+    if (nextQ.trim()) params.set("q", nextQ.trim());
+    if (nextCategory) params.set("category", nextCategory);
+    if (nextSort && nextSort !== "newest") params.set("sort", nextSort);
 
-  // mantener pageSize si estaba en la URL
-  const currentPageSize = sp.get("pageSize");
-  if (currentPageSize) params.set("pageSize", currentPageSize);
+    const currentPageSize = sp.get("pageSize");
+    if (currentPageSize) params.set("pageSize", currentPageSize);
 
-  // reset page
-  params.set("page", "1");
+    params.set("page", "1");
 
-  const qs = params.toString();
-  router.push(qs ? `/items?${qs}` : "/items");
-}
+    const qs = params.toString();
+    router.push(qs ? `/items?${qs}` : "/items");
+  }
 
   return (
-    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 14 }}>
-      <input
-        value={q}
-        onChange={(e) => {
-          const v = e.target.value;
-          setQ(v);
-          push(v, category, sort);
-        }}
-        placeholder="Search… (e.g. pokemon)"
+    <section
+      style={{
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.lg,
+        padding: 14,
+        background: theme.colors.surface,
+        boxShadow: theme.shadow.card
+      }}
+    >
+      <div
         style={{
-          padding: "8px 10px",
-          border: "1px solid #e5e7eb",
-          borderRadius: 10,
-          minWidth: 220
+          fontWeight: 800,
+          marginBottom: 12,
+          color: theme.colors.text
         }}
-      />
-
-      <select
-        value={category}
-        onChange={(e) => {
-          const v = e.target.value;
-          setCategory(v);
-          push(q, v, sort);
-        }}
-        style={{ padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: 10 }}
       >
-        {categories.map((c) => (
-          <option key={c} value={c}>
-            {c === "" ? "All categories" : c}
-          </option>
-        ))}
-      </select>
+        Filters
+      </div>
 
-      <select
-        value={sort}
-        onChange={(e) => {
-          const v = e.target.value;
-          setSort(v);
-          push(q, category, v);
-        }}
-        style={{ padding: "8px 10px", border: "1px solid #e5e7eb", borderRadius: 10 }}
-      >
-        {sorts.map((s) => (
-          <option key={s.value} value={s.value}>
-            {s.label}
-          </option>
-        ))}
-      </select>
-
-      <button
-        onClick={() => {
-          setQ("");
-          setCategory("");
-          setSort("newest");
-          router.push("/items");
-        }}
+      <div
         style={{
-          padding: "8px 12px",
-          borderRadius: 10,
-          border: "1px solid #ddd",
-          cursor: "pointer",
-          background: "white"
+          display: "grid",
+          gridTemplateColumns: "minmax(220px, 1.4fr) 1fr 1fr auto",
+          gap: 10,
+          alignItems: "center"
         }}
       >
-        Clear
-      </button>
-    </div>
+        <input
+          value={q}
+          onChange={(e) => {
+            const v = e.target.value;
+            setQ(v);
+            push(v, category, sort);
+          }}
+          placeholder="Search… (e.g. pokemon)"
+          style={inputStyle}
+        />
+
+        <select
+          value={category}
+          onChange={(e) => {
+            const v = e.target.value;
+            setCategory(v);
+            push(q, v, sort);
+          }}
+          style={inputStyle}
+        >
+          {categories.map((c) => (
+            <option key={c} value={c}>
+              {c === "" ? "All categories" : c}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={sort}
+          onChange={(e) => {
+            const v = e.target.value;
+            setSort(v);
+            push(q, category, v);
+          }}
+          style={inputStyle}
+        >
+          {sorts.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={() => {
+            setQ("");
+            setCategory("");
+            setSort("newest");
+            router.push("/items");
+          }}
+          style={{
+            padding: "10px 12px",
+            borderRadius: theme.radius.sm,
+            border: `1px solid ${theme.colors.border}`,
+            background: theme.colors.surface,
+            color: theme.colors.text,
+            fontWeight: 700,
+            cursor: "pointer"
+          }}
+        >
+          Clear
+        </button>
+      </div>
+    </section>
   );
 }
+
+const inputStyle: React.CSSProperties = {
+  padding: "10px 12px",
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.sm,
+  background: theme.colors.surface,
+  color: theme.colors.text,
+  outline: "none"
+};
