@@ -78,7 +78,7 @@ function TopItemRow({
       <div
         style={{
           fontWeight: 800,
-          color: theme.colors.gold
+          color: theme.colors.text
         }}
       >
         {it.totalValue.toFixed(2)}€

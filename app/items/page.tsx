@@ -358,7 +358,7 @@ function Stat({
         style={{
           fontSize: 22,
           fontWeight: 800,
-          color: theme.colors.gold
+          color: theme.colors.text
         }}
       >
         {value}

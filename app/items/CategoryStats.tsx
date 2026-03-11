@@ -71,7 +71,7 @@ export default async function CategoryStats() {
               style={{
                 fontSize: 18,
                 fontWeight: 800,
-                color: theme.colors.gold
+                color: theme.colors.text
               }}
             >
               {r.value.toFixed(2)} €
