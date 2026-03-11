@@ -1,3 +1,5 @@
+import { theme } from "../theme";
+
 type Row = {
   category: string;
   units: number;
@@ -9,7 +11,11 @@ const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function getByCategory(): Promise<Row[]> {
   const res = await fetch(`${API}/stats/by-category`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to fetch by-category stats");
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch by-category stats");
+  }
+
   return res.json();
 }
 
@@ -17,12 +23,25 @@ export default async function CategoryStats() {
   const rows = await getByCategory();
 
   return (
-    <section style={{ marginTop: 16 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10 }}>
-        Value by Category
+    <section style={{ marginTop: 14 }}>
+      <h2
+        style={{
+          fontSize: 15,
+          fontWeight: 800,
+          marginBottom: 10,
+          color: theme.colors.text
+        }}
+      >
+        Value by category
       </h2>
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: 10
+        }}
+      >
         {rows.map((r) => (
           <a
             key={r.category}
@@ -30,22 +49,49 @@ export default async function CategoryStats() {
             style={{
               textDecoration: "none",
               color: "inherit",
-              border: "1px solid #e5e7eb",
-              borderRadius: 12,
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.radius.md,
               padding: 12,
-              minWidth: 180,
+              background: theme.colors.surface,
+              boxShadow: theme.shadow.soft,
               display: "block"
             }}
           >
-            <div style={{ fontSize: 12, color: "#6b7280" }}>{r.category}</div>
-            <div style={{ fontSize: 18, fontWeight: 800 }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: theme.colors.textMuted,
+                marginBottom: 6
+              }}
+            >
+              {r.category}
+            </div>
+
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 800,
+                color: theme.colors.gold
+              }}
+            >
               {r.value.toFixed(2)} €
             </div>
-            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+
+            <div
+              style={{
+                fontSize: 12,
+                color: theme.colors.textMuted,
+                marginTop: 6
+              }}
+            >
               Units: {r.units} · Items: {r.items}
             </div>
           </a>
         ))}
+
+        {rows.length === 0 && (
+          <div style={{ color: theme.colors.textMuted }}>No data yet.</div>
+        )}
       </div>
     </section>
   );

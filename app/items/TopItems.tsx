@@ -1,3 +1,5 @@
+import { theme } from "../theme";
+
 type TopItem = {
   id: string;
   name: string;
@@ -38,11 +40,20 @@ function TopItemRow({
         alignItems: "center",
         textDecoration: "none",
         color: "inherit",
-        padding: "6px 4px",
-        borderRadius: 8
+        padding: "8px 6px",
+        borderRadius: theme.radius.sm,
+        background: "transparent"
       }}
     >
-      <div style={{ color: "#6b7280", fontSize: 12 }}>{idx + 1}</div>
+      <div
+        style={{
+          color: theme.colors.textMuted,
+          fontSize: 12,
+          fontWeight: 700
+        }}
+      >
+        {idx + 1}
+      </div>
 
       <div style={{ minWidth: 0 }}>
         <div
@@ -51,19 +62,27 @@ function TopItemRow({
             fontWeight: 700,
             whiteSpace: "nowrap",
             overflow: "hidden",
-            textOverflow: "ellipsis"
+            textOverflow: "ellipsis",
+            color: theme.colors.text
           }}
           title={it.name}
         >
           {it.name}
         </div>
 
-        <div style={{ fontSize: 12, color: "#6b7280" }}>
+        <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
           {it.category} · {it.quantity} × {it.estimatedPrice.toFixed(2)}€
         </div>
       </div>
 
-      <div style={{ fontWeight: 800 }}>{it.totalValue.toFixed(2)}€</div>
+      <div
+        style={{
+          fontWeight: 800,
+          color: theme.colors.gold
+        }}
+      >
+        {it.totalValue.toFixed(2)}€
+      </div>
     </a>
   );
 }
@@ -77,30 +96,37 @@ export default async function TopItems() {
   return (
     <section
       style={{
-        border: "1px solid #e5e7eb",
-        borderRadius: 14,
-        padding: 12,
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.lg,
+        padding: 14,
         width: 320,
-        background: "white"
+        background: theme.colors.surface,
+        boxShadow: theme.shadow.card
       }}
     >
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "baseline"
+          alignItems: "baseline",
+          borderBottom: `1px solid ${theme.colors.border}`,
+          paddingBottom: 8,
+          marginBottom: 8
         }}
       >
-        <div style={{ fontWeight: 800 }}>Top items</div>
-        <div style={{ fontSize: 12, color: "#6b7280" }}>by value</div>
+        <div style={{ fontWeight: 800, color: theme.colors.text }}>
+          Top items
+        </div>
+        <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
+          by value
+        </div>
       </div>
 
       <div
         style={{
-          marginTop: 10,
           display: "flex",
           flexDirection: "column",
-          gap: 8
+          gap: 6
         }}
       >
         {firstFive.map((it, idx) => (
@@ -112,7 +138,7 @@ export default async function TopItems() {
             <summary
               style={{
                 cursor: "pointer",
-                color: "#2563eb",
+                color: theme.colors.link,
                 fontSize: 13,
                 userSelect: "none"
               }}
@@ -125,7 +151,7 @@ export default async function TopItems() {
                 marginTop: 8,
                 display: "flex",
                 flexDirection: "column",
-                gap: 8
+                gap: 6
               }}
             >
               {rest.map((it, idx) => (
@@ -136,7 +162,7 @@ export default async function TopItems() {
         )}
 
         {items.length === 0 && (
-          <div style={{ color: "#6b7280" }}>No items yet.</div>
+          <div style={{ color: theme.colors.textMuted }}>No items yet.</div>
         )}
       </div>
     </section>
