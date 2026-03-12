@@ -42,80 +42,89 @@ export default async function ItemDetailPage({
         color: theme.colors.text
       }}
     >
-      <a
-        href="/items"
-        style={{
-          display: "inline-block",
-          marginBottom: 16,
-          textDecoration: "none",
-          color: theme.colors.link,
-          fontWeight: 700
-        }}
-      >
-        ← Back to inventory
-      </a>
-
-      <section
-        style={{
-          maxWidth: 900,
-          margin: "0 auto",
-          background: theme.colors.surface,
-          border: `1px solid ${theme.colors.border}`,
-          borderRadius: theme.radius.xl,
-          padding: 22,
-          boxShadow: theme.shadow.card
-        }}
-      >
-        <div
+      <div style={{ maxWidth: 980, margin: "0 auto" }}>
+        <a
+          href="/items"
           style={{
             display: "inline-block",
-            padding: "6px 10px",
-            borderRadius: 999,
-            background: "#F3F4F6",
-            color: theme.colors.textMuted,
-            fontSize: 12,
-            marginBottom: 10
+            marginBottom: 16,
+            textDecoration: "none",
+            color: theme.colors.link,
+            fontWeight: 700
           }}
         >
-          {item.category}
-        </div>
+          ← Back to inventory
+        </a>
 
-        <h1
+        <section
           style={{
-            fontSize: 30,
-            fontWeight: 800,
-            marginBottom: 18
+            background: theme.colors.surface,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.radius.xl,
+            padding: 22,
+            boxShadow: theme.shadow.card
           }}
         >
-          {item.name}
-        </h1>
+          <div
+            style={{
+              display: "inline-block",
+              padding: "6px 10px",
+              borderRadius: 999,
+              background: "#F3F4F6",
+              color: theme.colors.textMuted,
+              fontSize: 12,
+              marginBottom: 10
+            }}
+          >
+            {item.category}
+          </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: 12
-          }}
-        >
-          <InfoCard label="Price" value={`${Number(item.estimatedPrice).toFixed(2)} €`} />
-          <InfoCard label="Quantity" value={item.quantity} />
-          <InfoCard label="Total value" value={`${totalValue.toFixed(2)} €`} highlight />
-          <InfoCard label="Category" value={item.category} />
-        </div>
+          <h1
+            style={{
+              fontSize: 30,
+              fontWeight: 800,
+              margin: "0 0 18px 0"
+            }}
+          >
+            {item.name}
+          </h1>
 
-        <div
-          style={{
-            marginTop: 22,
-            color: theme.colors.textMuted,
-            fontSize: 14,
-            lineHeight: 1.8
-          }}
-        >
-          <div>Created: {new Date(item.createdAt).toLocaleString()}</div>
-          <div>Updated: {new Date(item.updatedAt).toLocaleString()}</div>
-          <div>ID: {item.id}</div>
-        </div>
-      </section>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12
+            }}
+          >
+            <InfoCard
+              label="Price"
+              value={`${Number(item.estimatedPrice).toFixed(2)} €`}
+            />
+            <InfoCard label="Quantity" value={item.quantity} />
+            <InfoCard
+              label="Total value"
+              value={`${totalValue.toFixed(2)} €`}
+              highlight
+            />
+            <InfoCard label="Category" value={item.category} />
+          </div>
+
+          <div
+            style={{
+              marginTop: 22,
+              color: theme.colors.textMuted,
+              fontSize: 14,
+              lineHeight: 1.8,
+              borderTop: `1px solid ${theme.colors.border}`,
+              paddingTop: 16
+            }}
+          >
+            <div>Created: {new Date(item.createdAt).toLocaleString()}</div>
+            <div>Updated: {new Date(item.updatedAt).toLocaleString()}</div>
+            <div>ID: {item.id}</div>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
@@ -135,7 +144,7 @@ function InfoCard({
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.lg,
         padding: 14,
-        background: theme.colors.surface,
+        background: theme.colors.surfaceAlt,
         boxShadow: theme.shadow.soft
       }}
     >
@@ -153,7 +162,7 @@ function InfoCard({
         style={{
           fontSize: 22,
           fontWeight: 800,
-          color: highlight ? theme.colors.gold : theme.colors.text
+          color: highlight ? theme.colors.text : theme.colors.text
         }}
       >
         {value}

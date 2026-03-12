@@ -44,7 +44,7 @@ export default function Filters() {
     <section
       style={{
         border: `1px solid ${theme.colors.border}`,
-        borderRadius: theme.radius.lg,
+        borderRadius: theme.radius.xl,
         padding: 14,
         background: theme.colors.surface,
         boxShadow: theme.shadow.card
@@ -54,7 +54,8 @@ export default function Filters() {
         style={{
           fontWeight: 800,
           marginBottom: 12,
-          color: theme.colors.text
+          color: theme.colors.text,
+          fontSize: 15
         }}
       >
         Filters
@@ -63,7 +64,7 @@ export default function Filters() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(220px, 1.4fr) 1fr 1fr auto",
+          gridTemplateColumns: "minmax(220px, 1.5fr) 1fr 1fr auto",
           gap: 10,
           alignItems: "center"
         }}
@@ -75,7 +76,7 @@ export default function Filters() {
             setQ(v);
             push(v, category, sort);
           }}
-          placeholder="Search… (e.g. pokemon)"
+          placeholder="Search…"
           style={inputStyle}
         />
 
@@ -122,7 +123,7 @@ export default function Filters() {
             padding: "10px 12px",
             borderRadius: theme.radius.sm,
             border: `1px solid ${theme.colors.border}`,
-            background: theme.colors.surface,
+            background: theme.colors.surfaceAlt,
             color: theme.colors.text,
             fontWeight: 700,
             cursor: "pointer"
