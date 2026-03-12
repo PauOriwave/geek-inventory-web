@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import Filters from "./Filters";
 import AddItemForm from "./AddItemForm";
 import ItemActions from "./ItemActions";
-import CategoryStats from "./CategoryStats";
 import ActiveFilters from "./ActiveFilters";
 import TopItems from "./TopItems";
+import CategoryStats from "./CategoryStats";
 import { theme } from "../theme";
 
 type Item = {
@@ -34,13 +34,23 @@ const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function getItems(queryString: string): Promise<ItemsResponse> {
   const res = await fetch(`${API}/items${queryString}`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to fetch items");
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch items");
+  }
+
   return res.json();
 }
 
 async function getSummary(queryString: string): Promise<Summary> {
-  const res = await fetch(`${API}/stats/summary${queryString}`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to fetch summary");
+  const res = await fetch(`${API}/stats/summary${queryString}`, {
+    cache: "no-store"
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch summary");
+  }
+
   return res.json();
 }
 
@@ -51,7 +61,8 @@ export default async function ItemsPage({
     | Promise<Record<string, string | string[] | undefined>>
     | Record<string, string | string[] | undefined>;
 }) {
-  const sp = searchParams instanceof Promise ? await searchParams : searchParams ?? {};
+  const sp =
+    searchParams instanceof Promise ? await searchParams : searchParams ?? {};
 
   const q = typeof sp.q === "string" ? sp.q : undefined;
   const category = typeof sp.category === "string" ? sp.category : undefined;
@@ -63,6 +74,7 @@ export default async function ItemsPage({
   const pageSize = typeof sp.pageSize === "string" ? Number(sp.pageSize) : 25;
 
   const params = new URLSearchParams();
+
   if (q) params.set("q", q);
   if (category) params.set("category", category);
   if (sort) params.set("sort", sort);
@@ -70,7 +82,10 @@ export default async function ItemsPage({
   if (maxPrice) params.set("maxPrice", maxPrice);
 
   params.set("page", String(Number.isFinite(page) && page >= 1 ? page : 1));
-  params.set("pageSize", String(Number.isFinite(pageSize) && pageSize >= 5 ? pageSize : 25));
+  params.set(
+    "pageSize",
+    String(Number.isFinite(pageSize) && pageSize >= 5 ? pageSize : 25)
+  );
 
   const queryString = `?${params.toString()}`;
 
@@ -80,7 +95,12 @@ export default async function ItemsPage({
   ]);
 
   const items = itemsRes.items;
-  const totalPages = Math.max(1, Math.ceil(itemsRes.total / itemsRes.pageSize));
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(itemsRes.total / itemsRes.pageSize)
+  );
+
   const currentPage = Math.min(Math.max(1, itemsRes.page), totalPages);
 
   const baseParams = Object.fromEntries(params.entries());
@@ -169,7 +189,14 @@ export default async function ItemsPage({
           >
             <Stat label="Items" value={summary.totalItems} />
             <Stat label="Units" value={summary.totalUnits} />
-            <Stat label="Total value" value={`${summary.totalValue.toFixed(2)} €`} />
+            <Stat
+              label="Total value"
+              value={`${summary.totalValue.toFixed(2)} €`}
+            />
+          </div>
+
+          <div style={{ marginBottom: 12 }}>
+            <CategoryStats />
           </div>
 
           <p
@@ -181,8 +208,6 @@ export default async function ItemsPage({
           >
             Showing {items.length} item(s) on this page — {itemsRes.total} total
           </p>
-
-          <CategoryStats />
         </div>
 
         <div style={{ position: "sticky", top: 16 }}>
@@ -252,8 +277,12 @@ export default async function ItemsPage({
                     </span>
                   </Td>
 
-                  <Td align="right">{Number(it.estimatedPrice).toFixed(2)} €</Td>
+                  <Td align="right">
+                    {Number(it.estimatedPrice).toFixed(2)} €
+                  </Td>
+
                   <Td align="right">{it.quantity}</Td>
+
                   <Td>{new Date(it.createdAt).toLocaleString()}</Td>
 
                   <Td align="right">
@@ -268,7 +297,13 @@ export default async function ItemsPage({
 
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: 18, color: theme.colors.textMuted }}>
+                  <td
+                    colSpan={6}
+                    style={{
+                      padding: 18,
+                      color: theme.colors.textMuted
+                    }}
+                  >
                     No items match these filters.
                   </td>
                 </tr>
