@@ -16,6 +16,7 @@ export default function ItemActions({
   initialPrice: number;
 }) {
   const router = useRouter();
+
   const [qty, setQty] = useState<number>(initialQty);
   const [price, setPrice] = useState<number>(initialPrice);
   const [loading, setLoading] = useState(false);
@@ -106,7 +107,7 @@ export default function ItemActions({
         onClick={save}
         disabled={loading}
         style={{
-          padding: "6px 10px",
+          padding: "7px 10px",
           borderRadius: theme.radius.sm,
           border: "none",
           background: theme.colors.gold,
@@ -122,11 +123,11 @@ export default function ItemActions({
         onClick={del}
         disabled={loading}
         style={{
-          padding: "6px 10px",
+          padding: "7px 10px",
           borderRadius: theme.radius.sm,
-          border: `1px solid ${theme.colors.danger}`,
+          border: `1px solid ${theme.colors.border}`,
+          background: theme.colors.surfaceAlt,
           color: theme.colors.danger,
-          background: theme.colors.surface,
           fontWeight: 700,
           cursor: loading ? "not-allowed" : "pointer"
         }}
@@ -135,7 +136,14 @@ export default function ItemActions({
       </button>
 
       {msg && (
-        <span style={{ width: 20, textAlign: "center", color: theme.colors.textMuted }}>
+        <span
+          style={{
+            width: 18,
+            textAlign: "center",
+            color: theme.colors.textMuted,
+            fontSize: 13
+          }}
+        >
           {msg}
         </span>
       )}
@@ -144,8 +152,8 @@ export default function ItemActions({
 }
 
 const smallInput: React.CSSProperties = {
-  width: 62,
-  padding: "6px 8px",
+  width: 60,
+  padding: "7px 8px",
   border: `1px solid ${theme.colors.border}`,
   borderRadius: theme.radius.sm,
   background: theme.colors.surface,
@@ -154,8 +162,8 @@ const smallInput: React.CSSProperties = {
 };
 
 const smallInputWide: React.CSSProperties = {
-  width: 88,
-  padding: "6px 8px",
+  width: 84,
+  padding: "7px 8px",
   border: `1px solid ${theme.colors.border}`,
   borderRadius: theme.radius.sm,
   background: theme.colors.surface,

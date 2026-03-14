@@ -83,8 +83,8 @@ export default function AddItemForm() {
     <section
       style={{
         border: `1px solid ${theme.colors.border}`,
-        borderRadius: theme.radius.lg,
-        padding: 14,
+        borderRadius: theme.radius.xl,
+        padding: 16,
         background: theme.colors.surface,
         boxShadow: theme.shadow.card
       }}
@@ -93,7 +93,8 @@ export default function AddItemForm() {
         style={{
           fontWeight: 800,
           marginBottom: 12,
-          color: theme.colors.text
+          color: theme.colors.text,
+          fontSize: 15
         }}
       >
         Add item
@@ -102,7 +103,7 @@ export default function AddItemForm() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(220px, 1.4fr) 1fr 120px 90px auto",
+          gridTemplateColumns: "minmax(220px, 1.5fr) 1fr 120px 90px auto",
           gap: 10,
           alignItems: "center"
         }}
@@ -155,7 +156,8 @@ export default function AddItemForm() {
             background: theme.colors.gold,
             color: theme.colors.black,
             fontWeight: 800,
-            cursor: loading ? "not-allowed" : "pointer"
+            cursor: loading ? "not-allowed" : "pointer",
+            boxShadow: theme.shadow.soft
           }}
         >
           {loading ? "Adding…" : "Add"}
@@ -163,7 +165,13 @@ export default function AddItemForm() {
       </div>
 
       {error && (
-        <div style={{ marginTop: 10, color: theme.colors.danger }}>
+        <div
+          style={{
+            marginTop: 10,
+            color: theme.colors.danger,
+            fontSize: 13
+          }}
+        >
           {error}
         </div>
       )}

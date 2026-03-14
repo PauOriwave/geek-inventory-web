@@ -175,7 +175,7 @@ export default async function ItemsPage({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) 320px",
+            gridTemplateColumns: "minmax(0, 1fr) minmax(280px, 320px)",
             gap: 18,
             alignItems: "start"
           }}
