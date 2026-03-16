@@ -226,25 +226,85 @@ export default async function ItemsPage({
           style={{
             marginTop: 18,
             display: "flex",
-            justifyContent: "flex-end"
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap"
           }}
         >
-          <a
-            href={`${API}/export/items.csv`}
+          <div
             style={{
-              display: "inline-block",
-              padding: "10px 12px",
-              borderRadius: theme.radius.sm,
-              border: `1px solid ${theme.colors.border}`,
-              background: theme.colors.surface,
-              color: theme.colors.text,
-              textDecoration: "none",
-              fontWeight: 700,
-              boxShadow: theme.shadow.soft
+              fontWeight: 800,
+              fontSize: 15,
+              color: theme.colors.text
             }}
           >
-            Export CSV
-          </a>
+            Collection controls
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              flexWrap: "wrap"
+            }}
+          >
+            <form
+              action={`${API}/import/items`}
+              method="post"
+              encType="multipart/form-data"
+              style={{
+                display: "flex",
+                gap: 8,
+                alignItems: "center",
+                flexWrap: "wrap"
+              }}
+            >
+              <input
+                type="file"
+                name="file"
+                accept=".csv"
+                style={{
+                  fontSize: 13,
+                  color: theme.colors.text
+                }}
+              />
+
+              <button
+                type="submit"
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: theme.radius.sm,
+                  border: `1px solid ${theme.colors.border}`,
+                  background: theme.colors.surface,
+                  color: theme.colors.text,
+                  fontWeight: 700,
+                  boxShadow: theme.shadow.soft,
+                  cursor: "pointer"
+                }}
+              >
+                Import CSV
+              </button>
+            </form>
+
+            <a
+              href={`${API}/export/items.csv`}
+              style={{
+                display: "inline-block",
+                padding: "10px 12px",
+                borderRadius: theme.radius.sm,
+                border: `1px solid ${theme.colors.border}`,
+                background: theme.colors.surface,
+                color: theme.colors.text,
+                textDecoration: "none",
+                fontWeight: 700,
+                boxShadow: theme.shadow.soft
+              }}
+            >
+              Export CSV
+            </a>
+          </div>
         </div>
 
         <div style={{ marginTop: 12 }}>
