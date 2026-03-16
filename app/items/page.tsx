@@ -222,7 +222,32 @@ export default async function ItemsPage({
           </div>
         </div>
 
-        <div style={{ marginTop: 18 }}>
+        <div
+          style={{
+            marginTop: 18,
+            display: "flex",
+            justifyContent: "flex-end"
+          }}
+        >
+          <a
+            href={`${API}/export/items.csv`}
+            style={{
+              display: "inline-block",
+              padding: "10px 12px",
+              borderRadius: theme.radius.sm,
+              border: `1px solid ${theme.colors.border}`,
+              background: theme.colors.surface,
+              color: theme.colors.text,
+              textDecoration: "none",
+              fontWeight: 700,
+              boxShadow: theme.shadow.soft
+            }}
+          >
+            Export CSV
+          </a>
+        </div>
+
+        <div style={{ marginTop: 12 }}>
           <Filters />
         </div>
 
