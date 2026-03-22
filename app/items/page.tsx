@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import Filters from "./Filters";
 import AddItemForm from "./AddItemForm";
+import ImportCsvButton from "./ImportCsvButton";
+import ExportCsvButton from "./ExportCsvButton";
 import ItemActions from "./ItemActions";
 import ActiveFilters from "./ActiveFilters";
 import TopItems from "./TopItems";
@@ -80,8 +82,6 @@ export default async function ItemsPage({
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
-
-  console.log("COOKIE HEADER IN NEXT:", cookieHeader);
 
   const sp =
     searchParams instanceof Promise ? await searchParams : searchParams ?? {};
@@ -280,60 +280,8 @@ export default async function ItemsPage({
               flexWrap: "wrap"
             }}
           >
-            <form
-              action={`${API}/import/items`}
-              method="post"
-              encType="multipart/form-data"
-              style={{
-                display: "flex",
-                gap: 8,
-                alignItems: "center",
-                flexWrap: "wrap"
-              }}
-            >
-              <input
-                type="file"
-                name="file"
-                accept=".csv"
-                style={{
-                  fontSize: 13,
-                  color: theme.colors.text
-                }}
-              />
-
-              <button
-                type="submit"
-                style={{
-                  padding: "10px 12px",
-                  borderRadius: theme.radius.sm,
-                  border: `1px solid ${theme.colors.border}`,
-                  background: theme.colors.surface,
-                  color: theme.colors.text,
-                  fontWeight: 700,
-                  boxShadow: theme.shadow.soft,
-                  cursor: "pointer"
-                }}
-              >
-                Import CSV
-              </button>
-            </form>
-
-            <a
-              href={`${API}/export/items.csv`}
-              style={{
-                display: "inline-block",
-                padding: "10px 12px",
-                borderRadius: theme.radius.sm,
-                border: `1px solid ${theme.colors.border}`,
-                background: theme.colors.surface,
-                color: theme.colors.text,
-                textDecoration: "none",
-                fontWeight: 700,
-                boxShadow: theme.shadow.soft
-              }}
-            >
-              Export CSV
-            </a>
+            <ImportCsvButton />
+            <ExportCsvButton />
           </div>
         </div>
 
