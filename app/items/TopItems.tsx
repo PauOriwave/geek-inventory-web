@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { theme } from "../theme";
 
 type TopItem = {
@@ -11,9 +12,12 @@ type TopItem = {
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-async function getTopItems(): Promise<TopItem[]> {
+async function getTopItems(cookieHeader: string): Promise<TopItem[]> {
   const res = await fetch(`${API}/stats/top-items?limit=10`, {
-    cache: "no-store"
+    cache: "no-store",
+    headers: {
+      cookie: cookieHeader
+    }
   });
 
   if (!res.ok) {
@@ -94,7 +98,10 @@ function TopItemRow({
 }
 
 export default async function TopItems() {
-  const items = await getTopItems();
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  const items = await getTopItems(cookieHeader);
 
   const firstFive = items.slice(0, 5);
   const rest = items.slice(5);

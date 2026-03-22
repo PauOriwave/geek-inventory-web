@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { theme } from "../theme";
+import { getSessionTokenFromCookie } from "../lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -45,13 +46,21 @@ export default function AddItemForm() {
       return;
     }
 
+    const token = getSessionTokenFromCookie();
+
+    if (!token) {
+      setError("No active session");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch(`${API}/items`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
           name: name.trim(),
@@ -62,7 +71,8 @@ export default function AddItemForm() {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to create item");
+        const text = await res.text();
+        throw new Error(text || "Failed to create item");
       }
 
       setName("");
@@ -73,7 +83,7 @@ export default function AddItemForm() {
       router.refresh();
     } catch (e) {
       console.error(e);
-      setError("Could not create item");
+      setError(e instanceof Error ? e.message : "Could not create item");
     } finally {
       setLoading(false);
     }

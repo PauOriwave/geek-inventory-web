@@ -24,14 +24,16 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json"
         },
-        credentials: "include",
         body: JSON.stringify({ email, password })
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.message || "Login failed");
       }
+
+      document.cookie = `session=${data.token}; path=/`;
 
       router.push("/items");
       router.refresh();
@@ -65,9 +67,7 @@ export default function LoginPage() {
           boxShadow: "0 8px 24px rgba(16, 24, 40, 0.06)"
         }}
       >
-        <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>
-          Login
-        </h1>
+        <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>Login</h1>
 
         <p style={{ color: "#6B7280", marginTop: 8, marginBottom: 18 }}>
           Access your collection vault

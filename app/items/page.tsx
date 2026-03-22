@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import Filters from "./Filters";
 import AddItemForm from "./AddItemForm";
 import ItemActions from "./ItemActions";
@@ -32,17 +33,41 @@ type ItemsResponse = {
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-async function getItems(queryString: string): Promise<ItemsResponse> {
-  const res = await fetch(`${API}/items${queryString}`, { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to fetch items");
+async function getItems(
+  queryString: string,
+  cookieHeader: string
+): Promise<ItemsResponse> {
+  const res = await fetch(`${API}/items${queryString}`, {
+    cache: "no-store",
+    headers: {
+      cookie: cookieHeader
+    }
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch items (${res.status}): ${text}`);
+  }
+
   return res.json();
 }
 
-async function getSummary(queryString: string): Promise<Summary> {
+async function getSummary(
+  queryString: string,
+  cookieHeader: string
+): Promise<Summary> {
   const res = await fetch(`${API}/stats/summary${queryString}`, {
-    cache: "no-store"
+    cache: "no-store",
+    headers: {
+      cookie: cookieHeader
+    }
   });
-  if (!res.ok) throw new Error("Failed to fetch summary");
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Failed to fetch summary (${res.status}): ${text}`);
+  }
+
   return res.json();
 }
 
@@ -53,6 +78,11 @@ export default async function ItemsPage({
     | Promise<Record<string, string | string[] | undefined>>
     | Record<string, string | string[] | undefined>;
 }) {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  console.log("COOKIE HEADER IN NEXT:", cookieHeader);
+
   const sp =
     searchParams instanceof Promise ? await searchParams : searchParams ?? {};
 
@@ -82,8 +112,8 @@ export default async function ItemsPage({
   const queryString = `?${params.toString()}`;
 
   const [itemsRes, summary] = await Promise.all([
-    getItems(queryString),
-    getSummary(queryString)
+    getItems(queryString, cookieHeader),
+    getSummary(queryString, cookieHeader)
   ]);
 
   const items = itemsRes.items;

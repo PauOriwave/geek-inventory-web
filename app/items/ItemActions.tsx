@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { theme } from "../theme";
+import { getSessionTokenFromCookie } from "../lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -23,13 +24,22 @@ export default function ItemActions({
   const [msg, setMsg] = useState("");
 
   async function save() {
+    const token = getSessionTokenFromCookie();
+    if (!token) {
+      setMsg("✕");
+      return;
+    }
+
     setLoading(true);
     setMsg("");
 
     try {
       const res = await fetch(`${API}/items/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
         body: JSON.stringify({
           quantity: qty,
           estimatedPrice: price
@@ -52,6 +62,12 @@ export default function ItemActions({
   }
 
   async function del() {
+    const token = getSessionTokenFromCookie();
+    if (!token) {
+      setMsg("✕");
+      return;
+    }
+
     const ok = confirm("Delete this item? This cannot be undone.");
     if (!ok) return;
 
@@ -60,7 +76,10 @@ export default function ItemActions({
 
     try {
       const res = await fetch(`${API}/items/${id}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
       if (!res.ok && res.status !== 204) {

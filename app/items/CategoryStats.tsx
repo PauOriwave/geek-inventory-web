@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { theme } from "../theme";
 
 type Row = {
@@ -9,8 +10,13 @@ type Row = {
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-async function getByCategory(): Promise<Row[]> {
-  const res = await fetch(`${API}/stats/by-category`, { cache: "no-store" });
+async function getByCategory(cookieHeader: string): Promise<Row[]> {
+  const res = await fetch(`${API}/stats/by-category`, {
+    cache: "no-store",
+    headers: {
+      cookie: cookieHeader
+    }
+  });
 
   if (!res.ok) {
     throw new Error("Failed to fetch by-category stats");
@@ -20,7 +26,10 @@ async function getByCategory(): Promise<Row[]> {
 }
 
 export default async function CategoryStats() {
-  const rows = await getByCategory();
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  const rows = await getByCategory(cookieHeader);
 
   return (
     <section style={{ marginTop: 14 }}>
