@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import Filters from "./Filters";
 import AddItemForm from "./AddItemForm";
 import ImportCsvButton from "./ImportCsvButton";
@@ -8,6 +9,7 @@ import ItemActions from "./ItemActions";
 import ActiveFilters from "./ActiveFilters";
 import TopItems from "./TopItems";
 import CategoryStats from "./CategoryStats";
+import LogoutButton from "./LogoutButton";
 import { theme } from "../theme";
 
 type Item = {
@@ -82,6 +84,11 @@ export default async function ItemsPage({
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
+  const session = cookieStore.get("session")?.value;
+
+  if (!session) {
+    redirect("/login");
+  }
 
   const sp =
     searchParams instanceof Promise ? await searchParams : searchParams ?? {};
@@ -189,16 +196,20 @@ export default async function ItemsPage({
             </div>
           </div>
 
-          <div
-            style={{
-              fontSize: 12,
-              color: "#D1D5DB",
-              padding: "6px 10px",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: 999
-            }}
-          >
-            Collection dashboard
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: "#D1D5DB",
+                padding: "6px 10px",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 999
+              }}
+            >
+              Collection dashboard
+            </div>
+
+            <LogoutButton />
           </div>
         </div>
 
