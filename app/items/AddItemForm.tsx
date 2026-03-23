@@ -25,6 +25,8 @@ export default function AddItemForm() {
   const [category, setCategory] = useState<Category>("videogame");
   const [estimatedPrice, setEstimatedPrice] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
+  const [condition, setCondition] = useState("");
+  const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -66,7 +68,9 @@ export default function AddItemForm() {
           name: name.trim(),
           category,
           estimatedPrice,
-          quantity
+          quantity,
+          condition: condition || undefined,
+          notes: notes || undefined
         })
       });
 
@@ -79,6 +83,8 @@ export default function AddItemForm() {
       setCategory("videogame");
       setEstimatedPrice(0);
       setQuantity(1);
+      setCondition("");
+      setNotes("");
 
       router.refresh();
     } catch (e) {
@@ -172,6 +178,36 @@ export default function AddItemForm() {
         >
           {loading ? "Adding…" : "Add"}
         </button>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "180px 1fr",
+          gap: 10,
+          marginTop: 10
+        }}
+      >
+        <select
+          value={condition}
+          onChange={(e) => setCondition(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">Condition</option>
+          <option value="mint">mint</option>
+          <option value="near_mint">near_mint</option>
+          <option value="very_good">very_good</option>
+          <option value="good">good</option>
+          <option value="fair">fair</option>
+          <option value="poor">poor</option>
+        </select>
+
+        <input
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Notes (optional)"
+          style={inputStyle}
+        />
       </div>
 
       {error && (
