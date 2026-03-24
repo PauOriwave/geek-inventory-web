@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { theme } from "../../theme";
 
 type Item = {
@@ -8,12 +10,19 @@ type Item = {
   quantity: number;
   createdAt: string;
   updatedAt: string;
+  condition?: string | null;
+  notes?: string | null;
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-async function getItem(id: string): Promise<Item> {
-  const res = await fetch(`${API}/items/${id}`, { cache: "no-store" });
+async function getItem(id: string, cookieHeader: string): Promise<Item> {
+  const res = await fetch(`${API}/items/${id}`, {
+    cache: "no-store",
+    headers: {
+      cookie: cookieHeader
+    }
+  });
 
   if (!res.ok) {
     throw new Error("Failed to fetch item");
@@ -27,8 +36,16 @@ export default async function ItemDetailPage({
 }: {
   params: Promise<{ id: string }> | { id: string };
 }) {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+  const session = cookieStore.get("session")?.value;
+
+  if (!session) {
+    redirect("/login");
+  }
+
   const resolvedParams = params instanceof Promise ? await params : params;
-  const item = await getItem(resolvedParams.id);
+  const item = await getItem(resolvedParams.id, cookieHeader);
 
   const totalValue = Number(item.estimatedPrice) * item.quantity;
 
@@ -111,6 +128,18 @@ export default async function ItemDetailPage({
 
           <div
             style={{
+              marginTop: 16,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 12
+            }}
+          >
+            <InfoCard label="Condition" value={formatCondition(item.condition)} />
+            <InfoCard label="Notes" value={item.notes?.trim() || "—"} />
+          </div>
+
+          <div
+            style={{
               marginTop: 22,
               color: theme.colors.textMuted,
               fontSize: 14,
@@ -169,4 +198,13 @@ function InfoCard({
       </div>
     </div>
   );
+}
+
+function formatCondition(value?: string | null) {
+  if (!value) return "—";
+
+  return value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
