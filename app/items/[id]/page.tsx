@@ -14,6 +14,7 @@ type Item = {
   notes?: string | null;
   platform?: string | null;
   completeness?: string | null;
+  region?: string | null;
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -137,6 +138,7 @@ export default async function ItemDetailPage({
             }}
           >
             <InfoCard label="Platform" value={item.platform || "—"} />
+            <InfoCard label="Region" value={item.region || "—"} />
             <InfoCard label="Condition" value={formatCondition(item.condition)} />
             <InfoCard
               label="Completeness"

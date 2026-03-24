@@ -28,6 +28,7 @@ export default function AddItemForm() {
   const [condition, setCondition] = useState("");
   const [platform, setPlatform] = useState("");
   const [completeness, setCompleteness] = useState("");
+  const [region, setRegion] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -74,6 +75,7 @@ export default function AddItemForm() {
           condition: condition || undefined,
           platform: platform || undefined,
           completeness: completeness || undefined,
+          region: region || undefined,
           notes: notes || undefined
         })
       });
@@ -90,6 +92,7 @@ export default function AddItemForm() {
       setCondition("");
       setPlatform("");
       setCompleteness("");
+      setRegion("");
       setNotes("");
 
       router.refresh();
@@ -189,7 +192,7 @@ export default function AddItemForm() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "180px 180px 180px 1fr",
+          gridTemplateColumns: "180px 180px 180px 180px 1fr",
           gap: 10,
           marginTop: 10
         }}
@@ -225,6 +228,13 @@ export default function AddItemForm() {
           <option value="cib">cib</option>
           <option value="sealed">sealed</option>
         </select>
+
+        <input
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          placeholder="Region (optional)"
+          style={inputStyle}
+        />
 
         <input
           value={notes}

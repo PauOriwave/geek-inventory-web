@@ -14,6 +14,7 @@ export default function ItemActions({
   initialCondition,
   initialPlatform,
   initialCompleteness,
+  initialRegion,
   initialNotes
 }: {
   id: string;
@@ -22,6 +23,7 @@ export default function ItemActions({
   initialCondition?: string | null;
   initialPlatform?: string | null;
   initialCompleteness?: string | null;
+  initialRegion?: string | null;
   initialNotes?: string | null;
 }) {
   const router = useRouter();
@@ -33,6 +35,7 @@ export default function ItemActions({
   const [completeness, setCompleteness] = useState<string>(
     initialCompleteness ?? ""
   );
+  const [region, setRegion] = useState<string>(initialRegion ?? "");
   const [notes, setNotes] = useState<string>(initialNotes ?? "");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -61,6 +64,7 @@ export default function ItemActions({
           condition: condition || "",
           platform: platform || "",
           completeness: completeness || "",
+          region: region || "",
           notes: notes || ""
         })
       });
@@ -192,6 +196,13 @@ export default function ItemActions({
         </select>
 
         <input
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          placeholder="Region"
+          style={regionInput}
+        />
+
+        <input
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Notes"
@@ -289,6 +300,16 @@ const smallSelect: React.CSSProperties = {
 
 const platformInput: React.CSSProperties = {
   width: 120,
+  padding: "7px 8px",
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.sm,
+  background: theme.colors.surface,
+  color: theme.colors.text,
+  outline: "none"
+};
+
+const regionInput: React.CSSProperties = {
+  width: 110,
   padding: "7px 8px",
   border: `1px solid ${theme.colors.border}`,
   borderRadius: theme.radius.sm,
