@@ -20,6 +20,8 @@ type Item = {
   quantity: number;
   createdAt: string;
   updatedAt: string;
+  condition?: string | null;
+  notes?: string | null;
 };
 
 type Summary = {
@@ -336,6 +338,7 @@ export default async function ItemsPage({
                 <tr>
                   <Th>Name</Th>
                   <Th>Category</Th>
+                  <Th>Condition</Th>
                   <Th align="right">Price</Th>
                   <Th align="right">Qty</Th>
                   <Th>Created</Th>
@@ -374,6 +377,22 @@ export default async function ItemsPage({
                       </span>
                     </Td>
 
+                    <Td>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "4px 8px",
+                          borderRadius: 999,
+                          background: "#F9FAFB",
+                          fontSize: 12,
+                          color: theme.colors.textMuted,
+                          border: `1px solid ${theme.colors.border}`
+                        }}
+                      >
+                        {formatCondition(it.condition)}
+                      </span>
+                    </Td>
+
                     <Td align="right">
                       {Number(it.estimatedPrice).toFixed(2)} €
                     </Td>
@@ -395,7 +414,7 @@ export default async function ItemsPage({
                 {items.length === 0 && (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       style={{
                         padding: 18,
                         color: theme.colors.textMuted
@@ -543,4 +562,13 @@ function Td({
       {children}
     </td>
   );
+}
+
+function formatCondition(value?: string | null) {
+  if (!value) return "—";
+
+  return value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
