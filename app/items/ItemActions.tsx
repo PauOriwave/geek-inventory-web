@@ -12,12 +12,14 @@ export default function ItemActions({
   initialQty,
   initialPrice,
   initialCondition,
+  initialPlatform,
   initialNotes
 }: {
   id: string;
   initialQty: number;
   initialPrice: number;
   initialCondition?: string | null;
+  initialPlatform?: string | null;
   initialNotes?: string | null;
 }) {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function ItemActions({
   const [qty, setQty] = useState<number>(initialQty);
   const [price, setPrice] = useState<number>(initialPrice);
   const [condition, setCondition] = useState<string>(initialCondition ?? "");
+  const [platform, setPlatform] = useState<string>(initialPlatform ?? "");
   const [notes, setNotes] = useState<string>(initialNotes ?? "");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -51,6 +54,7 @@ export default function ItemActions({
           quantity: qty,
           estimatedPrice: price,
           condition: condition || "",
+          platform: platform || "",
           notes: notes || ""
         })
       });
@@ -164,6 +168,13 @@ export default function ItemActions({
         </select>
 
         <input
+          value={platform}
+          onChange={(e) => setPlatform(e.target.value)}
+          placeholder="Platform"
+          style={platformInput}
+        />
+
+        <input
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Notes"
@@ -259,8 +270,18 @@ const smallSelect: React.CSSProperties = {
   outline: "none"
 };
 
+const platformInput: React.CSSProperties = {
+  width: 120,
+  padding: "7px 8px",
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.sm,
+  background: theme.colors.surface,
+  color: theme.colors.text,
+  outline: "none"
+};
+
 const notesInput: React.CSSProperties = {
-  width: 160,
+  width: 140,
   padding: "7px 8px",
   border: `1px solid ${theme.colors.border}`,
   borderRadius: theme.radius.sm,

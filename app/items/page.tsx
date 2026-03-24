@@ -22,6 +22,7 @@ type Item = {
   updatedAt: string;
   condition?: string | null;
   notes?: string | null;
+  platform?: string | null;
 };
 
 type Summary = {
@@ -338,6 +339,7 @@ export default async function ItemsPage({
                 <tr>
                   <Th>Name</Th>
                   <Th>Category</Th>
+                  <Th>Platform</Th>
                   <Th>Condition</Th>
                   <Th align="right">Price</Th>
                   <Th align="right">Qty</Th>
@@ -377,6 +379,8 @@ export default async function ItemsPage({
                       </span>
                     </Td>
 
+                    <Td>{it.platform || "—"}</Td>
+
                     <Td>
                       <span
                         style={{
@@ -407,6 +411,7 @@ export default async function ItemsPage({
                         initialQty={it.quantity}
                         initialPrice={Number(it.estimatedPrice)}
                         initialCondition={it.condition}
+                        initialPlatform={it.platform}
                         initialNotes={it.notes}
                       />
                     </Td>
@@ -416,7 +421,7 @@ export default async function ItemsPage({
                 {items.length === 0 && (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       style={{
                         padding: 18,
                         color: theme.colors.textMuted

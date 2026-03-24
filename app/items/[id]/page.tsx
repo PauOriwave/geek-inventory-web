@@ -12,6 +12,7 @@ type Item = {
   updatedAt: string;
   condition?: string | null;
   notes?: string | null;
+  platform?: string | null;
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -134,6 +135,7 @@ export default async function ItemDetailPage({
               gap: 12
             }}
           >
+            <InfoCard label="Platform" value={item.platform || "—"} />
             <InfoCard label="Condition" value={formatCondition(item.condition)} />
             <InfoCard label="Notes" value={item.notes?.trim() || "—"} />
           </div>

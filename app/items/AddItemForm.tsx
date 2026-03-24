@@ -26,6 +26,7 @@ export default function AddItemForm() {
   const [estimatedPrice, setEstimatedPrice] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [condition, setCondition] = useState("");
+  const [platform, setPlatform] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -70,6 +71,7 @@ export default function AddItemForm() {
           estimatedPrice,
           quantity,
           condition: condition || undefined,
+          platform: platform || undefined,
           notes: notes || undefined
         })
       });
@@ -84,6 +86,7 @@ export default function AddItemForm() {
       setEstimatedPrice(0);
       setQuantity(1);
       setCondition("");
+      setPlatform("");
       setNotes("");
 
       router.refresh();
@@ -183,7 +186,7 @@ export default function AddItemForm() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "180px 1fr",
+          gridTemplateColumns: "180px 180px 1fr",
           gap: 10,
           marginTop: 10
         }}
@@ -201,6 +204,13 @@ export default function AddItemForm() {
           <option value="fair">fair</option>
           <option value="poor">poor</option>
         </select>
+
+        <input
+          value={platform}
+          onChange={(e) => setPlatform(e.target.value)}
+          placeholder="Platform (optional)"
+          style={inputStyle}
+        />
 
         <input
           value={notes}
