@@ -27,6 +27,7 @@ export default function AddItemForm() {
   const [quantity, setQuantity] = useState<number>(1);
   const [condition, setCondition] = useState("");
   const [platform, setPlatform] = useState("");
+  const [completeness, setCompleteness] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -72,6 +73,7 @@ export default function AddItemForm() {
           quantity,
           condition: condition || undefined,
           platform: platform || undefined,
+          completeness: completeness || undefined,
           notes: notes || undefined
         })
       });
@@ -87,6 +89,7 @@ export default function AddItemForm() {
       setQuantity(1);
       setCondition("");
       setPlatform("");
+      setCompleteness("");
       setNotes("");
 
       router.refresh();
@@ -186,7 +189,7 @@ export default function AddItemForm() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "180px 180px 1fr",
+          gridTemplateColumns: "180px 180px 180px 1fr",
           gap: 10,
           marginTop: 10
         }}
@@ -211,6 +214,17 @@ export default function AddItemForm() {
           placeholder="Platform (optional)"
           style={inputStyle}
         />
+
+        <select
+          value={completeness}
+          onChange={(e) => setCompleteness(e.target.value)}
+          style={inputStyle}
+        >
+          <option value="">Completeness</option>
+          <option value="loose">loose</option>
+          <option value="cib">cib</option>
+          <option value="sealed">sealed</option>
+        </select>
 
         <input
           value={notes}

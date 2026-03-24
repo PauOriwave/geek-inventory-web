@@ -13,6 +13,7 @@ export default function ItemActions({
   initialPrice,
   initialCondition,
   initialPlatform,
+  initialCompleteness,
   initialNotes
 }: {
   id: string;
@@ -20,6 +21,7 @@ export default function ItemActions({
   initialPrice: number;
   initialCondition?: string | null;
   initialPlatform?: string | null;
+  initialCompleteness?: string | null;
   initialNotes?: string | null;
 }) {
   const router = useRouter();
@@ -28,6 +30,9 @@ export default function ItemActions({
   const [price, setPrice] = useState<number>(initialPrice);
   const [condition, setCondition] = useState<string>(initialCondition ?? "");
   const [platform, setPlatform] = useState<string>(initialPlatform ?? "");
+  const [completeness, setCompleteness] = useState<string>(
+    initialCompleteness ?? ""
+  );
   const [notes, setNotes] = useState<string>(initialNotes ?? "");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
@@ -55,6 +60,7 @@ export default function ItemActions({
           estimatedPrice: price,
           condition: condition || "",
           platform: platform || "",
+          completeness: completeness || "",
           notes: notes || ""
         })
       });
@@ -173,6 +179,17 @@ export default function ItemActions({
           placeholder="Platform"
           style={platformInput}
         />
+
+        <select
+          value={completeness}
+          onChange={(e) => setCompleteness(e.target.value)}
+          style={smallSelect}
+        >
+          <option value="">Completeness</option>
+          <option value="loose">loose</option>
+          <option value="cib">cib</option>
+          <option value="sealed">sealed</option>
+        </select>
 
         <input
           value={notes}
