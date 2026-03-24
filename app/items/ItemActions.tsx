@@ -10,21 +10,28 @@ const API = process.env.NEXT_PUBLIC_API_URL!;
 export default function ItemActions({
   id,
   initialQty,
-  initialPrice
+  initialPrice,
+  initialCondition,
+  initialNotes
 }: {
   id: string;
   initialQty: number;
   initialPrice: number;
+  initialCondition?: string | null;
+  initialNotes?: string | null;
 }) {
   const router = useRouter();
 
   const [qty, setQty] = useState<number>(initialQty);
   const [price, setPrice] = useState<number>(initialPrice);
+  const [condition, setCondition] = useState<string>(initialCondition ?? "");
+  const [notes, setNotes] = useState<string>(initialNotes ?? "");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
   async function save() {
     const token = getSessionTokenFromCookie();
+
     if (!token) {
       setMsg("✕");
       return;
@@ -42,7 +49,9 @@ export default function ItemActions({
         },
         body: JSON.stringify({
           quantity: qty,
-          estimatedPrice: price
+          estimatedPrice: price,
+          condition: condition || "",
+          notes: notes || ""
         })
       });
 
@@ -63,6 +72,7 @@ export default function ItemActions({
 
   async function del() {
     const token = getSessionTokenFromCookie();
+
     if (!token) {
       setMsg("✕");
       return;
@@ -98,74 +108,123 @@ export default function ItemActions({
   return (
     <div
       style={{
-        display: "flex",
+        display: "grid",
         gap: 8,
-        alignItems: "center",
-        justifyContent: "flex-end",
-        flexWrap: "wrap"
+        justifyItems: "end"
       }}
     >
-      <input
-        type="number"
-        min={1}
-        value={qty}
-        onChange={(e) => setQty(Number(e.target.value))}
-        style={smallInput}
-      />
-
-      <input
-        type="number"
-        min={0}
-        step="0.01"
-        value={price}
-        onChange={(e) => setPrice(Number(e.target.value))}
-        style={smallInputWide}
-      />
-
-      <button
-        onClick={save}
-        disabled={loading}
+      <div
         style={{
-          padding: "7px 10px",
-          borderRadius: theme.radius.sm,
-          border: "none",
-          background: theme.colors.gold,
-          color: theme.colors.black,
-          fontWeight: 700,
-          cursor: loading ? "not-allowed" : "pointer"
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          justifyContent: "flex-end",
+          flexWrap: "wrap"
         }}
       >
-        Save
-      </button>
+        <input
+          type="number"
+          min={1}
+          value={qty}
+          onChange={(e) => setQty(Number(e.target.value))}
+          style={smallInput}
+        />
 
-      <button
-        onClick={del}
-        disabled={loading}
+        <input
+          type="number"
+          min={0}
+          step="0.01"
+          value={price}
+          onChange={(e) => setPrice(Number(e.target.value))}
+          style={smallInputWide}
+        />
+      </div>
+
+      <div
         style={{
-          padding: "7px 10px",
-          borderRadius: theme.radius.sm,
-          border: `1px solid ${theme.colors.border}`,
-          background: theme.colors.surfaceAlt,
-          color: theme.colors.danger,
-          fontWeight: 700,
-          cursor: loading ? "not-allowed" : "pointer"
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          justifyContent: "flex-end",
+          flexWrap: "wrap"
         }}
       >
-        Delete
-      </button>
+        <select
+          value={condition}
+          onChange={(e) => setCondition(e.target.value)}
+          style={smallSelect}
+        >
+          <option value="">Condition</option>
+          <option value="mint">mint</option>
+          <option value="near_mint">near_mint</option>
+          <option value="very_good">very_good</option>
+          <option value="good">good</option>
+          <option value="fair">fair</option>
+          <option value="poor">poor</option>
+        </select>
 
-      {msg && (
-        <span
+        <input
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Notes"
+          style={notesInput}
+        />
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          alignItems: "center",
+          justifyContent: "flex-end",
+          flexWrap: "wrap"
+        }}
+      >
+        <button
+          onClick={save}
+          disabled={loading}
           style={{
-            width: 18,
-            textAlign: "center",
-            color: theme.colors.textMuted,
-            fontSize: 13
+            padding: "7px 10px",
+            borderRadius: theme.radius.sm,
+            border: "none",
+            background: theme.colors.gold,
+            color: theme.colors.black,
+            fontWeight: 700,
+            cursor: loading ? "not-allowed" : "pointer"
           }}
         >
-          {msg}
-        </span>
-      )}
+          Save
+        </button>
+
+        <button
+          onClick={del}
+          disabled={loading}
+          style={{
+            padding: "7px 10px",
+            borderRadius: theme.radius.sm,
+            border: `1px solid ${theme.colors.border}`,
+            background: theme.colors.surfaceAlt,
+            color: theme.colors.danger,
+            fontWeight: 700,
+            cursor: loading ? "not-allowed" : "pointer"
+          }}
+        >
+          Delete
+        </button>
+
+        {msg && (
+          <span
+            style={{
+              width: 18,
+              textAlign: "center",
+              color: theme.colors.textMuted,
+              fontSize: 13
+            }}
+          >
+            {msg}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -182,6 +241,26 @@ const smallInput: React.CSSProperties = {
 
 const smallInputWide: React.CSSProperties = {
   width: 84,
+  padding: "7px 8px",
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.sm,
+  background: theme.colors.surface,
+  color: theme.colors.text,
+  outline: "none"
+};
+
+const smallSelect: React.CSSProperties = {
+  width: 130,
+  padding: "7px 8px",
+  border: `1px solid ${theme.colors.border}`,
+  borderRadius: theme.radius.sm,
+  background: theme.colors.surface,
+  color: theme.colors.text,
+  outline: "none"
+};
+
+const notesInput: React.CSSProperties = {
+  width: 160,
   padding: "7px 8px",
   border: `1px solid ${theme.colors.border}`,
   borderRadius: theme.radius.sm,

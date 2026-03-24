@@ -406,6 +406,8 @@ export default async function ItemsPage({
                         id={it.id}
                         initialQty={it.quantity}
                         initialPrice={Number(it.estimatedPrice)}
+                        initialCondition={it.condition}
+                        initialNotes={it.notes}
                       />
                     </Td>
                   </tr>
