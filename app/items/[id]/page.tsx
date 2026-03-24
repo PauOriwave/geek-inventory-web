@@ -13,6 +13,7 @@ type Item = {
   condition?: string | null;
   notes?: string | null;
   platform?: string | null;
+  completeness?: string | null;
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -137,6 +138,10 @@ export default async function ItemDetailPage({
           >
             <InfoCard label="Platform" value={item.platform || "—"} />
             <InfoCard label="Condition" value={formatCondition(item.condition)} />
+            <InfoCard
+              label="Completeness"
+              value={formatCompleteness(item.completeness)}
+            />
             <InfoCard label="Notes" value={item.notes?.trim() || "—"} />
           </div>
 
@@ -209,4 +214,10 @@ function formatCondition(value?: string | null) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function formatCompleteness(value?: string | null) {
+  if (!value) return "—";
+
+  return value.toUpperCase();
 }

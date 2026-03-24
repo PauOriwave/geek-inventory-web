@@ -23,6 +23,7 @@ type Item = {
   condition?: string | null;
   notes?: string | null;
   platform?: string | null;
+  completeness?: string | null;
 };
 
 type Summary = {
@@ -341,6 +342,7 @@ export default async function ItemsPage({
                   <Th>Category</Th>
                   <Th>Platform</Th>
                   <Th>Condition</Th>
+                  <Th>Completeness</Th>
                   <Th align="right">Price</Th>
                   <Th align="right">Qty</Th>
                   <Th>Created</Th>
@@ -397,6 +399,22 @@ export default async function ItemsPage({
                       </span>
                     </Td>
 
+                    <Td>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          padding: "4px 8px",
+                          borderRadius: 999,
+                          background: "#F9FAFB",
+                          fontSize: 12,
+                          color: theme.colors.textMuted,
+                          border: `1px solid ${theme.colors.border}`
+                        }}
+                      >
+                        {formatCompleteness(it.completeness)}
+                      </span>
+                    </Td>
+
                     <Td align="right">
                       {Number(it.estimatedPrice).toFixed(2)} €
                     </Td>
@@ -412,6 +430,7 @@ export default async function ItemsPage({
                         initialPrice={Number(it.estimatedPrice)}
                         initialCondition={it.condition}
                         initialPlatform={it.platform}
+                        initialCompleteness={it.completeness}
                         initialNotes={it.notes}
                       />
                     </Td>
@@ -421,7 +440,7 @@ export default async function ItemsPage({
                 {items.length === 0 && (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={9}
                       style={{
                         padding: 18,
                         color: theme.colors.textMuted
@@ -578,4 +597,10 @@ function formatCondition(value?: string | null) {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function formatCompleteness(value?: string | null) {
+  if (!value) return "—";
+
+  return value.toUpperCase();
 }
