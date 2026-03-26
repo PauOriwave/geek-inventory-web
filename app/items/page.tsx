@@ -9,6 +9,7 @@ import ItemActions from "./ItemActions";
 import ActiveFilters from "./ActiveFilters";
 import TopItems from "./TopItems";
 import CategoryStats from "./CategoryStats";
+import CollectionValueChart from "./CollectionValueChart";
 import LogoutButton from "./LogoutButton";
 import { theme } from "../theme";
 
@@ -254,6 +255,7 @@ export default async function ItemsPage({
               />
             </div>
 
+            <CollectionValueChart />
             <CategoryStats />
 
             <p
@@ -390,7 +392,6 @@ export default async function ItemsPage({
                     </Td>
 
                     <Td>{it.platform || "—"}</Td>
-
                     <Td>{it.region || "—"}</Td>
 
                     <Td>
@@ -445,7 +446,6 @@ export default async function ItemsPage({
                     </Td>
 
                     <Td align="right">{it.quantity}</Td>
-
                     <Td>{new Date(it.createdAt).toLocaleString()}</Td>
 
                     <Td align="right">
