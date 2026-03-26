@@ -21,6 +21,14 @@ type Item = {
   lastValuationAt?: string | null;
 };
 
+type Snapshot = {
+  id: string;
+  source: string;
+  marketValue: string | number;
+  confidence?: number | null;
+  recordedAt: string;
+};
+
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function getItem(id: string, cookieHeader: string): Promise<Item> {
@@ -33,6 +41,24 @@ async function getItem(id: string, cookieHeader: string): Promise<Item> {
 
   if (!res.ok) {
     throw new Error("Failed to fetch item");
+  }
+
+  return res.json();
+}
+
+async function getSnapshots(
+  id: string,
+  cookieHeader: string
+): Promise<Snapshot[]> {
+  const res = await fetch(`${API}/items/${id}/snapshots`, {
+    cache: "no-store",
+    headers: {
+      cookie: cookieHeader
+    }
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch snapshots");
   }
 
   return res.json();
@@ -52,7 +78,11 @@ export default async function ItemDetailPage({
   }
 
   const resolvedParams = params instanceof Promise ? await params : params;
-  const item = await getItem(resolvedParams.id, cookieHeader);
+
+  const [item, snapshots] = await Promise.all([
+    getItem(resolvedParams.id, cookieHeader),
+    getSnapshots(resolvedParams.id, cookieHeader)
+  ]);
 
   const totalValue = Number(item.estimatedPrice) * item.quantity;
   const marketValue =
@@ -199,6 +229,105 @@ export default async function ItemDetailPage({
             <div>ID: {item.id}</div>
           </div>
         </section>
+
+        <section
+          style={{
+            marginTop: 18,
+            background: theme.colors.surface,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.radius.xl,
+            padding: 22,
+            boxShadow: theme.shadow.card
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 800,
+              fontSize: 18,
+              marginBottom: 14
+            }}
+          >
+            Valuation history
+          </div>
+
+          {snapshots.length === 0 ? (
+            <div style={{ color: theme.colors.textMuted }}>
+              No valuation history yet.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 10 }}>
+              {snapshots.map((snapshot, index) => {
+                const currentValue = Number(snapshot.marketValue);
+                const previousValue =
+                  index < snapshots.length - 1
+                    ? Number(snapshots[index + 1].marketValue)
+                    : null;
+
+                const delta =
+                  previousValue != null ? currentValue - previousValue : null;
+
+                return (
+                  <div
+                    key={snapshot.id}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr auto auto auto",
+                      gap: 12,
+                      alignItems: "center",
+                      padding: "12px 14px",
+                      border: `1px solid ${theme.colors.border}`,
+                      borderRadius: theme.radius.lg,
+                      background: theme.colors.surfaceAlt
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 700 }}>
+                        {new Date(snapshot.recordedAt).toLocaleString()}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: theme.colors.textMuted,
+                          marginTop: 2
+                        }}
+                      >
+                        Source: {snapshot.source}
+                        {snapshot.confidence != null
+                          ? ` · ${Math.round(snapshot.confidence * 100)}% confidence`
+                          : ""}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        fontWeight: 800,
+                        minWidth: 90,
+                        textAlign: "right"
+                      }}
+                    >
+                      {currentValue.toFixed(2)} €
+                    </div>
+
+                    <div style={{ minWidth: 80, textAlign: "right" }}>
+                      <SnapshotDeltaBadge delta={delta} />
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: theme.colors.textMuted,
+                        minWidth: 70,
+                        textAlign: "right"
+                      }}
+                    >
+                      #{snapshots.length - index}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
@@ -243,6 +372,45 @@ function InfoCard({
         {value}
       </div>
     </div>
+  );
+}
+
+function SnapshotDeltaBadge({ delta }: { delta: number | null }) {
+  if (delta == null) {
+    return <span style={{ color: theme.colors.textMuted }}>—</span>;
+  }
+
+  const positive = delta > 0;
+  const negative = delta < 0;
+
+  const bg = positive ? "#ECFDF3" : negative ? "#FEF3F2" : "#F9FAFB";
+
+  const color = positive
+    ? "#027A48"
+    : negative
+      ? "#B42318"
+      : theme.colors.textMuted;
+
+  const prefix = positive ? "+" : "";
+
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        minWidth: 70,
+        textAlign: "center",
+        padding: "4px 8px",
+        borderRadius: 999,
+        background: bg,
+        color,
+        fontSize: 12,
+        fontWeight: 700,
+        border: `1px solid ${theme.colors.border}`
+      }}
+    >
+      {prefix}
+      {delta.toFixed(2)} €
+    </span>
   );
 }
 
