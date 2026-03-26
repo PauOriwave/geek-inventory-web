@@ -84,6 +84,40 @@ export default function ItemActions({
     }
   }
 
+  async function valuate() {
+    const token = getSessionTokenFromCookie();
+
+    if (!token) {
+      setMsg("✕");
+      return;
+    }
+
+    setLoading(true);
+    setMsg("");
+
+    try {
+      const res = await fetch(`${API}/items/${id}/valuate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to valuate");
+      }
+
+      setMsg("💎");
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+      setMsg("✕");
+    } finally {
+      setLoading(false);
+      setTimeout(() => setMsg(""), 1500);
+    }
+  }
+
   async function del() {
     const token = getSessionTokenFromCookie();
 
@@ -222,31 +256,23 @@ export default function ItemActions({
         <button
           onClick={save}
           disabled={loading}
-          style={{
-            padding: "7px 10px",
-            borderRadius: theme.radius.sm,
-            border: "none",
-            background: theme.colors.gold,
-            color: theme.colors.black,
-            fontWeight: 700,
-            cursor: loading ? "not-allowed" : "pointer"
-          }}
+          style={primaryButton}
         >
           Save
         </button>
 
         <button
+          onClick={valuate}
+          disabled={loading}
+          style={secondaryButton}
+        >
+          Valuate
+        </button>
+
+        <button
           onClick={del}
           disabled={loading}
-          style={{
-            padding: "7px 10px",
-            borderRadius: theme.radius.sm,
-            border: `1px solid ${theme.colors.border}`,
-            background: theme.colors.surfaceAlt,
-            color: theme.colors.danger,
-            fontWeight: 700,
-            cursor: loading ? "not-allowed" : "pointer"
-          }}
+          style={dangerButton}
         >
           Delete
         </button>
@@ -254,7 +280,7 @@ export default function ItemActions({
         {msg && (
           <span
             style={{
-              width: 18,
+              width: 22,
               textAlign: "center",
               color: theme.colors.textMuted,
               fontSize: 13
@@ -326,4 +352,34 @@ const notesInput: React.CSSProperties = {
   background: theme.colors.surface,
   color: theme.colors.text,
   outline: "none"
+};
+
+const primaryButton: React.CSSProperties = {
+  padding: "7px 10px",
+  borderRadius: theme.radius.sm,
+  border: "none",
+  background: theme.colors.gold,
+  color: theme.colors.black,
+  fontWeight: 700,
+  cursor: "pointer"
+};
+
+const secondaryButton: React.CSSProperties = {
+  padding: "7px 10px",
+  borderRadius: theme.radius.sm,
+  border: `1px solid ${theme.colors.border}`,
+  background: theme.colors.surface,
+  color: theme.colors.text,
+  fontWeight: 700,
+  cursor: "pointer"
+};
+
+const dangerButton: React.CSSProperties = {
+  padding: "7px 10px",
+  borderRadius: theme.radius.sm,
+  border: `1px solid ${theme.colors.border}`,
+  background: theme.colors.surfaceAlt,
+  color: theme.colors.danger,
+  fontWeight: 700,
+  cursor: "pointer"
 };

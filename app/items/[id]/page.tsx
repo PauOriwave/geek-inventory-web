@@ -15,6 +15,10 @@ type Item = {
   platform?: string | null;
   completeness?: string | null;
   region?: string | null;
+  marketValue?: string | number | null;
+  valuationSource?: string | null;
+  valuationConfidence?: number | null;
+  lastValuationAt?: string | null;
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -51,6 +55,10 @@ export default async function ItemDetailPage({
   const item = await getItem(resolvedParams.id, cookieHeader);
 
   const totalValue = Number(item.estimatedPrice) * item.quantity;
+  const marketValue =
+    item.marketValue != null ? Number(item.marketValue) : null;
+  const marketDelta =
+    marketValue != null ? marketValue - Number(item.estimatedPrice) : null;
 
   return (
     <main
@@ -120,6 +128,10 @@ export default async function ItemDetailPage({
               label="Price"
               value={`${Number(item.estimatedPrice).toFixed(2)} €`}
             />
+            <InfoCard
+              label="Market value"
+              value={marketValue != null ? `${marketValue.toFixed(2)} €` : "—"}
+            />
             <InfoCard label="Quantity" value={item.quantity} />
             <InfoCard
               label="Total value"
@@ -143,6 +155,31 @@ export default async function ItemDetailPage({
             <InfoCard
               label="Completeness"
               value={formatCompleteness(item.completeness)}
+            />
+            <InfoCard
+              label="Valuation delta"
+              value={
+                marketDelta != null
+                  ? `${marketDelta > 0 ? "+" : ""}${marketDelta.toFixed(2)} €`
+                  : "—"
+              }
+            />
+            <InfoCard label="Valuation source" value={item.valuationSource || "—"} />
+            <InfoCard
+              label="Confidence"
+              value={
+                item.valuationConfidence != null
+                  ? `${Math.round(item.valuationConfidence * 100)}%`
+                  : "—"
+              }
+            />
+            <InfoCard
+              label="Last valuation"
+              value={
+                item.lastValuationAt
+                  ? new Date(item.lastValuationAt).toLocaleString()
+                  : "—"
+              }
             />
             <InfoCard label="Notes" value={item.notes?.trim() || "—"} />
           </div>

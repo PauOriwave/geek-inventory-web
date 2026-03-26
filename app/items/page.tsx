@@ -25,6 +25,10 @@ type Item = {
   platform?: string | null;
   completeness?: string | null;
   region?: string | null;
+  marketValue?: string | number | null;
+  valuationSource?: string | null;
+  valuationConfidence?: number | null;
+  lastValuationAt?: string | null;
 };
 
 type Summary = {
@@ -346,6 +350,8 @@ export default async function ItemsPage({
                   <Th>Condition</Th>
                   <Th>Completeness</Th>
                   <Th align="right">Price</Th>
+                  <Th align="right">Market</Th>
+                  <Th align="right">Δ</Th>
                   <Th align="right">Qty</Th>
                   <Th>Created</Th>
                   <Th align="right">Actions</Th>
@@ -423,6 +429,21 @@ export default async function ItemsPage({
                       {Number(it.estimatedPrice).toFixed(2)} €
                     </Td>
 
+                    <Td align="right">
+                      {it.marketValue != null
+                        ? `${Number(it.marketValue).toFixed(2)} €`
+                        : "—"}
+                    </Td>
+
+                    <Td align="right">
+                      <DeltaBadge
+                        estimatedPrice={Number(it.estimatedPrice)}
+                        marketValue={
+                          it.marketValue != null ? Number(it.marketValue) : null
+                        }
+                      />
+                    </Td>
+
                     <Td align="right">{it.quantity}</Td>
 
                     <Td>{new Date(it.createdAt).toLocaleString()}</Td>
@@ -445,7 +466,7 @@ export default async function ItemsPage({
                 {items.length === 0 && (
                   <tr>
                     <td
-                      colSpan={10}
+                      colSpan={12}
                       style={{
                         padding: 18,
                         color: theme.colors.textMuted
@@ -608,4 +629,50 @@ function formatCompleteness(value?: string | null) {
   if (!value) return "—";
 
   return value.toUpperCase();
+}
+
+function DeltaBadge({
+  estimatedPrice,
+  marketValue
+}: {
+  estimatedPrice: number;
+  marketValue: number | null;
+}) {
+  if (marketValue == null) {
+    return <span style={{ color: theme.colors.textMuted }}>—</span>;
+  }
+
+  const delta = marketValue - estimatedPrice;
+  const positive = delta > 0;
+  const negative = delta < 0;
+
+  const bg = positive ? "#ECFDF3" : negative ? "#FEF3F2" : "#F9FAFB";
+
+  const color = positive
+    ? "#027A48"
+    : negative
+      ? "#B42318"
+      : theme.colors.textMuted;
+
+  const prefix = positive ? "+" : "";
+
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        minWidth: 70,
+        textAlign: "center",
+        padding: "4px 8px",
+        borderRadius: 999,
+        background: bg,
+        color,
+        fontSize: 12,
+        fontWeight: 700,
+        border: `1px solid ${theme.colors.border}`
+      }}
+    >
+      {prefix}
+      {delta.toFixed(2)} €
+    </span>
+  );
 }
