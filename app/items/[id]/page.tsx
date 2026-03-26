@@ -255,77 +255,101 @@ export default async function ItemDetailPage({
               No valuation history yet.
             </div>
           ) : (
-            <div style={{ display: "grid", gap: 10 }}>
-              {snapshots.map((snapshot, index) => {
-                const currentValue = Number(snapshot.marketValue);
-                const previousValue =
-                  index < snapshots.length - 1
-                    ? Number(snapshots[index + 1].marketValue)
-                    : null;
+            <>
+              <div
+                style={{
+                  marginBottom: 18,
+                  border: `1px solid ${theme.colors.border}`,
+                  borderRadius: theme.radius.lg,
+                  background: theme.colors.surfaceAlt,
+                  padding: 14
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: theme.colors.textMuted,
+                    marginBottom: 10
+                  }}
+                >
+                  Market value trend
+                </div>
 
-                const delta =
-                  previousValue != null ? currentValue - previousValue : null;
+                <MiniValuationChart snapshots={snapshots} />
+              </div>
 
-                return (
-                  <div
-                    key={snapshot.id}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr auto auto auto",
-                      gap: 12,
-                      alignItems: "center",
-                      padding: "12px 14px",
-                      border: `1px solid ${theme.colors.border}`,
-                      borderRadius: theme.radius.lg,
-                      background: theme.colors.surfaceAlt
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 700 }}>
-                        {new Date(snapshot.recordedAt).toLocaleString()}
+              <div style={{ display: "grid", gap: 10 }}>
+                {snapshots.map((snapshot, index) => {
+                  const currentValue = Number(snapshot.marketValue);
+                  const previousValue =
+                    index < snapshots.length - 1
+                      ? Number(snapshots[index + 1].marketValue)
+                      : null;
+
+                  const delta =
+                    previousValue != null ? currentValue - previousValue : null;
+
+                  return (
+                    <div
+                      key={snapshot.id}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr auto auto auto",
+                        gap: 12,
+                        alignItems: "center",
+                        padding: "12px 14px",
+                        border: `1px solid ${theme.colors.border}`,
+                        borderRadius: theme.radius.lg,
+                        background: theme.colors.surfaceAlt
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontWeight: 700 }}>
+                          {new Date(snapshot.recordedAt).toLocaleString()}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: theme.colors.textMuted,
+                            marginTop: 2
+                          }}
+                        >
+                          Source: {snapshot.source}
+                          {snapshot.confidence != null
+                            ? ` · ${Math.round(snapshot.confidence * 100)}% confidence`
+                            : ""}
+                        </div>
                       </div>
+
+                      <div
+                        style={{
+                          fontWeight: 800,
+                          minWidth: 90,
+                          textAlign: "right"
+                        }}
+                      >
+                        {currentValue.toFixed(2)} €
+                      </div>
+
+                      <div style={{ minWidth: 80, textAlign: "right" }}>
+                        <SnapshotDeltaBadge delta={delta} />
+                      </div>
+
                       <div
                         style={{
                           fontSize: 12,
                           color: theme.colors.textMuted,
-                          marginTop: 2
+                          minWidth: 70,
+                          textAlign: "right"
                         }}
                       >
-                        Source: {snapshot.source}
-                        {snapshot.confidence != null
-                          ? ` · ${Math.round(snapshot.confidence * 100)}% confidence`
-                          : ""}
+                        #{snapshots.length - index}
                       </div>
                     </div>
-
-                    <div
-                      style={{
-                        fontWeight: 800,
-                        minWidth: 90,
-                        textAlign: "right"
-                      }}
-                    >
-                      {currentValue.toFixed(2)} €
-                    </div>
-
-                    <div style={{ minWidth: 80, textAlign: "right" }}>
-                      <SnapshotDeltaBadge delta={delta} />
-                    </div>
-
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: theme.colors.textMuted,
-                        minWidth: 70,
-                        textAlign: "right"
-                      }}
-                    >
-                      #{snapshots.length - index}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </section>
       </div>
@@ -411,6 +435,134 @@ function SnapshotDeltaBadge({ delta }: { delta: number | null }) {
       {prefix}
       {delta.toFixed(2)} €
     </span>
+  );
+}
+
+function MiniValuationChart({ snapshots }: { snapshots: Snapshot[] }) {
+  const points = [...snapshots].reverse().map((s) => Number(s.marketValue));
+
+  if (points.length === 0) {
+    return null;
+  }
+
+  const width = 760;
+  const height = 180;
+  const padding = 24;
+
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+
+  const toX = (index: number) => {
+    if (points.length === 1) return width / 2;
+    return (
+      padding + (index * (width - padding * 2)) / (points.length - 1)
+    );
+  };
+
+  const toY = (value: number) => {
+    return height - padding - ((value - min) / range) * (height - padding * 2);
+  };
+
+  const polylinePoints = points
+    .map((value, index) => `${toX(index)},${toY(value)}`)
+    .join(" ");
+
+  const latest = points[points.length - 1];
+  const first = points[0];
+
+  return (
+    <div>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        style={{
+          width: "100%",
+          height: "auto",
+          display: "block"
+        }}
+      >
+        <line
+          x1={padding}
+          y1={height - padding}
+          x2={width - padding}
+          y2={height - padding}
+          stroke="#E5E7EB"
+          strokeWidth="1"
+        />
+
+        <line
+          x1={padding}
+          y1={padding}
+          x2={padding}
+          y2={height - padding}
+          stroke="#E5E7EB"
+          strokeWidth="1"
+        />
+
+        <polyline
+          fill="none"
+          stroke={theme.colors.gold}
+          strokeWidth="3"
+          points={polylinePoints}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+
+        {points.map((value, index) => (
+          <g key={`${index}-${value}`}>
+            <circle
+              cx={toX(index)}
+              cy={toY(value)}
+              r="4"
+              fill={theme.colors.black}
+            />
+          </g>
+        ))}
+
+        <text
+          x={padding}
+          y={16}
+          fontSize="12"
+          fill="#6B7280"
+        >
+          Max: {max.toFixed(2)} €
+        </text>
+
+        <text
+          x={padding}
+          y={height - 6}
+          fontSize="12"
+          fill="#6B7280"
+        >
+          Min: {min.toFixed(2)} €
+        </text>
+
+        <text
+          x={width - padding}
+          y={18}
+          textAnchor="end"
+          fontSize="12"
+          fill="#111827"
+          fontWeight="700"
+        >
+          Current: {latest.toFixed(2)} €
+        </text>
+      </svg>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginTop: 8,
+          fontSize: 12,
+          color: theme.colors.textMuted
+        }}
+      >
+        <span>First: {first.toFixed(2)} €</span>
+        <span>{points.length} snapshot(s)</span>
+        <span>Latest: {latest.toFixed(2)} €</span>
+      </div>
+    </div>
   );
 }
 
