@@ -81,7 +81,7 @@ export default async function TopItems({
           gap: 8
         }}
       >
-        {items.slice(0, 5).map((it, idx) => (
+        {items.map((it, idx) => (
           <a
             key={it.id}
             href={`/items/${it.id}`}
@@ -93,15 +93,26 @@ export default async function TopItems({
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "24px 1fr auto",
-                gap: 8,
+                gridTemplateColumns: "28px 1fr auto",
+                gap: 10,
                 alignItems: "center",
-                padding: "6px 8px",
-                borderRadius: 8
+                padding: "8px 10px",
+                borderRadius: 10,
+                background: idx < 3 ? "#FAFAF8" : "transparent",
+                border:
+                  idx < 3
+                    ? `1px solid ${theme.colors.border}`
+                    : "1px solid transparent"
               }}
             >
-              <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
-                {idx + 1}
+              <div
+                style={{
+                  fontSize: 12,
+                  color: theme.colors.textMuted,
+                  fontWeight: 700
+                }}
+              >
+                #{idx + 1}
               </div>
 
               <div style={{ minWidth: 0 }}>
@@ -119,12 +130,17 @@ export default async function TopItems({
                 </div>
 
                 <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
-                  {it.quantity} × {it.estimatedPrice.toFixed(2)}€
+                  {it.quantity} × {it.estimatedPrice.toFixed(2)} €
                 </div>
               </div>
 
-              <div style={{ fontWeight: 800 }}>
-                {it.totalValue.toFixed(2)}€
+              <div
+                style={{
+                  fontWeight: 800,
+                  whiteSpace: "nowrap"
+                }}
+              >
+                {it.totalValue.toFixed(2)} €
               </div>
             </div>
           </a>
