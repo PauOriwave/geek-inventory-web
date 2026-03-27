@@ -5,6 +5,7 @@ import Filters from "./Filters";
 import AddItemForm from "./AddItemForm";
 import ImportCsvButton from "./ImportCsvButton";
 import ExportCsvButton from "./ExportCsvButton";
+import ValuateAllButton from "./ValuateAllButton";
 import ItemActions from "./ItemActions";
 import ActiveFilters from "./ActiveFilters";
 import TopItems from "./TopItems";
@@ -302,6 +303,7 @@ export default async function ItemsPage({
               flexWrap: "wrap"
             }}
           >
+            <ValuateAllButton />
             <ImportCsvButton />
             <ExportCsvButton />
           </div>
