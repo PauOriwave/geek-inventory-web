@@ -9,9 +9,14 @@ type HistoryPoint = {
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function getCollectionHistory(
-  cookieHeader: string
+  cookieHeader: string,
+  category?: string
 ): Promise<HistoryPoint[]> {
-  const res = await fetch(`${API}/stats/collection-history`, {
+  const qs = category
+    ? `?category=${encodeURIComponent(category)}`
+    : "";
+
+  const res = await fetch(`${API}/stats/collection-history${qs}`, {
     cache: "no-store",
     headers: {
       cookie: cookieHeader
@@ -25,11 +30,15 @@ async function getCollectionHistory(
   return res.json();
 }
 
-export default async function CollectionValueChart() {
+export default async function CollectionValueChart({
+  category
+}: {
+  category?: string;
+}) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
 
-  const points = await getCollectionHistory(cookieHeader);
+  const points = await getCollectionHistory(cookieHeader, category);
 
   return (
     <section
@@ -57,7 +66,9 @@ export default async function CollectionValueChart() {
             color: theme.colors.text
           }}
         >
-          Collection value trend
+          {category
+            ? `${capitalize(category)} value trend`
+            : "Collection value trend"}
         </div>
 
         <div
@@ -66,13 +77,15 @@ export default async function CollectionValueChart() {
             color: theme.colors.textMuted
           }}
         >
-          snapshots history
+          {category ? "filtered by category" : "snapshots history"}
         </div>
       </div>
 
       {points.length === 0 ? (
         <div style={{ color: theme.colors.textMuted }}>
-          No valuation history yet. Use “Valuate” on your items to build the chart.
+          {category
+            ? `No valuation history yet for "${category}". Use “Valuate” on items in this category to build the chart.`
+            : "No valuation history yet. Use “Valuate” on your items to build the chart."}
         </div>
       ) : (
         <MiniCollectionChart points={points} />
@@ -246,4 +259,8 @@ function StatPill({
       <span style={{ fontWeight: 800, color }}>{value}</span>
     </div>
   );
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

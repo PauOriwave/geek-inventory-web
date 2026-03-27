@@ -256,7 +256,7 @@ export default async function ItemsPage({
               />
             </div>
 
-            <CollectionValueChart />
+            <CollectionValueChart category={category} />
             <CategoryStats />
 
             <p
