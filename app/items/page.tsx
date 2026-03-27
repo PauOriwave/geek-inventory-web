@@ -271,7 +271,7 @@ export default async function ItemsPage({
           </div>
 
           <div style={{ position: "sticky", top: 16 }}>
-            <TopItems />
+            <TopItems category={category} />
           </div>
         </div>
 

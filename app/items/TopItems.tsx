@@ -12,8 +12,18 @@ type TopItem = {
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-async function getTopItems(cookieHeader: string): Promise<TopItem[]> {
-  const res = await fetch(`${API}/stats/top-items?limit=10`, {
+async function getTopItems(
+  cookieHeader: string,
+  category?: string
+): Promise<TopItem[]> {
+  const qs = new URLSearchParams();
+  qs.set("limit", "10");
+
+  if (category) {
+    qs.set("category", category);
+  }
+
+  const res = await fetch(`${API}/stats/top-items?${qs.toString()}`, {
     cache: "no-store",
     headers: {
       cookie: cookieHeader
@@ -27,84 +37,15 @@ async function getTopItems(cookieHeader: string): Promise<TopItem[]> {
   return res.json();
 }
 
-function TopItemRow({
-  it,
-  idx
+export default async function TopItems({
+  category
 }: {
-  it: TopItem;
-  idx: number;
+  category?: string;
 }) {
-  return (
-    <a
-      href={`/items/${it.id}`}
-      style={{
-        display: "grid",
-        gridTemplateColumns: "24px 1fr auto",
-        gap: 10,
-        alignItems: "center",
-        textDecoration: "none",
-        color: "inherit",
-        padding: "8px 6px",
-        borderRadius: theme.radius.sm
-      }}
-    >
-      <div
-        style={{
-          fontSize: 12,
-          fontWeight: 700,
-          color: theme.colors.textMuted
-        }}
-      >
-        {idx + 1}
-      </div>
-
-      <div style={{ minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 700,
-            color: theme.colors.text,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis"
-          }}
-          title={it.name}
-        >
-          {it.name}
-        </div>
-
-        <div
-          style={{
-            fontSize: 12,
-            color: theme.colors.textMuted,
-            marginTop: 2
-          }}
-        >
-          {it.category} · {it.quantity} × {it.estimatedPrice.toFixed(2)}€
-        </div>
-      </div>
-
-      <div
-        style={{
-          fontSize: 13,
-          fontWeight: 800,
-          color: theme.colors.text
-        }}
-      >
-        {it.totalValue.toFixed(2)}€
-      </div>
-    </a>
-  );
-}
-
-export default async function TopItems() {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
 
-  const items = await getTopItems(cookieHeader);
-
-  const firstFive = items.slice(0, 5);
-  const rest = items.slice(5);
+  const items = await getTopItems(cookieHeader, category);
 
   return (
     <section
@@ -112,7 +53,6 @@ export default async function TopItems() {
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.xl,
         padding: 14,
-        width: 320,
         background: theme.colors.surface,
         boxShadow: theme.shadow.card
       }}
@@ -121,14 +61,11 @@ export default async function TopItems() {
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "baseline",
-          borderBottom: `1px solid ${theme.colors.border}`,
-          paddingBottom: 10,
-          marginBottom: 8
+          alignItems: "baseline"
         }}
       >
-        <div style={{ fontWeight: 800, fontSize: 15, color: theme.colors.text }}>
-          Top items
+        <div style={{ fontWeight: 800 }}>
+          {category ? `Top ${capitalize(category)} items` : "Top 10 items"}
         </div>
 
         <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
@@ -136,43 +73,73 @@ export default async function TopItems() {
         </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        {firstFive.map((it, idx) => (
-          <TopItemRow key={it.id} it={it} idx={idx} />
-        ))}
-
-        {rest.length > 0 && (
-          <details style={{ marginTop: 6 }}>
-            <summary
-              style={{
-                cursor: "pointer",
-                color: theme.colors.link,
-                fontSize: 13,
-                userSelect: "none"
-              }}
-            >
-              Show {rest.length} more
-            </summary>
-
+      <div
+        style={{
+          marginTop: 10,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8
+        }}
+      >
+        {items.slice(0, 5).map((it, idx) => (
+          <a
+            key={it.id}
+            href={`/items/${it.id}`}
+            style={{
+              textDecoration: "none",
+              color: theme.colors.text
+            }}
+          >
             <div
               style={{
-                marginTop: 8,
-                display: "flex",
-                flexDirection: "column",
-                gap: 4
+                display: "grid",
+                gridTemplateColumns: "24px 1fr auto",
+                gap: 8,
+                alignItems: "center",
+                padding: "6px 8px",
+                borderRadius: 8
               }}
             >
-              {rest.map((it, idx) => (
-                <TopItemRow key={it.id} it={it} idx={idx + 5} />
-              ))}
+              <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
+                {idx + 1}
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis"
+                  }}
+                  title={it.name}
+                >
+                  {it.name}
+                </div>
+
+                <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
+                  {it.quantity} × {it.estimatedPrice.toFixed(2)}€
+                </div>
+              </div>
+
+              <div style={{ fontWeight: 800 }}>
+                {it.totalValue.toFixed(2)}€
+              </div>
             </div>
-          </details>
-        )}
+          </a>
+        ))}
 
         {items.length === 0 && (
-          <div style={{ color: theme.colors.textMuted }}>No items yet.</div>
+          <div style={{ color: theme.colors.textMuted }}>
+            No items in this category.
+          </div>
         )}
       </div>
     </section>
   );
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
