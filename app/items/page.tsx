@@ -11,6 +11,7 @@ import ActiveFilters from "./ActiveFilters";
 import TopItems from "./TopItems";
 import CategoryStats from "./CategoryStats";
 import CollectionValueChart from "./CollectionValueChart";
+import TrendingItems from "./TrendingItems";
 import LogoutButton from "./LogoutButton";
 import { theme } from "../theme";
 
@@ -257,6 +258,7 @@ export default async function ItemsPage({
             </div>
 
             <CollectionValueChart category={category} />
+            <TrendingItems category={category} />
             <CategoryStats />
 
             <p

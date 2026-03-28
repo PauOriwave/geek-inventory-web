@@ -1,0 +1,253 @@
+import { cookies } from "next/headers";
+import { theme } from "../theme";
+
+type TrendingItem = {
+  id: string;
+  name: string;
+  category: string;
+  firstValue: number;
+  latestValue: number;
+  delta: number;
+};
+
+const API = process.env.NEXT_PUBLIC_API_URL!;
+
+async function getTrendingItems(
+  cookieHeader: string,
+  direction: "rising" | "dropping",
+  category?: string
+): Promise<TrendingItem[]> {
+  const qs = new URLSearchParams();
+  qs.set("limit", "5");
+  qs.set("direction", direction);
+
+  if (category) {
+    qs.set("category", category);
+  }
+
+  const res = await fetch(`${API}/stats/trending-items?${qs.toString()}`, {
+    cache: "no-store",
+    headers: {
+      cookie: cookieHeader
+    }
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch trending items");
+  }
+
+  return res.json();
+}
+
+export default async function TrendingItems({
+  category
+}: {
+  category?: string;
+}) {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  const [risingItems, droppingItems] = await Promise.all([
+    getTrendingItems(cookieHeader, "rising", category),
+    getTrendingItems(cookieHeader, "dropping", category)
+  ]);
+
+  return (
+    <section
+      style={{
+        marginTop: 14,
+        background: theme.colors.surface,
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.xl,
+        padding: 16,
+        boxShadow: theme.shadow.card
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          marginBottom: 12
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 800,
+            fontSize: 15,
+            color: theme.colors.text
+          }}
+        >
+          {category ? `${capitalize(category)} movers` : "Top movers"}
+        </div>
+
+        <div
+          style={{
+            fontSize: 12,
+            color: theme.colors.textMuted
+          }}
+        >
+          from valuation history
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 12
+        }}
+      >
+        <TrendColumn
+          title="Rising items"
+          emptyText="No rising items yet."
+          items={risingItems}
+          direction="rising"
+        />
+
+        <TrendColumn
+          title="Dropping items"
+          emptyText="No dropping items yet."
+          items={droppingItems}
+          direction="dropping"
+        />
+      </div>
+    </section>
+  );
+}
+
+function TrendColumn({
+  title,
+  emptyText,
+  items,
+  direction
+}: {
+  title: string;
+  emptyText: string;
+  items: TrendingItem[];
+  direction: "rising" | "dropping";
+}) {
+  return (
+    <div
+      style={{
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.lg,
+        padding: 12,
+        background: theme.colors.surfaceAlt
+      }}
+    >
+      <div
+        style={{
+          fontWeight: 800,
+          marginBottom: 10,
+          color: theme.colors.text
+        }}
+      >
+        {title}
+      </div>
+
+      {items.length === 0 ? (
+        <div style={{ color: theme.colors.textMuted, fontSize: 13 }}>
+          {emptyText}
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 8 }}>
+          {items.map((item, index) => (
+            <a
+              key={item.id}
+              href={`/items/${item.id}`}
+              style={{
+                textDecoration: "none",
+                color: theme.colors.text,
+                border: `1px solid ${theme.colors.border}`,
+                borderRadius: theme.radius.md,
+                background: theme.colors.surface,
+                padding: "10px 12px",
+                display: "grid",
+                gridTemplateColumns: "28px 1fr auto",
+                gap: 10,
+                alignItems: "center"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: theme.colors.textMuted
+                }}
+              >
+                #{index + 1}
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis"
+                  }}
+                  title={item.name}
+                >
+                  {item.name}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: theme.colors.textMuted
+                  }}
+                >
+                  {item.firstValue.toFixed(2)} € → {item.latestValue.toFixed(2)} €
+                </div>
+              </div>
+
+              <TrendDeltaBadge
+                delta={item.delta}
+                direction={direction}
+              />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TrendDeltaBadge({
+  delta,
+  direction
+}: {
+  delta: number;
+  direction: "rising" | "dropping";
+}) {
+  const positive = direction === "rising";
+  const bg = positive ? "#ECFDF3" : "#FEF3F2";
+  const color = positive ? "#027A48" : "#B42318";
+
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        minWidth: 74,
+        textAlign: "center",
+        padding: "4px 8px",
+        borderRadius: 999,
+        border: `1px solid ${theme.colors.border}`,
+        background: bg,
+        color,
+        fontSize: 12,
+        fontWeight: 800,
+        whiteSpace: "nowrap"
+      }}
+    >
+      {delta > 0 ? "+" : ""}
+      {delta.toFixed(2)} €
+    </span>
+  );
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
