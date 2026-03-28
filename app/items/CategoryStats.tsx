@@ -6,6 +6,8 @@ type Row = {
   units: number;
   value: number;
   items: number;
+  trend: "rising" | "dropping" | "stable";
+  trendDelta: number;
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -47,7 +49,7 @@ export default async function CategoryStats() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
           gap: 10
         }}
       >
@@ -68,12 +70,23 @@ export default async function CategoryStats() {
           >
             <div
               style={{
-                fontSize: 12,
-                color: theme.colors.textMuted,
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 8,
+                alignItems: "center",
                 marginBottom: 6
               }}
             >
-              {r.category}
+              <div
+                style={{
+                  fontSize: 12,
+                  color: theme.colors.textMuted
+                }}
+              >
+                {r.category}
+              </div>
+
+              <TrendBadge trend={r.trend} delta={r.trendDelta} />
             </div>
 
             <div
@@ -103,5 +116,54 @@ export default async function CategoryStats() {
         )}
       </div>
     </section>
+  );
+}
+
+function TrendBadge({
+  trend,
+  delta
+}: {
+  trend: "rising" | "dropping" | "stable";
+  delta: number;
+}) {
+  const positive = trend === "rising";
+  const negative = trend === "dropping";
+
+  const bg = positive ? "#ECFDF3" : negative ? "#FEF3F2" : "#F9FAFB";
+  const color = positive
+    ? "#027A48"
+    : negative
+      ? "#B42318"
+      : theme.colors.textMuted;
+
+  const label =
+    trend === "rising"
+      ? "Rising"
+      : trend === "dropping"
+        ? "Dropping"
+        : "Stable";
+
+  const formattedDelta =
+    delta === 0 ? "0.00€" : `${delta > 0 ? "+" : ""}${delta.toFixed(2)}€`;
+
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "4px 8px",
+        borderRadius: 999,
+        border: `1px solid ${theme.colors.border}`,
+        background: bg,
+        color,
+        fontSize: 12,
+        fontWeight: 700,
+        whiteSpace: "nowrap"
+      }}
+    >
+      <span>{label}</span>
+      <span>{formattedDelta}</span>
+    </span>
   );
 }
