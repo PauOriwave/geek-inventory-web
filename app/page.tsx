@@ -1,17 +1,11 @@
+import PublicSiteShell from "./components/PublicSiteShell";
 import { theme, availableThemes } from "./theme";
 
 export default function HomePage() {
   const featuredThemes = availableThemes.slice(0, 4);
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: theme.colors.bg,
-        color: theme.colors.text,
-        fontFamily: "system-ui"
-      }}
-    >
+    <PublicSiteShell>
       <section
         style={{
           background:
@@ -23,69 +17,11 @@ export default function HomePage() {
           style={{
             maxWidth: 1240,
             margin: "0 auto",
-            padding: "26px 24px 72px 24px"
+            padding: "38px 24px 72px 24px"
           }}
         >
-          <header
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 16,
-              flexWrap: "wrap"
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 999,
-                  background: theme.colors.gold,
-                  color: theme.colors.black,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 900,
-                  fontSize: 18
-                }}
-              >
-                D
-              </div>
-
-              <div>
-                <div style={{ fontSize: 18, fontWeight: 800 }}>
-                  DrakoryVault
-                </div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.72)" }}>
-                  The Universal Collection Tracker
-                </div>
-              </div>
-            </div>
-
-            <nav
-              style={{
-                display: "flex",
-                gap: 10,
-                alignItems: "center",
-                flexWrap: "wrap"
-              }}
-            >
-              <a href="/pricing" style={navLink}>
-                Pricing
-              </a>
-              <a href="/login" style={navLink}>
-                Login
-              </a>
-              <a href="/register" style={primaryCta}>
-                Start free
-              </a>
-            </nav>
-          </header>
-
           <div
             style={{
-              marginTop: 56,
               display: "grid",
               gridTemplateColumns: "minmax(0, 1.1fr) minmax(320px, 0.9fr)",
               gap: 28,
@@ -569,7 +505,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-    </main>
+    </PublicSiteShell>
   );
 }
 
@@ -707,23 +643,6 @@ function Swatch({ color }: { color: string }) {
     />
   );
 }
-
-const navLink: React.CSSProperties = {
-  textDecoration: "none",
-  color: "white",
-  padding: "10px 12px",
-  borderRadius: 999,
-  fontWeight: 700
-};
-
-const primaryCta: React.CSSProperties = {
-  textDecoration: "none",
-  background: theme.colors.gold,
-  color: theme.colors.black,
-  padding: "11px 16px",
-  borderRadius: 999,
-  fontWeight: 800
-};
 
 const heroPrimary: React.CSSProperties = {
   textDecoration: "none",
