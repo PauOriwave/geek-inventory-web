@@ -1,14 +1,19 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import PublicSiteShell from "../components/PublicSiteShell";
+import { getDictionary, type Locale } from "../i18n";
 import { theme } from "../theme";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const locale = (searchParams.get("lang") === "es" ? "es" : "en") as Locale;
+  const t = useMemo(() => getDictionary(locale), [locale]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,7 +25,11 @@ export default function LoginPage() {
     setError("");
 
     if (!email.trim() || !password.trim()) {
-      setError("Email and password are required");
+      setError(
+        locale === "es"
+          ? "Email y contraseña son obligatorios"
+          : "Email and password are required"
+      );
       return;
     }
 
@@ -41,11 +50,18 @@ export default function LoginPage() {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        throw new Error(data?.message || "Login failed");
+        throw new Error(
+          data?.message ||
+            (locale === "es" ? "Error al iniciar sesión" : "Login failed")
+        );
       }
 
       if (!data?.token) {
-        throw new Error("No session token received");
+        throw new Error(
+          locale === "es"
+            ? "No se recibió token de sesión"
+            : "No session token received"
+        );
       }
 
       document.cookie = `session=${data.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
@@ -53,14 +69,20 @@ export default function LoginPage() {
       router.push("/items");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(
+        err instanceof Error
+          ? err.message
+          : locale === "es"
+            ? "Error al iniciar sesión"
+            : "Login failed"
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <PublicSiteShell compact>
+    <PublicSiteShell>
       <section
         style={{
           maxWidth: 1120,
@@ -98,7 +120,7 @@ export default function LoginPage() {
                 marginBottom: 14
               }}
             >
-              Welcome back
+              {locale === "es" ? "Bienvenido de nuevo" : "Welcome back"}
             </div>
 
             <h1
@@ -109,7 +131,7 @@ export default function LoginPage() {
                 fontWeight: 900
               }}
             >
-              Sign in to your vault
+              {t.login.title}
             </h1>
 
             <p
@@ -121,8 +143,9 @@ export default function LoginPage() {
                 fontSize: 15
               }}
             >
-              Access your collection dashboard, valuation history, category trends
-              and all your tracked items.
+              {locale === "es"
+                ? "Accede a tu dashboard de colección, historial de valoraciones, tendencias por categoría y todos tus objetos."
+                : "Access your collection dashboard, valuation history, category trends and all your tracked items."}
             </p>
 
             <form
@@ -134,7 +157,7 @@ export default function LoginPage() {
               }}
             >
               <div>
-                <label style={labelStyle}>Email</label>
+                <label style={labelStyle}>{t.login.email}</label>
                 <input
                   type="email"
                   value={email}
@@ -146,12 +169,14 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label style={labelStyle}>Password</label>
+                <label style={labelStyle}>{t.login.password}</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Your password"
+                  placeholder={
+                    locale === "es" ? "Tu contraseña" : "Your password"
+                  }
                   autoComplete="current-password"
                   style={inputStyle}
                 />
@@ -188,7 +213,11 @@ export default function LoginPage() {
                   boxShadow: theme.shadow.soft
                 }}
               >
-                {loading ? "Signing in…" : "Sign in"}
+                {loading
+                  ? locale === "es"
+                    ? "Entrando…"
+                    : "Signing in…"
+                  : t.login.button}
               </button>
             </form>
 
@@ -199,16 +228,16 @@ export default function LoginPage() {
                 color: theme.colors.textMuted
               }}
             >
-              Don&apos;t have an account?{" "}
+              {t.login.noAccount}{" "}
               <a
-                href="/register"
+                href={`/register?lang=${locale}`}
                 style={{
                   color: theme.colors.link,
                   fontWeight: 800,
                   textDecoration: "none"
                 }}
               >
-                Create one
+                {t.login.create}
               </a>
             </div>
           </div>
@@ -234,7 +263,7 @@ export default function LoginPage() {
                   marginBottom: 10
                 }}
               >
-                Collector workspace
+                {locale === "es" ? "Espacio del coleccionista" : "Collector workspace"}
               </div>
 
               <h2
@@ -244,7 +273,9 @@ export default function LoginPage() {
                   lineHeight: 1.15
                 }}
               >
-                Track items, trends and valuation history from one premium dashboard.
+                {locale === "es"
+                  ? "Controla objetos, tendencias e historial de valoraciones desde un único dashboard premium."
+                  : "Track items, trends and valuation history from one premium dashboard."}
               </h2>
 
               <p
@@ -255,9 +286,9 @@ export default function LoginPage() {
                   fontSize: 15
                 }}
               >
-                DrakoryVault is designed for collectors who want more than a
-                spreadsheet: category insight, top movers, snapshots and a vault
-                experience that feels premium.
+                {locale === "es"
+                  ? "DrakoryVault está diseñado para coleccionistas que quieren algo más que una hoja de cálculo: insight por categorías, top movers, snapshots y una experiencia premium."
+                  : "DrakoryVault is designed for collectors who want more than a spreadsheet: category insight, top movers, snapshots and a vault experience that feels premium."}
               </p>
             </div>
 
@@ -269,10 +300,22 @@ export default function LoginPage() {
                 gap: 12
               }}
             >
-              <DarkStat label="Snapshots" value="Historical" />
-              <DarkStat label="Themes" value="Unlockable" />
-              <DarkStat label="Collection" value="Tracked" />
-              <DarkStat label="Insights" value="Actionable" />
+              <DarkStat
+                label={locale === "es" ? "Snapshots" : "Snapshots"}
+                value={locale === "es" ? "Histórico" : "Historical"}
+              />
+              <DarkStat
+                label={locale === "es" ? "Temas" : "Themes"}
+                value={locale === "es" ? "Desbloqueables" : "Unlockable"}
+              />
+              <DarkStat
+                label={locale === "es" ? "Colección" : "Collection"}
+                value={locale === "es" ? "Controlada" : "Tracked"}
+              />
+              <DarkStat
+                label={locale === "es" ? "Insights" : "Insights"}
+                value={locale === "es" ? "Útiles" : "Actionable"}
+              />
             </div>
           </div>
         </div>

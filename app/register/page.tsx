@@ -1,14 +1,19 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import PublicSiteShell from "../components/PublicSiteShell";
+import { getDictionary, type Locale } from "../i18n";
 import { theme } from "../theme";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const locale = (searchParams.get("lang") === "es" ? "es" : "en") as Locale;
+  const t = useMemo(() => getDictionary(locale), [locale]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,17 +26,29 @@ export default function RegisterPage() {
     setError("");
 
     if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
-      setError("All fields are required");
+      setError(
+        locale === "es"
+          ? "Todos los campos son obligatorios"
+          : "All fields are required"
+      );
       return;
     }
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError(
+        locale === "es"
+          ? "La contraseña debe tener al menos 8 caracteres"
+          : "Password must be at least 8 characters"
+      );
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(
+        locale === "es"
+          ? "Las contraseñas no coinciden"
+          : "Passwords do not match"
+      );
       return;
     }
 
@@ -52,7 +69,12 @@ export default function RegisterPage() {
       const registerData = await registerRes.json().catch(() => null);
 
       if (!registerRes.ok) {
-        throw new Error(registerData?.message || "Registration failed");
+        throw new Error(
+          registerData?.message ||
+            (locale === "es"
+              ? "Error al registrar la cuenta"
+              : "Registration failed")
+        );
       }
 
       const loginRes = await fetch(`${API}/auth/login`, {
@@ -69,11 +91,18 @@ export default function RegisterPage() {
       const loginData = await loginRes.json().catch(() => null);
 
       if (!loginRes.ok) {
-        throw new Error(loginData?.message || "Auto login failed");
+        throw new Error(
+          loginData?.message ||
+            (locale === "es" ? "Error al iniciar sesión" : "Auto login failed")
+        );
       }
 
       if (!loginData?.token) {
-        throw new Error("No session token received");
+        throw new Error(
+          locale === "es"
+            ? "No se recibió token de sesión"
+            : "No session token received"
+        );
       }
 
       document.cookie = `session=${loginData.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
@@ -81,14 +110,20 @@ export default function RegisterPage() {
       router.push("/items");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      setError(
+        err instanceof Error
+          ? err.message
+          : locale === "es"
+            ? "Error al registrar la cuenta"
+            : "Registration failed"
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <PublicSiteShell compact>
+    <PublicSiteShell>
       <section
         style={{
           maxWidth: 1120,
@@ -126,7 +161,9 @@ export default function RegisterPage() {
                 marginBottom: 14
               }}
             >
-              Start your collection vault
+              {locale === "es"
+                ? "Empieza tu bóveda de colección"
+                : "Start your collection vault"}
             </div>
 
             <h1
@@ -137,7 +174,7 @@ export default function RegisterPage() {
                 fontWeight: 900
               }}
             >
-              Create your account
+              {t.register.title}
             </h1>
 
             <p
@@ -149,8 +186,9 @@ export default function RegisterPage() {
                 fontSize: 15
               }}
             >
-              Begin with your free vault and grow into valuations, trends,
-              unlockable themes and premium collector features over time.
+              {locale === "es"
+                ? "Empieza con tu vault gratis y evoluciona hacia valoraciones, tendencias, temas desbloqueables y funciones premium."
+                : "Begin with your free vault and grow into valuations, trends, unlockable themes and premium collector features over time."}
             </p>
 
             <form
@@ -162,7 +200,7 @@ export default function RegisterPage() {
               }}
             >
               <div>
-                <label style={labelStyle}>Email</label>
+                <label style={labelStyle}>{t.register.email}</label>
                 <input
                   type="email"
                   value={email}
@@ -174,24 +212,32 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label style={labelStyle}>Password</label>
+                <label style={labelStyle}>{t.register.password}</label>
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
+                  placeholder={
+                    locale === "es"
+                      ? "Mínimo 8 caracteres"
+                      : "At least 8 characters"
+                  }
                   autoComplete="new-password"
                   style={inputStyle}
                 />
               </div>
 
               <div>
-                <label style={labelStyle}>Confirm password</label>
+                <label style={labelStyle}>{t.register.confirm}</label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repeat your password"
+                  placeholder={
+                    locale === "es"
+                      ? "Repite tu contraseña"
+                      : "Repeat your password"
+                  }
                   autoComplete="new-password"
                   style={inputStyle}
                 />
@@ -228,7 +274,11 @@ export default function RegisterPage() {
                   boxShadow: theme.shadow.soft
                 }}
               >
-                {loading ? "Creating account…" : "Create account"}
+                {loading
+                  ? locale === "es"
+                    ? "Creando cuenta…"
+                    : "Creating account…"
+                  : t.register.button}
               </button>
             </form>
 
@@ -239,16 +289,16 @@ export default function RegisterPage() {
                 color: theme.colors.textMuted
               }}
             >
-              Already have an account?{" "}
+              {t.register.haveAccount}{" "}
               <a
-                href="/login"
+                href={`/login?lang=${locale}`}
                 style={{
                   color: theme.colors.link,
                   fontWeight: 800,
                   textDecoration: "none"
                 }}
               >
-                Sign in
+                {t.register.login}
               </a>
             </div>
           </div>
@@ -274,7 +324,7 @@ export default function RegisterPage() {
                   marginBottom: 10
                 }}
               >
-                Free plan includes
+                {locale === "es" ? "El plan gratis incluye" : "Free plan includes"}
               </div>
 
               <h2
@@ -284,7 +334,9 @@ export default function RegisterPage() {
                   lineHeight: 1.15
                 }}
               >
-                Everything you need to begin tracking your collection properly.
+                {locale === "es"
+                  ? "Todo lo que necesitas para empezar a controlar tu colección correctamente."
+                  : "Everything you need to begin tracking your collection properly."}
               </h2>
 
               <p
@@ -295,9 +347,9 @@ export default function RegisterPage() {
                   fontSize: 15
                 }}
               >
-                Start with core inventory management, import/export workflows and
-                a clean collector dashboard. Upgrade later for deeper valuation
-                intelligence and premium themes.
+                {locale === "es"
+                  ? "Empieza con gestión básica de inventario, import/export y un dashboard limpio. Mejora después para tener más inteligencia de valoración y temas premium."
+                  : "Start with core inventory management, import/export workflows and a clean collector dashboard. Upgrade later for deeper valuation intelligence and premium themes."}
               </p>
             </div>
 
@@ -308,10 +360,34 @@ export default function RegisterPage() {
                 gap: 10
               }}
             >
-              <Benefit text="Track games, books, TCG, figures and more" />
-              <Benefit text="Import and export your collection with CSV" />
-              <Benefit text="See category value and top items" />
-              <Benefit text="Grow into snapshots, movers and theme unlocks" />
+              <Benefit
+                text={
+                  locale === "es"
+                    ? "Controla juegos, libros, TCG, figuras y más"
+                    : "Track games, books, TCG, figures and more"
+                }
+              />
+              <Benefit
+                text={
+                  locale === "es"
+                    ? "Importa y exporta tu colección en CSV"
+                    : "Import and export your collection with CSV"
+                }
+              />
+              <Benefit
+                text={
+                  locale === "es"
+                    ? "Consulta valor por categoría y top items"
+                    : "See category value and top items"
+                }
+              />
+              <Benefit
+                text={
+                  locale === "es"
+                    ? "Evoluciona hacia snapshots, movers y temas desbloqueables"
+                    : "Grow into snapshots, movers and theme unlocks"
+                }
+              />
             </div>
           </div>
         </div>

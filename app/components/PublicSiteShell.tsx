@@ -1,4 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { theme } from "../theme";
 
 export default function PublicSiteShell({
@@ -8,6 +11,13 @@ export default function PublicSiteShell({
   children: ReactNode;
   compact?: boolean;
 }) {
+  const searchParams = useSearchParams();
+  const lang = searchParams.get("lang") === "es" ? "es" : "en";
+
+  function withLang(path: string) {
+    return `${path}?lang=${lang}`;
+  }
+
   return (
     <main
       style={{
@@ -23,7 +33,10 @@ export default function PublicSiteShell({
           top: 0,
           zIndex: 20,
           backdropFilter: "blur(10px)",
-          background: "rgba(245,243,238,0.88)",
+          background:
+            lang === "es"
+              ? "rgba(245,243,238,0.88)"
+              : "rgba(245,243,238,0.88)",
           borderBottom: `1px solid ${theme.colors.border}`
         }}
       >
@@ -40,7 +53,7 @@ export default function PublicSiteShell({
           }}
         >
           <a
-            href="/"
+            href={withLang("/")}
             style={{
               display: "flex",
               alignItems: "center",
@@ -76,7 +89,9 @@ export default function PublicSiteShell({
                   color: theme.colors.textMuted
                 }}
               >
-                The Universal Collection Tracker
+                {lang === "es"
+                  ? "El rastreador universal de colecciones"
+                  : "The Universal Collection Tracker"}
               </div>
             </div>
           </a>
@@ -89,21 +104,52 @@ export default function PublicSiteShell({
               flexWrap: "wrap"
             }}
           >
-            <a href="/" style={navLink}>
-              Home
+            <a href={withLang("/")} style={navLink}>
+              {lang === "es" ? "Inicio" : "Home"}
             </a>
 
-            <a href="/pricing" style={navLink}>
-              Pricing
+            <a href={withLang("/pricing")} style={navLink}>
+              {lang === "es" ? "Precios" : "Pricing"}
             </a>
 
-            <a href="/login" style={navLink}>
-              Login
+            <a href={withLang("/login")} style={navLink}>
+              {lang === "es" ? "Entrar" : "Login"}
             </a>
 
-            <a href="/register" style={primaryCta}>
-              Start free
+            <a href={withLang("/register")} style={primaryCta}>
+              {lang === "es" ? "Empezar gratis" : "Start free"}
             </a>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginLeft: 4
+              }}
+            >
+              <a
+                href="/?lang=en"
+                style={{
+                  ...langSwitchLink,
+                  background: lang === "en" ? theme.colors.surfaceAlt : "transparent",
+                  color: theme.colors.text
+                }}
+              >
+                EN
+              </a>
+
+              <a
+                href="/?lang=es"
+                style={{
+                  ...langSwitchLink,
+                  background: lang === "es" ? theme.colors.surfaceAlt : "transparent",
+                  color: theme.colors.text
+                }}
+              >
+                ES
+              </a>
+            </div>
           </nav>
         </div>
       </header>
@@ -138,7 +184,9 @@ export default function PublicSiteShell({
                 marginTop: 4
               }}
             >
-              Track your collection. Understand its value.
+              {lang === "es"
+                ? "Controla tu colección. Entiende su valor."
+                : "Track your collection. Understand its value."}
             </div>
           </div>
 
@@ -150,17 +198,17 @@ export default function PublicSiteShell({
               fontSize: 13
             }}
           >
-            <a href="/" style={footerLink}>
-              Home
+            <a href={withLang("/")} style={footerLink}>
+              {lang === "es" ? "Inicio" : "Home"}
             </a>
-            <a href="/pricing" style={footerLink}>
-              Pricing
+            <a href={withLang("/pricing")} style={footerLink}>
+              {lang === "es" ? "Precios" : "Pricing"}
             </a>
-            <a href="/login" style={footerLink}>
-              Login
+            <a href={withLang("/login")} style={footerLink}>
+              {lang === "es" ? "Entrar" : "Login"}
             </a>
-            <a href="/register" style={footerLink}>
-              Register
+            <a href={withLang("/register")} style={footerLink}>
+              {lang === "es" ? "Registro" : "Register"}
             </a>
           </div>
         </div>
@@ -190,4 +238,13 @@ const primaryCta: React.CSSProperties = {
 const footerLink: React.CSSProperties = {
   textDecoration: "none",
   color: theme.colors.textMuted
+};
+
+const langSwitchLink: React.CSSProperties = {
+  textDecoration: "none",
+  padding: "8px 10px",
+  borderRadius: 999,
+  border: `1px solid ${theme.colors.border}`,
+  fontSize: 12,
+  fontWeight: 800
 };
