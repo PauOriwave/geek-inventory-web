@@ -14,6 +14,7 @@ import CollectionValueChart from "./CollectionValueChart";
 import TrendingItems from "./TrendingItems";
 import LogoutButton from "./LogoutButton";
 import { theme } from "../theme";
+import { getDictionary, getLocale } from "../i18n";
 
 type Item = {
   id: string;
@@ -105,6 +106,9 @@ export default async function ItemsPage({
   const sp =
     searchParams instanceof Promise ? await searchParams : searchParams ?? {};
 
+  const locale = getLocale(sp);
+  const t = getDictionary(locale);
+
   const q = typeof sp.q === "string" ? sp.q : undefined;
   const category = typeof sp.category === "string" ? sp.category : undefined;
   const sort = typeof sp.sort === "string" ? sp.sort : undefined;
@@ -121,6 +125,7 @@ export default async function ItemsPage({
   if (sort) params.set("sort", sort);
   if (minPrice) params.set("minPrice", minPrice);
   if (maxPrice) params.set("maxPrice", maxPrice);
+  params.set("lang", locale);
 
   params.set("page", String(Number.isFinite(page) && page >= 1 ? page : 1));
   params.set(
@@ -150,6 +155,44 @@ export default async function ItemsPage({
     ...baseParams,
     page: String(Math.min(totalPages, currentPage + 1))
   }).toString()}`;
+
+  const text = {
+    dashboard:
+      locale === "es" ? "Panel de colección" : "Collection dashboard",
+    collectionControls:
+      locale === "es" ? "Controles de colección" : "Collection controls",
+    collectionItems:
+      locale === "es" ? "Objetos de la colección" : "Collection items",
+    totalRecords:
+      locale === "es"
+        ? `${itemsRes.total} registros totales`
+        : `${itemsRes.total} total records`,
+    showing:
+      locale === "es"
+        ? `Mostrando ${items.length} objeto(s) en esta página — ${itemsRes.total} en total`
+        : `Showing ${items.length} item(s) on this page — ${itemsRes.total} total`,
+    noItems:
+      locale === "es"
+        ? "No hay objetos que coincidan con estos filtros."
+        : "No items match these filters.",
+    prev: locale === "es" ? "Anterior" : "Prev",
+    next: locale === "es" ? "Siguiente" : "Next",
+    page: locale === "es" ? "Página" : "Page",
+    items: locale === "es" ? "Objetos" : "Items",
+    units: locale === "es" ? "Unidades" : "Units",
+    totalValue: locale === "es" ? "Valor total" : "Total value",
+    name: locale === "es" ? "Nombre" : "Name",
+    category: locale === "es" ? "Categoría" : "Category",
+    platform: locale === "es" ? "Plataforma" : "Platform",
+    region: locale === "es" ? "Región" : "Region",
+    condition: locale === "es" ? "Estado" : "Condition",
+    completeness: locale === "es" ? "Completitud" : "Completeness",
+    price: locale === "es" ? "Precio" : "Price",
+    market: locale === "es" ? "Mercado" : "Market",
+    qty: locale === "es" ? "Cant." : "Qty",
+    created: locale === "es" ? "Creado" : "Created",
+    actions: locale === "es" ? "Acciones" : "Actions"
+  };
 
   return (
     <main
@@ -203,7 +246,9 @@ export default async function ItemsPage({
             <div>
               <div style={{ fontWeight: 800, fontSize: 18 }}>DrakoryVault</div>
               <div style={{ fontSize: 12, color: "#D1D5DB" }}>
-                The Universal Collection Tracker
+                {locale === "es"
+                  ? "El rastreador universal de colecciones"
+                  : "The Universal Collection Tracker"}
               </div>
             </div>
           </div>
@@ -218,7 +263,7 @@ export default async function ItemsPage({
                 borderRadius: 999
               }}
             >
-              Collection dashboard
+              {text.dashboard}
             </div>
 
             <LogoutButton />
@@ -249,10 +294,10 @@ export default async function ItemsPage({
                 marginBottom: 14
               }}
             >
-              <Stat label="Items" value={summary.totalItems} />
-              <Stat label="Units" value={summary.totalUnits} />
+              <Stat label={text.items} value={summary.totalItems} />
+              <Stat label={text.units} value={summary.totalUnits} />
               <Stat
-                label="Total value"
+                label={text.totalValue}
                 value={`${summary.totalValue.toFixed(2)} €`}
               />
             </div>
@@ -268,7 +313,7 @@ export default async function ItemsPage({
                 fontSize: 14
               }}
             >
-              Showing {items.length} item(s) on this page — {itemsRes.total} total
+              {text.showing}
             </p>
           </div>
 
@@ -294,7 +339,7 @@ export default async function ItemsPage({
               color: theme.colors.text
             }}
           >
-            Collection controls
+            {text.collectionControls}
           </div>
 
           <div
@@ -339,9 +384,11 @@ export default async function ItemsPage({
               alignItems: "center"
             }}
           >
-            <div style={{ fontWeight: 800, fontSize: 15 }}>Collection items</div>
+            <div style={{ fontWeight: 800, fontSize: 15 }}>
+              {text.collectionItems}
+            </div>
             <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
-              {itemsRes.total} total records
+              {text.totalRecords}
             </div>
           </div>
 
@@ -349,18 +396,18 @@ export default async function ItemsPage({
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  <Th>Name</Th>
-                  <Th>Category</Th>
-                  <Th>Platform</Th>
-                  <Th>Region</Th>
-                  <Th>Condition</Th>
-                  <Th>Completeness</Th>
-                  <Th align="right">Price</Th>
-                  <Th align="right">Market</Th>
+                  <Th>{text.name}</Th>
+                  <Th>{text.category}</Th>
+                  <Th>{text.platform}</Th>
+                  <Th>{text.region}</Th>
+                  <Th>{text.condition}</Th>
+                  <Th>{text.completeness}</Th>
+                  <Th align="right">{text.price}</Th>
+                  <Th align="right">{text.market}</Th>
                   <Th align="right">Δ</Th>
-                  <Th align="right">Qty</Th>
-                  <Th>Created</Th>
-                  <Th align="right">Actions</Th>
+                  <Th align="right">{text.qty}</Th>
+                  <Th>{text.created}</Th>
+                  <Th align="right">{text.actions}</Th>
                 </tr>
               </thead>
 
@@ -476,7 +523,7 @@ export default async function ItemsPage({
                         color: theme.colors.textMuted
                       }}
                     >
-                      No items match these filters.
+                      {text.noItems}
                     </td>
                   </tr>
                 )}
@@ -507,11 +554,11 @@ export default async function ItemsPage({
               background: theme.colors.surface
             }}
           >
-            Prev
+            {text.prev}
           </a>
 
           <div style={{ color: theme.colors.textMuted, fontSize: 14 }}>
-            Page {currentPage} / {totalPages}
+            {text.page} {currentPage} / {totalPages}
           </div>
 
           <a
@@ -527,7 +574,7 @@ export default async function ItemsPage({
               background: theme.colors.surface
             }}
           >
-            Next
+            {text.next}
           </a>
         </div>
       </div>

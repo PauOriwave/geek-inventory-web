@@ -107,7 +107,7 @@ export default function RegisterPage() {
 
       document.cookie = `session=${loginData.token}; path=/; max-age=${60 * 60 * 24 * 7}; samesite=lax`;
 
-      router.push("/items");
+      router.push(`/items?lang=${locale}`);
       router.refresh();
     } catch (err) {
       setError(
