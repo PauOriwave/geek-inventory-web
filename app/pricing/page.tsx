@@ -1,8 +1,162 @@
 import PublicSiteShell from "../components/PublicSiteShell";
 import { availableThemes, theme } from "../theme";
+import { getLocale } from "../i18n";
 
-export default function PricingPage() {
+export default async function PricingPage({
+  searchParams
+}: {
+  searchParams?:
+    | Promise<Record<string, string | string[] | undefined>>
+    | Record<string, string | string[] | undefined>;
+}) {
+  const sp =
+    searchParams instanceof Promise ? await searchParams : searchParams ?? {};
+
+  const locale = getLocale(sp);
   const premiumThemes = availableThemes.filter((item) => item.premium);
+
+  const text = {
+    badge: locale === "es" ? "Precios" : "Pricing",
+    title:
+      locale === "es"
+        ? "Empieza gratis. Mejora cuando necesites más profundidad."
+        : "Start free. Upgrade when you want deeper insights.",
+    subtitle:
+      locale === "es"
+        ? "DrakoryVault está pensado para ser útil desde el primer día, con planes premium que desbloquean histórico de valoraciones, insights avanzados, temas por fidelización y futuras automatizaciones."
+        : "DrakoryVault is built to be useful from day one, with premium plans unlocking valuation history, advanced insights, loyalty themes and future automation.",
+
+    freeTitle: "Free",
+    freePrice: "0€",
+    freeSubtitle:
+      locale === "es"
+        ? "Para empezar tu vault"
+        : "For starting your vault",
+    freeFeatures:
+      locale === "es"
+        ? [
+            "Hasta 100 objetos",
+            "Dashboard básico",
+            "Importación/exportación CSV",
+            "Valoración manual",
+            "Tema por defecto",
+            "Gestión base de colección"
+          ]
+        : [
+            "Up to 100 items",
+            "Basic dashboard",
+            "CSV import/export",
+            "Manual valuation",
+            "Default theme",
+            "Core collection management"
+          ],
+    freeCta: locale === "es" ? "Empezar gratis" : "Start free",
+
+    proTitle: "Pro",
+    proPrice: "4.99€ / month",
+    proSubtitle:
+      locale === "es"
+        ? "Para coleccionistas activos"
+        : "For active collectors",
+    proFeatures:
+      locale === "es"
+        ? [
+            "Objetos ilimitados",
+            "Dashboard avanzado",
+            "Historial de valoraciones",
+            "Top movers y tendencias por categoría",
+            "Evolución del valor de la colección",
+            "Temas premium y ruta de desbloqueo por fidelización",
+            "Futuras valoraciones automáticas"
+          ]
+        : [
+            "Unlimited items",
+            "Advanced dashboard",
+            "Valuation history",
+            "Top movers and category trends",
+            "Collection value evolution",
+            "Premium themes and loyalty unlock path",
+            "Future automatic valuations"
+          ],
+    proCta: locale === "es" ? "Elegir Pro" : "Choose Pro",
+    proBadge:
+      locale === "es" ? "Más equilibrado" : "Most balanced",
+
+    collectorTitle: "Collector",
+    collectorPrice: "9.99€ / month",
+    collectorSubtitle:
+      locale === "es"
+        ? "Para power users y early adopters"
+        : "For power users and early adopters",
+    collectorFeatures:
+      locale === "es"
+        ? [
+            "Todo lo incluido en Pro",
+            "Acceso prioritario a nuevas funciones",
+            "Futuras fuentes de valoración más profundas",
+            "Cosméticos premium e identidad de supporter",
+            "Mayores límites de automatización en el futuro",
+            "Recompensas por fidelización"
+          ]
+        : [
+            "Everything in Pro",
+            "Priority feature access",
+            "Deeper future valuation sources",
+            "Premium cosmetics and supporter identity",
+            "Higher future automation limits",
+            "Long-term loyalty rewards"
+          ],
+    collectorCta:
+      locale === "es" ? "Hazte Collector" : "Become Collector",
+
+    loyaltyEyebrow:
+      locale === "es" ? "Estéticas por fidelidad" : "Loyalty aesthetics",
+    loyaltyTitle:
+      locale === "es"
+        ? "Los temas forman parte del producto, no son un añadido"
+        : "Themes are part of the product, not an afterthought",
+    loyaltyText:
+      locale === "es"
+        ? "DrakoryVault está construido con una arquitectura multi-theme para que los planes premium y los supporters de largo plazo puedan desbloquear estilos visuales distintos en toda la app."
+        : "DrakoryVault is built with a multi-theme architecture so premium plans and long-term supporters can unlock different visual styles across the whole app.",
+    createAccount:
+      locale === "es" ? "Crear cuenta" : "Create account",
+
+    includedTitle:
+      locale === "es"
+        ? "Lo que ya forma parte de la dirección del producto"
+        : "What is already included in the product direction",
+    includedItems:
+      locale === "es"
+        ? [
+            "Inventario de colección con estructura por categorías",
+            "Flujos de importación y exportación CSV",
+            "Snapshots de valor de mercado y gráficos históricos",
+            "Tendencias por categoría y top movers",
+            "Arquitectura de temas lista para desbloqueos premium",
+            "Roadmap futuro para logros, fidelización y mejores proveedores de valoración"
+          ]
+        : [
+            "Collection inventory with category-aware structure",
+            "CSV import and export workflows",
+            "Market value snapshots and historical charts",
+            "Category trends and top movers",
+            "Theme system architecture ready for premium unlocks",
+            "Future roadmap for achievements, loyalty rewards and better valuation providers"
+          ],
+
+    startEyebrow:
+      locale === "es" ? "Empieza ahora" : "Get started",
+    startTitle:
+      locale === "es"
+        ? "Construye tu vault ahora y evoluciona a Pro cuando necesites más profundidad."
+        : "Build your vault now and grow into Pro when you need more depth.",
+    startFree:
+      locale === "es" ? "Empezar gratis" : "Start free",
+    login: locale === "es" ? "Entrar" : "Login",
+
+    defaultTheme: locale === "es" ? "por defecto" : "default"
+  };
 
   return (
     <PublicSiteShell compact>
@@ -33,7 +187,7 @@ export default function PricingPage() {
               marginBottom: 14
             }}
           >
-            Pricing
+            {text.badge}
           </div>
 
           <h1
@@ -44,7 +198,7 @@ export default function PricingPage() {
               fontWeight: 900
             }}
           >
-            Start free. Upgrade when you want deeper insights.
+            {text.title}
           </h1>
 
           <p
@@ -55,9 +209,7 @@ export default function PricingPage() {
               lineHeight: 1.7
             }}
           >
-            DrakoryVault is built to be useful from day one, with premium plans
-            unlocking valuation history, advanced insights, loyalty themes and
-            future automation.
+            {text.subtitle}
           </p>
         </div>
       </section>
@@ -77,53 +229,32 @@ export default function PricingPage() {
           }}
         >
           <PlanCard
-            title="Free"
-            price="0€"
-            subtitle="For starting your vault"
-            features={[
-              "Up to 100 items",
-              "Basic dashboard",
-              "CSV import/export",
-              "Manual valuation",
-              "Default theme",
-              "Core collection management"
-            ]}
-            cta="Start free"
-            href="/register"
+            title={text.freeTitle}
+            price={text.freePrice}
+            subtitle={text.freeSubtitle}
+            features={text.freeFeatures}
+            cta={text.freeCta}
+            href={`/register?lang=${locale}`}
           />
 
           <PlanCard
-            title="Pro"
-            price="4.99€ / month"
-            subtitle="For active collectors"
+            title={text.proTitle}
+            price={text.proPrice}
+            subtitle={text.proSubtitle}
+            features={text.proFeatures}
+            cta={text.proCta}
+            href={`/register?lang=${locale}`}
             highlight
-            features={[
-              "Unlimited items",
-              "Advanced dashboard",
-              "Valuation history",
-              "Top movers and category trends",
-              "Collection value evolution",
-              "Premium themes and loyalty unlock path",
-              "Future automatic valuations"
-            ]}
-            cta="Choose Pro"
-            href="/register"
+            badge={text.proBadge}
           />
 
           <PlanCard
-            title="Collector"
-            price="9.99€ / month"
-            subtitle="For power users and early adopters"
-            features={[
-              "Everything in Pro",
-              "Priority feature access",
-              "Deeper future valuation sources",
-              "Premium cosmetics and supporter identity",
-              "Higher future automation limits",
-              "Long-term loyalty rewards"
-            ]}
-            cta="Become Collector"
-            href="/register"
+            title={text.collectorTitle}
+            price={text.collectorPrice}
+            subtitle={text.collectorSubtitle}
+            features={text.collectorFeatures}
+            cta={text.collectorCta}
+            href={`/register?lang=${locale}`}
           />
         </div>
       </section>
@@ -162,7 +293,7 @@ export default function PricingPage() {
                   marginBottom: 8
                 }}
               >
-                Loyalty aesthetics
+                {text.loyaltyEyebrow}
               </div>
 
               <h2
@@ -171,7 +302,7 @@ export default function PricingPage() {
                   fontSize: 30
                 }}
               >
-                Themes are part of the product, not an afterthought
+                {text.loyaltyTitle}
               </h2>
 
               <p
@@ -182,14 +313,12 @@ export default function PricingPage() {
                   lineHeight: 1.7
                 }}
               >
-                DrakoryVault is built with a multi-theme architecture so premium
-                plans and long-term supporters can unlock different visual styles
-                across the whole app.
+                {text.loyaltyText}
               </p>
             </div>
 
-            <a href="/register" style={secondaryCta}>
-              Create account
+            <a href={`/register?lang=${locale}`} style={secondaryCta}>
+              {text.createAccount}
             </a>
           </div>
 
@@ -293,7 +422,7 @@ export default function PricingPage() {
                 marginBottom: 10
               }}
             >
-              What is already included in the product direction
+              {text.includedTitle}
             </div>
 
             <div
@@ -305,12 +434,9 @@ export default function PricingPage() {
                 fontSize: 14
               }}
             >
-              <div>• Collection inventory with category-aware structure</div>
-              <div>• CSV import and export workflows</div>
-              <div>• Market value snapshots and historical charts</div>
-              <div>• Category trends and top movers</div>
-              <div>• Theme system architecture ready for premium unlocks</div>
-              <div>• Future roadmap for achievements, loyalty rewards and better valuation providers</div>
+              {text.includedItems.map((item) => (
+                <div key={item}>• {item}</div>
+              ))}
             </div>
           </div>
 
@@ -331,7 +457,7 @@ export default function PricingPage() {
                 fontWeight: 800
               }}
             >
-              Get started
+              {text.startEyebrow}
             </div>
 
             <h3
@@ -341,7 +467,7 @@ export default function PricingPage() {
                 lineHeight: 1.15
               }}
             >
-              Build your vault now and grow into Pro when you need more depth.
+              {text.startTitle}
             </h3>
 
             <div
@@ -352,11 +478,11 @@ export default function PricingPage() {
                 flexWrap: "wrap"
               }}
             >
-              <a href="/register" style={primaryCta}>
-                Start free
+              <a href={`/register?lang=${locale}`} style={primaryCta}>
+                {text.startFree}
               </a>
-              <a href="/login" style={ghostCta}>
-                Login
+              <a href={`/login?lang=${locale}`} style={ghostCta}>
+                {text.login}
               </a>
             </div>
           </div>
@@ -373,7 +499,8 @@ function PlanCard({
   features,
   cta,
   href,
-  highlight = false
+  highlight = false,
+  badge
 }: {
   title: string;
   price: string;
@@ -382,6 +509,7 @@ function PlanCard({
   cta: string;
   href: string;
   highlight?: boolean;
+  badge?: string;
 }) {
   return (
     <div
@@ -396,7 +524,7 @@ function PlanCard({
         position: "relative"
       }}
     >
-      {highlight && (
+      {highlight && badge && (
         <div
           style={{
             position: "absolute",
@@ -410,7 +538,7 @@ function PlanCard({
             color: theme.colors.black
           }}
         >
-          Most balanced
+          {badge}
         </div>
       )}
 
