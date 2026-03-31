@@ -18,6 +18,22 @@ export default function PublicSiteShell({
     return `${path}?lang=${lang}`;
   }
 
+  const text = {
+    tagline:
+      lang === "es"
+        ? "El rastreador universal de colecciones"
+        : "The Universal Collection Tracker",
+    home: lang === "es" ? "Inicio" : "Home",
+    pricing: lang === "es" ? "Precios" : "Pricing",
+    login: lang === "es" ? "Entrar" : "Login",
+    register: lang === "es" ? "Registro" : "Register",
+    startFree: lang === "es" ? "Empezar gratis" : "Start free",
+    footerText:
+      lang === "es"
+        ? "Controla tu colección. Entiende su valor."
+        : "Track your collection. Understand its value."
+  };
+
   return (
     <main
       style={{
@@ -33,10 +49,7 @@ export default function PublicSiteShell({
           top: 0,
           zIndex: 20,
           backdropFilter: "blur(10px)",
-          background:
-            lang === "es"
-              ? "rgba(245,243,238,0.88)"
-              : "rgba(245,243,238,0.88)",
+          background: "rgba(245,243,238,0.88)",
           borderBottom: `1px solid ${theme.colors.border}`
         }}
       >
@@ -89,9 +102,7 @@ export default function PublicSiteShell({
                   color: theme.colors.textMuted
                 }}
               >
-                {lang === "es"
-                  ? "El rastreador universal de colecciones"
-                  : "The Universal Collection Tracker"}
+                {text.tagline}
               </div>
             </div>
           </a>
@@ -105,19 +116,19 @@ export default function PublicSiteShell({
             }}
           >
             <a href={withLang("/")} style={navLink}>
-              {lang === "es" ? "Inicio" : "Home"}
+              {text.home}
             </a>
 
             <a href={withLang("/pricing")} style={navLink}>
-              {lang === "es" ? "Precios" : "Pricing"}
+              {text.pricing}
             </a>
 
             <a href={withLang("/login")} style={navLink}>
-              {lang === "es" ? "Entrar" : "Login"}
+              {text.login}
             </a>
 
             <a href={withLang("/register")} style={primaryCta}>
-              {lang === "es" ? "Empezar gratis" : "Start free"}
+              {text.startFree}
             </a>
 
             <div
@@ -132,7 +143,8 @@ export default function PublicSiteShell({
                 href="/?lang=en"
                 style={{
                   ...langSwitchLink,
-                  background: lang === "en" ? theme.colors.surfaceAlt : "transparent",
+                  background:
+                    lang === "en" ? theme.colors.surfaceAlt : "transparent",
                   color: theme.colors.text
                 }}
               >
@@ -143,7 +155,8 @@ export default function PublicSiteShell({
                 href="/?lang=es"
                 style={{
                   ...langSwitchLink,
-                  background: lang === "es" ? theme.colors.surfaceAlt : "transparent",
+                  background:
+                    lang === "es" ? theme.colors.surfaceAlt : "transparent",
                   color: theme.colors.text
                 }}
               >
@@ -184,9 +197,7 @@ export default function PublicSiteShell({
                 marginTop: 4
               }}
             >
-              {lang === "es"
-                ? "Controla tu colección. Entiende su valor."
-                : "Track your collection. Understand its value."}
+              {text.footerText}
             </div>
           </div>
 
@@ -199,16 +210,16 @@ export default function PublicSiteShell({
             }}
           >
             <a href={withLang("/")} style={footerLink}>
-              {lang === "es" ? "Inicio" : "Home"}
+              {text.home}
             </a>
             <a href={withLang("/pricing")} style={footerLink}>
-              {lang === "es" ? "Precios" : "Pricing"}
+              {text.pricing}
             </a>
             <a href={withLang("/login")} style={footerLink}>
-              {lang === "es" ? "Entrar" : "Login"}
+              {text.login}
             </a>
             <a href={withLang("/register")} style={footerLink}>
-              {lang === "es" ? "Registro" : "Register"}
+              {text.register}
             </a>
           </div>
         </div>
