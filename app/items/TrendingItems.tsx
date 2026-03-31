@@ -40,9 +40,11 @@ async function getTrendingItems(
 }
 
 export default async function TrendingItems({
-  category
+  category,
+  locale = "en"
 }: {
   category?: string;
+  locale?: "en" | "es";
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
@@ -51,6 +53,30 @@ export default async function TrendingItems({
     getTrendingItems(cookieHeader, "rising", category),
     getTrendingItems(cookieHeader, "dropping", category)
   ]);
+
+  const text = {
+    title: category
+      ? locale === "es"
+        ? `Movimientos de ${capitalize(category)}`
+        : `${capitalize(category)} movers`
+      : locale === "es"
+        ? "Principales movimientos"
+        : "Top movers",
+    subtitle:
+      locale === "es"
+        ? "desde el historial de valoraciones"
+        : "from valuation history",
+    rising: locale === "es" ? "Objetos subiendo" : "Rising items",
+    dropping: locale === "es" ? "Objetos bajando" : "Dropping items",
+    noRising:
+      locale === "es"
+        ? "Todavía no hay objetos subiendo."
+        : "No rising items yet.",
+    noDropping:
+      locale === "es"
+        ? "Todavía no hay objetos bajando."
+        : "No dropping items yet."
+  };
 
   return (
     <section
@@ -78,7 +104,7 @@ export default async function TrendingItems({
             color: theme.colors.text
           }}
         >
-          {category ? `${capitalize(category)} movers` : "Top movers"}
+          {text.title}
         </div>
 
         <div
@@ -87,7 +113,7 @@ export default async function TrendingItems({
             color: theme.colors.textMuted
           }}
         >
-          from valuation history
+          {text.subtitle}
         </div>
       </div>
 
@@ -99,17 +125,19 @@ export default async function TrendingItems({
         }}
       >
         <TrendColumn
-          title="Rising items"
-          emptyText="No rising items yet."
+          title={text.rising}
+          emptyText={text.noRising}
           items={risingItems}
           direction="rising"
+          locale={locale}
         />
 
         <TrendColumn
-          title="Dropping items"
-          emptyText="No dropping items yet."
+          title={text.dropping}
+          emptyText={text.noDropping}
           items={droppingItems}
           direction="dropping"
+          locale={locale}
         />
       </div>
     </section>
@@ -120,12 +148,14 @@ function TrendColumn({
   title,
   emptyText,
   items,
-  direction
+  direction,
+  locale
 }: {
   title: string;
   emptyText: string;
   items: TrendingItem[];
   direction: "rising" | "dropping";
+  locale: "en" | "es";
 }) {
   return (
     <div
@@ -155,7 +185,7 @@ function TrendColumn({
           {items.map((item, index) => (
             <a
               key={item.id}
-              href={`/items/${item.id}`}
+              href={`/items/${item.id}?lang=${locale}`}
               style={{
                 textDecoration: "none",
                 color: theme.colors.text,
@@ -203,10 +233,7 @@ function TrendColumn({
                 </div>
               </div>
 
-              <TrendDeltaBadge
-                delta={item.delta}
-                direction={direction}
-              />
+              <TrendDeltaBadge delta={item.delta} direction={direction} />
             </a>
           ))}
         </div>

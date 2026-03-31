@@ -38,14 +38,31 @@ async function getTopItems(
 }
 
 export default async function TopItems({
-  category
+  category,
+  locale = "en"
 }: {
   category?: string;
+  locale?: "en" | "es";
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
 
   const items = await getTopItems(cookieHeader, category);
+
+  const text = {
+    title: category
+      ? locale === "es"
+        ? `Top ${capitalize(category)}`
+        : `Top ${capitalize(category)} items`
+      : locale === "es"
+        ? "Top 10 objetos"
+        : "Top 10 items",
+    byValue: locale === "es" ? "por valor" : "by value",
+    noItems:
+      locale === "es"
+        ? "No hay objetos en esta categoría."
+        : "No items in this category."
+  };
 
   return (
     <section
@@ -64,12 +81,10 @@ export default async function TopItems({
           alignItems: "baseline"
         }}
       >
-        <div style={{ fontWeight: 800 }}>
-          {category ? `Top ${capitalize(category)} items` : "Top 10 items"}
-        </div>
+        <div style={{ fontWeight: 800 }}>{text.title}</div>
 
         <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
-          by value
+          {text.byValue}
         </div>
       </div>
 
@@ -84,7 +99,7 @@ export default async function TopItems({
         {items.map((it, idx) => (
           <a
             key={it.id}
-            href={`/items/${it.id}`}
+            href={`/items/${it.id}${locale === "es" ? "?lang=es" : "?lang=en"}`}
             style={{
               textDecoration: "none",
               color: theme.colors.text
@@ -147,9 +162,7 @@ export default async function TopItems({
         ))}
 
         {items.length === 0 && (
-          <div style={{ color: theme.colors.textMuted }}>
-            No items in this category.
-          </div>
+          <div style={{ color: theme.colors.textMuted }}>{text.noItems}</div>
         )}
       </div>
     </section>

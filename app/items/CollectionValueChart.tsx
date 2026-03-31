@@ -12,9 +12,7 @@ async function getCollectionHistory(
   cookieHeader: string,
   category?: string
 ): Promise<HistoryPoint[]> {
-  const qs = category
-    ? `?category=${encodeURIComponent(category)}`
-    : "";
+  const qs = category ? `?category=${encodeURIComponent(category)}` : "";
 
   const res = await fetch(`${API}/stats/collection-history${qs}`, {
     cache: "no-store",
@@ -31,14 +29,41 @@ async function getCollectionHistory(
 }
 
 export default async function CollectionValueChart({
-  category
+  category,
+  locale = "en"
 }: {
   category?: string;
+  locale?: "en" | "es";
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
 
   const points = await getCollectionHistory(cookieHeader, category);
+
+  const text = {
+    title: category
+      ? locale === "es"
+        ? `Tendencia de valor de ${capitalize(category)}`
+        : `${capitalize(category)} value trend`
+      : locale === "es"
+        ? "Tendencia de valor de la colección"
+        : "Collection value trend",
+    subtitle:
+      category
+        ? locale === "es"
+          ? "filtrado por categoría"
+          : "filtered by category"
+        : locale === "es"
+          ? "historial de snapshots"
+          : "snapshots history",
+    empty: category
+      ? locale === "es"
+        ? `Todavía no hay historial de valoración para "${category}". Usa “Valuate” en los objetos de esta categoría para construir el gráfico.`
+        : `No valuation history yet for "${category}". Use “Valuate” on items in this category to build the chart.`
+      : locale === "es"
+        ? "Todavía no hay historial de valoración. Usa “Valuate” en tus objetos para construir el gráfico."
+        : "No valuation history yet. Use “Valuate” on your items to build the chart."
+  };
 
   return (
     <section
@@ -66,9 +91,7 @@ export default async function CollectionValueChart({
             color: theme.colors.text
           }}
         >
-          {category
-            ? `${capitalize(category)} value trend`
-            : "Collection value trend"}
+          {text.title}
         </div>
 
         <div
@@ -77,24 +100,26 @@ export default async function CollectionValueChart({
             color: theme.colors.textMuted
           }}
         >
-          {category ? "filtered by category" : "snapshots history"}
+          {text.subtitle}
         </div>
       </div>
 
       {points.length === 0 ? (
-        <div style={{ color: theme.colors.textMuted }}>
-          {category
-            ? `No valuation history yet for "${category}". Use “Valuate” on items in this category to build the chart.`
-            : "No valuation history yet. Use “Valuate” on your items to build the chart."}
-        </div>
+        <div style={{ color: theme.colors.textMuted }}>{text.empty}</div>
       ) : (
-        <MiniCollectionChart points={points} />
+        <MiniCollectionChart points={points} locale={locale} />
       )}
     </section>
   );
 }
 
-function MiniCollectionChart({ points }: { points: HistoryPoint[] }) {
+function MiniCollectionChart({
+  points,
+  locale
+}: {
+  points: HistoryPoint[];
+  locale: "en" | "es";
+}) {
   const width = 760;
   const height = 220;
   const padding = 28;
@@ -106,9 +131,7 @@ function MiniCollectionChart({ points }: { points: HistoryPoint[] }) {
 
   const toX = (index: number) => {
     if (points.length === 1) return width / 2;
-    return (
-      padding + (index * (width - padding * 2)) / (points.length - 1)
-    );
+    return padding + (index * (width - padding * 2)) / (points.length - 1);
   };
 
   const toY = (value: number) => {
@@ -123,6 +146,16 @@ function MiniCollectionChart({ points }: { points: HistoryPoint[] }) {
   const latest = points[points.length - 1].total;
   const delta = latest - first;
   const positive = delta > 0;
+
+  const labels = {
+    max: locale === "es" ? "Máx" : "Max",
+    min: locale === "es" ? "Mín" : "Min",
+    current: locale === "es" ? "Actual" : "Current",
+    first: locale === "es" ? "Primero" : "First",
+    latest: locale === "es" ? "Último" : "Latest",
+    change: locale === "es" ? "Cambio" : "Change",
+    points: locale === "es" ? "Puntos" : "Points"
+  };
 
   return (
     <div>
@@ -172,11 +205,11 @@ function MiniCollectionChart({ points }: { points: HistoryPoint[] }) {
         ))}
 
         <text x={padding} y={16} fontSize="12" fill="#6B7280">
-          Max: {max.toFixed(2)} €
+          {labels.max}: {max.toFixed(2)} €
         </text>
 
         <text x={padding} y={height - 6} fontSize="12" fill="#6B7280">
-          Min: {min.toFixed(2)} €
+          {labels.min}: {min.toFixed(2)} €
         </text>
 
         <text
@@ -187,7 +220,7 @@ function MiniCollectionChart({ points }: { points: HistoryPoint[] }) {
           fill="#111827"
           fontWeight="700"
         >
-          Current: {latest.toFixed(2)} €
+          {labels.current}: {latest.toFixed(2)} €
         </text>
       </svg>
 
@@ -200,15 +233,15 @@ function MiniCollectionChart({ points }: { points: HistoryPoint[] }) {
           flexWrap: "wrap"
         }}
       >
-        <StatPill label="First" value={`${first.toFixed(2)} €`} />
-        <StatPill label="Latest" value={`${latest.toFixed(2)} €`} />
+        <StatPill label={labels.first} value={`${first.toFixed(2)} €`} />
+        <StatPill label={labels.latest} value={`${latest.toFixed(2)} €`} />
         <StatPill
-          label="Change"
+          label={labels.change}
           value={`${positive ? "+" : ""}${delta.toFixed(2)} €`}
           positive={positive}
           negative={delta < 0}
         />
-        <StatPill label="Points" value={String(points.length)} />
+        <StatPill label={labels.points} value={String(points.length)} />
       </div>
 
       <div

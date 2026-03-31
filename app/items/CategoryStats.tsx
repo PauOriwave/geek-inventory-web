@@ -27,11 +27,22 @@ async function getByCategory(cookieHeader: string): Promise<Row[]> {
   return res.json();
 }
 
-export default async function CategoryStats() {
+export default async function CategoryStats({
+  locale = "en"
+}: {
+  locale?: "en" | "es";
+}) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
 
   const rows = await getByCategory(cookieHeader);
+
+  const text = {
+    title: locale === "es" ? "Valor por categoría" : "Value by category",
+    noData: locale === "es" ? "Todavía no hay datos." : "No data yet.",
+    units: locale === "es" ? "Unidades" : "Units",
+    items: locale === "es" ? "Objetos" : "Items"
+  };
 
   return (
     <section style={{ marginTop: 14 }}>
@@ -43,7 +54,7 @@ export default async function CategoryStats() {
           color: theme.colors.text
         }}
       >
-        Value by category
+        {text.title}
       </h2>
 
       <div
@@ -56,7 +67,7 @@ export default async function CategoryStats() {
         {rows.map((r) => (
           <a
             key={r.category}
-            href={`/items?category=${encodeURIComponent(r.category)}&page=1&pageSize=25`}
+            href={`/items?category=${encodeURIComponent(r.category)}&page=1&pageSize=25&lang=${locale}`}
             style={{
               textDecoration: "none",
               color: "inherit",
@@ -86,7 +97,7 @@ export default async function CategoryStats() {
                 {r.category}
               </div>
 
-              <TrendBadge trend={r.trend} delta={r.trendDelta} />
+              <TrendBadge trend={r.trend} delta={r.trendDelta} locale={locale} />
             </div>
 
             <div
@@ -106,13 +117,13 @@ export default async function CategoryStats() {
                 marginTop: 6
               }}
             >
-              Units: {r.units} · Items: {r.items}
+              {text.units}: {r.units} · {text.items}: {r.items}
             </div>
           </a>
         ))}
 
         {rows.length === 0 && (
-          <div style={{ color: theme.colors.textMuted }}>No data yet.</div>
+          <div style={{ color: theme.colors.textMuted }}>{text.noData}</div>
         )}
       </div>
     </section>
@@ -121,10 +132,12 @@ export default async function CategoryStats() {
 
 function TrendBadge({
   trend,
-  delta
+  delta,
+  locale
 }: {
   trend: "rising" | "dropping" | "stable";
   delta: number;
+  locale: "en" | "es";
 }) {
   const positive = trend === "rising";
   const negative = trend === "dropping";
@@ -138,10 +151,16 @@ function TrendBadge({
 
   const label =
     trend === "rising"
-      ? "Rising"
+      ? locale === "es"
+        ? "Subiendo"
+        : "Rising"
       : trend === "dropping"
-        ? "Dropping"
-        : "Stable";
+        ? locale === "es"
+          ? "Bajando"
+          : "Dropping"
+        : locale === "es"
+          ? "Estable"
+          : "Stable";
 
   const formattedDelta =
     delta === 0 ? "0.00€" : `${delta > 0 ? "+" : ""}${delta.toFixed(2)}€`;
