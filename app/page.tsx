@@ -1,8 +1,153 @@
 import PublicSiteShell from "./components/PublicSiteShell";
-import { theme, availableThemes } from "./theme";
+import { availableThemes, theme } from "./theme";
+import { getDictionary, getLocale } from "./i18n";
 
-export default function HomePage() {
+export default async function HomePage({
+  searchParams
+}: {
+  searchParams?:
+    | Promise<Record<string, string | string[] | undefined>>
+    | Record<string, string | string[] | undefined>;
+}) {
+  const sp =
+    searchParams instanceof Promise ? await searchParams : searchParams ?? {};
+
+  const locale = getLocale(sp);
+  const t = getDictionary(locale);
   const featuredThemes = availableThemes.slice(0, 4);
+
+  const text = {
+    badge:
+      locale === "es"
+        ? "Tracking premium para coleccionistas"
+        : "Premium tracking for collectors",
+
+    heroTitle1:
+      locale === "es" ? "Controla tu colección." : "Track your collection.",
+    heroTitle2:
+      locale === "es" ? "Entiende su valor." : "Understand its value.",
+    heroTitle3:
+      locale === "es" ? "Observa su evolución." : "Watch it evolve.",
+
+    heroText:
+      locale === "es"
+        ? "DrakoryVault ayuda a coleccionistas a organizar videojuegos, libros, TCG, figuras y más, con valoraciones, snapshots históricos, tendencias por categoría y un dashboard premium pensado para colecciones reales."
+        : "DrakoryVault helps collectors organize games, books, TCG, figures and more, with valuations, historical snapshots, category trends and a premium dashboard built for real collection tracking.",
+
+    createAccount:
+      locale === "es" ? "Crear cuenta" : "Create account",
+    seePricing:
+      locale === "es" ? "Ver precios" : "See pricing",
+
+    pill1: locale === "es" ? "Multiusuario" : "Multi-user",
+    pill2: locale === "es" ? "Importación/exportación CSV" : "CSV import/export",
+    pill3: locale === "es" ? "Historial de valoraciones" : "Valuation history",
+    pill4: locale === "es" ? "Tendencias por categoría" : "Category trends",
+
+    previewItems: locale === "es" ? "Objetos" : "Items",
+    previewCollection: locale === "es" ? "Colección" : "Collection",
+    previewTrend: locale === "es" ? "Tendencia" : "Trend",
+    previewChartTitle:
+      locale === "es"
+        ? "Tendencia de valor de la colección"
+        : "Collection value trend",
+    previewFirst:
+      locale === "es" ? "Primer snapshot" : "First snapshot",
+    previewLatest:
+      locale === "es" ? "Última valoración" : "Latest valuation",
+    risingCategories:
+      locale === "es" ? "Categorías en subida" : "Rising categories",
+    topMovers:
+      locale === "es" ? "Principales movimientos" : "Top movers",
+
+    whyEyebrow: locale === "es" ? "Por qué DrakoryVault" : "Why DrakoryVault",
+    whyTitle:
+      locale === "es"
+        ? "Creado para coleccionistas, no solo para hojas de cálculo"
+        : "Built for collectors, not just spreadsheets",
+    whyText:
+      locale === "es"
+        ? "Controla lo que tienes, monitoriza el valor de mercado, explora tendencias por categoría y construye un dashboard de colección que realmente se sienta premium."
+        : "Track what you own, monitor market value, explore category trends and build a collection dashboard that actually feels premium.",
+
+    feature1Title:
+      locale === "es"
+        ? "Inventario que respeta al coleccionista"
+        : "Inventory that respects collectors",
+    feature1Text:
+      locale === "es"
+        ? "Guarda objetos con estado, plataforma, completitud, región, notas y organización por categoría."
+        : "Store items with condition, platform, completeness, region, notes and category-aware organization.",
+
+    feature2Title:
+      locale === "es"
+        ? "Valoraciones e histórico"
+        : "Valuations and history",
+    feature2Text:
+      locale === "es"
+        ? "Crea snapshots de valoración, compara tu precio con el valor de mercado y observa cómo evolucionan tus objetos."
+        : "Create valuation snapshots, compare price vs market value and see how items evolve over time.",
+
+    feature3Title:
+      locale === "es"
+        ? "Inteligencia por categoría"
+        : "Category intelligence",
+    feature3Text:
+      locale === "es"
+        ? "Entiende qué partes de tu colección están subiendo, bajando o empujando el valor total."
+        : "Understand which parts of your collection are rising, dropping or driving total value.",
+
+    feature4Title:
+      locale === "es"
+        ? "Importación y exportación CSV"
+        : "CSV import and export",
+    feature4Text:
+      locale === "es"
+        ? "Empieza rápido, mueve tus datos con facilidad y mantén tu colección portable."
+        : "Start fast, move data easily and keep your collection portable without vendor lock-in.",
+
+    feature5Title:
+      locale === "es"
+        ? "Sistema de temas preparado"
+        : "Theme system ready",
+    feature5Text:
+      locale === "es"
+        ? "Los temas premium y desbloqueables por fidelización forman parte de la dirección del producto desde el primer día."
+        : "Premium and loyalty-based themes are built into the product direction from day one.",
+
+    feature6Title:
+      locale === "es"
+        ? "Dashboard con señal real"
+        : "Dashboard with real signal",
+    feature6Text:
+      locale === "es"
+        ? "Consulta top items, movers, tendencia global y valor por categoría en un único espacio premium."
+        : "See top items, movers, collection trend and value by category in one premium workspace.",
+
+    loyaltyEyebrow:
+      locale === "es" ? "Temas por fidelidad" : "Loyalty themes",
+    loyaltyTitle:
+      locale === "es"
+        ? "Mantente suscrito y desbloquea nuevas estéticas"
+        : "Stay subscribed, unlock new aesthetics",
+    loyaltyText:
+      locale === "es"
+        ? "DrakoryVault está diseñado para soportar temas premium y desbloqueos por fidelización. El sistema de temas no es un añadido cosmético: forma parte de la arquitectura del producto."
+        : "DrakoryVault is designed to support premium themes and loyalty unlocks. That means the theme system is not a cosmetic afterthought: it is part of the product architecture from the start.",
+    explorePlans:
+      locale === "es" ? "Explorar planes" : "Explore plans",
+    defaultTheme: locale === "es" ? "por defecto" : "default",
+
+    ctaEyebrow:
+      locale === "es" ? "¿Listo para empezar?" : "Ready to start?",
+    ctaTitle:
+      locale === "es"
+        ? "Construye tu vault de colección y empieza a seguir su valor de verdad."
+        : "Build your collection vault and start tracking value properly.",
+    ctaPrimary:
+      locale === "es" ? "Empezar gratis" : "Start free",
+    ctaSecondary: locale === "es" ? "Precios" : "Pricing"
+  };
 
   return (
     <PublicSiteShell>
@@ -40,7 +185,7 @@ export default function HomePage() {
                   marginBottom: 16
                 }}
               >
-                Premium tracking for collectors
+                {text.badge}
               </div>
 
               <h1
@@ -52,11 +197,11 @@ export default function HomePage() {
                   maxWidth: 760
                 }}
               >
-                Track your collection.
+                {text.heroTitle1}
                 <br />
-                Understand its value.
+                {text.heroTitle2}
                 <br />
-                Watch it evolve.
+                {text.heroTitle3}
               </h1>
 
               <p
@@ -69,10 +214,7 @@ export default function HomePage() {
                   color: "rgba(255,255,255,0.78)"
                 }}
               >
-                DrakoryVault helps collectors organize games, books, TCG,
-                figures and more, with valuations, historical snapshots,
-                category trends and a premium dashboard built for real
-                collection tracking.
+                {text.heroText}
               </p>
 
               <div
@@ -83,11 +225,11 @@ export default function HomePage() {
                   flexWrap: "wrap"
                 }}
               >
-                <a href="/register" style={heroPrimary}>
-                  Create account
+                <a href={`/register?lang=${locale}`} style={heroPrimary}>
+                  {text.createAccount}
                 </a>
-                <a href="/pricing" style={heroSecondary}>
-                  See pricing
+                <a href={`/pricing?lang=${locale}`} style={heroSecondary}>
+                  {text.seePricing}
                 </a>
               </div>
 
@@ -101,10 +243,10 @@ export default function HomePage() {
                   fontSize: 13
                 }}
               >
-                <span>Multi-user</span>
-                <span>CSV import/export</span>
-                <span>Valuation history</span>
-                <span>Category trends</span>
+                <span>{text.pill1}</span>
+                <span>{text.pill2}</span>
+                <span>{text.pill3}</span>
+                <span>{text.pill4}</span>
               </div>
             </div>
 
@@ -132,9 +274,9 @@ export default function HomePage() {
                     gap: 10
                   }}
                 >
-                  <PreviewStat label="Items" value="248" />
-                  <PreviewStat label="Collection" value="12.4k€" />
-                  <PreviewStat label="Trend" value="+8.2%" />
+                  <PreviewStat label={text.previewItems} value="248" />
+                  <PreviewStat label={text.previewCollection} value="12.4k€" />
+                  <PreviewStat label={text.previewTrend} value="+8.2%" />
                 </div>
 
                 <div
@@ -153,7 +295,7 @@ export default function HomePage() {
                       marginBottom: 10
                     }}
                   >
-                    Collection value trend
+                    {text.previewChartTitle}
                   </div>
 
                   <svg
@@ -191,8 +333,8 @@ export default function HomePage() {
                       color: theme.colors.textMuted
                     }}
                   >
-                    <span>First snapshot</span>
-                    <span>Latest valuation</span>
+                    <span>{text.previewFirst}</span>
+                    <span>{text.previewLatest}</span>
                   </div>
                 </div>
 
@@ -205,15 +347,23 @@ export default function HomePage() {
                   }}
                 >
                   <MiniPanel
-                    title="Rising categories"
-                    lines={[
-                      "Videogames  +42.50€",
-                      "Figures  +18.00€",
-                      "Books  +7.20€"
-                    ]}
+                    title={text.risingCategories}
+                    lines={
+                      locale === "es"
+                        ? [
+                            "Videojuegos  +42.50€",
+                            "Figuras  +18.00€",
+                            "Libros  +7.20€"
+                          ]
+                        : [
+                            "Videogames  +42.50€",
+                            "Figures  +18.00€",
+                            "Books  +7.20€"
+                          ]
+                    }
                   />
                   <MiniPanel
-                    title="Top movers"
+                    title={text.topMovers}
                     lines={[
                       "Pokémon Azul  +12.00€",
                       "Chrono Trigger  +9.50€",
@@ -249,7 +399,7 @@ export default function HomePage() {
               marginBottom: 10
             }}
           >
-            Why DrakoryVault
+            {text.whyEyebrow}
           </div>
 
           <h2
@@ -259,7 +409,7 @@ export default function HomePage() {
               lineHeight: 1.14
             }}
           >
-            Built for collectors, not just spreadsheets
+            {text.whyTitle}
           </h2>
 
           <p
@@ -270,8 +420,7 @@ export default function HomePage() {
               lineHeight: 1.7
             }}
           >
-            Track what you own, monitor market value, explore category trends
-            and build a collection dashboard that actually feels premium.
+            {text.whyText}
           </p>
         </div>
 
@@ -282,30 +431,12 @@ export default function HomePage() {
             gap: 14
           }}
         >
-          <FeatureCard
-            title="Inventory that respects collectors"
-            text="Store items with condition, platform, completeness, region, notes and category-aware organization."
-          />
-          <FeatureCard
-            title="Valuations and history"
-            text="Create valuation snapshots, compare price vs market value and see how items evolve over time."
-          />
-          <FeatureCard
-            title="Category intelligence"
-            text="Understand which parts of your collection are rising, dropping or driving total value."
-          />
-          <FeatureCard
-            title="CSV import and export"
-            text="Start fast, move data easily and keep your collection portable without vendor lock-in."
-          />
-          <FeatureCard
-            title="Theme system ready"
-            text="Premium and loyalty-based themes are built into the product direction from day one."
-          />
-          <FeatureCard
-            title="Dashboard with real signal"
-            text="See top items, movers, collection trend and value by category in one premium workspace."
-          />
+          <FeatureCard title={text.feature1Title} text={text.feature1Text} />
+          <FeatureCard title={text.feature2Title} text={text.feature2Text} />
+          <FeatureCard title={text.feature3Title} text={text.feature3Text} />
+          <FeatureCard title={text.feature4Title} text={text.feature4Text} />
+          <FeatureCard title={text.feature5Title} text={text.feature5Text} />
+          <FeatureCard title={text.feature6Title} text={text.feature6Text} />
         </div>
       </section>
 
@@ -343,7 +474,7 @@ export default function HomePage() {
                   marginBottom: 8
                 }}
               >
-                Loyalty themes
+                {text.loyaltyEyebrow}
               </div>
 
               <h3
@@ -352,7 +483,7 @@ export default function HomePage() {
                   fontSize: 30
                 }}
               >
-                Stay subscribed, unlock new aesthetics
+                {text.loyaltyTitle}
               </h3>
 
               <p
@@ -363,14 +494,12 @@ export default function HomePage() {
                   lineHeight: 1.7
                 }}
               >
-                DrakoryVault is designed to support premium themes and loyalty
-                unlocks. That means the theme system is not a cosmetic afterthought:
-                it is part of the product architecture from the start.
+                {text.loyaltyText}
               </p>
             </div>
 
-            <a href="/pricing" style={secondaryCtaLight}>
-              Explore plans
+            <a href={`/pricing?lang=${locale}`} style={secondaryCtaLight}>
+              {text.explorePlans}
             </a>
           </div>
 
@@ -412,7 +541,7 @@ export default function HomePage() {
                   >
                     {item.premium
                       ? `${item.loyaltyMonthsRequired}m+`
-                      : "default"}
+                      : text.defaultTheme}
                   </span>
                 </div>
 
@@ -475,7 +604,7 @@ export default function HomePage() {
                 fontWeight: 800
               }}
             >
-              Ready to start?
+              {text.ctaEyebrow}
             </div>
 
             <h3
@@ -485,7 +614,7 @@ export default function HomePage() {
                 lineHeight: 1.15
               }}
             >
-              Build your collection vault and start tracking value properly.
+              {text.ctaTitle}
             </h3>
           </div>
 
@@ -496,11 +625,11 @@ export default function HomePage() {
               flexWrap: "wrap"
             }}
           >
-            <a href="/register" style={footerPrimary}>
-              Start free
+            <a href={`/register?lang=${locale}`} style={footerPrimary}>
+              {text.ctaPrimary}
             </a>
-            <a href="/pricing" style={footerSecondary}>
-              Pricing
+            <a href={`/pricing?lang=${locale}`} style={footerSecondary}>
+              {text.ctaSecondary}
             </a>
           </div>
         </div>
