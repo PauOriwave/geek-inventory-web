@@ -1,8 +1,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { theme } from "../../theme";
+import { getLocale } from "../../i18n";
 
-type Item = {
+type ItemDetail = {
   id: string;
   name: string;
   category: string;
@@ -21,17 +22,9 @@ type Item = {
   lastValuationAt?: string | null;
 };
 
-type Snapshot = {
-  id: string;
-  source: string;
-  marketValue: string | number;
-  confidence?: number | null;
-  recordedAt: string;
-};
-
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-async function getItem(id: string, cookieHeader: string): Promise<Item> {
+async function getItem(id: string, cookieHeader: string): Promise<ItemDetail> {
   const res = await fetch(`${API}/items/${id}`, {
     cache: "no-store",
     headers: {
@@ -40,34 +33,21 @@ async function getItem(id: string, cookieHeader: string): Promise<Item> {
   });
 
   if (!res.ok) {
-    throw new Error("Failed to fetch item");
-  }
-
-  return res.json();
-}
-
-async function getSnapshots(
-  id: string,
-  cookieHeader: string
-): Promise<Snapshot[]> {
-  const res = await fetch(`${API}/items/${id}/snapshots`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieHeader
-    }
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch snapshots");
+    const text = await res.text();
+    throw new Error(`Failed to fetch item (${res.status}): ${text}`);
   }
 
   return res.json();
 }
 
 export default async function ItemDetailPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ id: string }> | { id: string };
+  searchParams?:
+    | Promise<Record<string, string | string[] | undefined>>
+    | Record<string, string | string[] | undefined>;
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
@@ -78,40 +58,188 @@ export default async function ItemDetailPage({
   }
 
   const resolvedParams = params instanceof Promise ? await params : params;
+  const sp =
+    searchParams instanceof Promise ? await searchParams : searchParams ?? {};
 
-  const [item, snapshots] = await Promise.all([
-    getItem(resolvedParams.id, cookieHeader),
-    getSnapshots(resolvedParams.id, cookieHeader)
-  ]);
+  const locale = getLocale(sp);
+  const item = await getItem(resolvedParams.id, cookieHeader);
 
-  const totalValue = Number(item.estimatedPrice) * item.quantity;
+  const backHref = `/items?lang=${locale}`;
+  const langEsHref = `/items/${item.id}?lang=es`;
+  const langEnHref = `/items/${item.id}?lang=en`;
+
+  const text = {
+    back: locale === "es" ? "← Volver a colección" : "← Back to collection",
+    dashboard:
+      locale === "es" ? "Detalle del objeto" : "Item detail",
+    metadata: locale === "es" ? "Metadatos" : "Metadata",
+    valuation: locale === "es" ? "Valoración" : "Valuation",
+    notes: locale === "es" ? "Notas" : "Notes",
+    name: locale === "es" ? "Nombre" : "Name",
+    category: locale === "es" ? "Categoría" : "Category",
+    price: locale === "es" ? "Precio estimado" : "Estimated price",
+    market: locale === "es" ? "Valor de mercado" : "Market value",
+    delta: locale === "es" ? "Diferencia" : "Delta",
+    qty: locale === "es" ? "Cantidad" : "Quantity",
+    platform: locale === "es" ? "Plataforma" : "Platform",
+    region: locale === "es" ? "Región" : "Region",
+    condition: locale === "es" ? "Estado" : "Condition",
+    completeness: locale === "es" ? "Completitud" : "Completeness",
+    source: locale === "es" ? "Fuente" : "Source",
+    confidence: locale === "es" ? "Confianza" : "Confidence",
+    lastValuation:
+      locale === "es" ? "Última valoración" : "Last valuation",
+    created: locale === "es" ? "Creado" : "Created",
+    updated: locale === "es" ? "Actualizado" : "Updated",
+    noNotes:
+      locale === "es" ? "No hay notas para este objeto." : "No notes for this item.",
+    tracker:
+      locale === "es"
+        ? "El rastreador universal de colecciones"
+        : "The Universal Collection Tracker",
+    notAvailable: "—"
+  };
+
+  const estimatedPrice = Number(item.estimatedPrice);
   const marketValue =
     item.marketValue != null ? Number(item.marketValue) : null;
-  const marketDelta =
-    marketValue != null ? marketValue - Number(item.estimatedPrice) : null;
+  const delta = marketValue != null ? marketValue - estimatedPrice : null;
 
   return (
     <main
       style={{
         minHeight: "100vh",
         background: theme.colors.bg,
-        padding: 24,
+        color: theme.colors.text,
         fontFamily: "system-ui",
-        color: theme.colors.text
+        padding: 24
       }}
     >
-      <div style={{ maxWidth: 980, margin: "0 auto" }}>
-        <a
-          href="/items"
+      <div
+        style={{
+          maxWidth: 1180,
+          margin: "0 auto"
+        }}
+      >
+        <div
           style={{
-            display: "inline-block",
-            marginBottom: 16,
-            textDecoration: "none",
-            color: theme.colors.link,
-            fontWeight: 700
+            background: theme.colors.black,
+            color: "white",
+            borderRadius: theme.radius.xl,
+            padding: "16px 20px",
+            marginBottom: 18,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            boxShadow: theme.shadow.card,
+            flexWrap: "wrap"
           }}
         >
-          ← Back to inventory
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 999,
+                background: theme.colors.gold,
+                color: theme.colors.black,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 800,
+                fontSize: 18,
+                flexShrink: 0
+              }}
+            >
+              D
+            </div>
+
+            <div>
+              <div style={{ fontWeight: 800, fontSize: 18 }}>DrakoryVault</div>
+              <div style={{ fontSize: 12, color: "#D1D5DB" }}>
+                {text.tracker}
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap"
+            }}
+          >
+            <div
+              style={{
+                fontSize: 12,
+                color: "#D1D5DB",
+                padding: "6px 10px",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 999
+              }}
+            >
+              {text.dashboard}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6
+              }}
+            >
+              <a
+                href={langEnHref}
+                style={{
+                  ...langSwitchLink,
+                  background:
+                    locale === "en"
+                      ? "rgba(255,255,255,0.14)"
+                      : "transparent",
+                  color: "white",
+                  border:
+                    locale === "en"
+                      ? "1px solid rgba(255,255,255,0.18)"
+                      : "1px solid rgba(255,255,255,0.10)"
+                }}
+              >
+                EN
+              </a>
+
+              <a
+                href={langEsHref}
+                style={{
+                  ...langSwitchLink,
+                  background:
+                    locale === "es"
+                      ? "rgba(255,255,255,0.14)"
+                      : "transparent",
+                  color: "white",
+                  border:
+                    locale === "es"
+                      ? "1px solid rgba(255,255,255,0.18)"
+                      : "1px solid rgba(255,255,255,0.10)"
+                }}
+              >
+                ES
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <a
+          href={backHref}
+          style={{
+            display: "inline-block",
+            marginBottom: 14,
+            color: theme.colors.text,
+            textDecoration: "none",
+            fontWeight: 800
+          }}
+        >
+          {text.back}
         </a>
 
         <section
@@ -119,261 +247,246 @@ export default async function ItemDetailPage({
             background: theme.colors.surface,
             border: `1px solid ${theme.colors.border}`,
             borderRadius: theme.radius.xl,
-            padding: 22,
+            padding: 20,
             boxShadow: theme.shadow.card
           }}
         >
           <div
             style={{
-              display: "inline-block",
-              padding: "6px 10px",
-              borderRadius: 999,
-              background: "#F3F4F6",
-              color: theme.colors.textMuted,
-              fontSize: 12,
-              marginBottom: 10
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 18,
+              alignItems: "flex-start",
+              flexWrap: "wrap"
             }}
           >
-            {item.category}
-          </div>
-
-          <h1
-            style={{
-              fontSize: 30,
-              fontWeight: 800,
-              margin: "0 0 18px 0"
-            }}
-          >
-            {item.name}
-          </h1>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 12
-            }}
-          >
-            <InfoCard
-              label="Price"
-              value={`${Number(item.estimatedPrice).toFixed(2)} €`}
-            />
-            <InfoCard
-              label="Market value"
-              value={marketValue != null ? `${marketValue.toFixed(2)} €` : "—"}
-            />
-            <InfoCard label="Quantity" value={item.quantity} />
-            <InfoCard
-              label="Total value"
-              value={`${totalValue.toFixed(2)} €`}
-              highlight
-            />
-            <InfoCard label="Category" value={item.category} />
-          </div>
-
-          <div
-            style={{
-              marginTop: 16,
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 12
-            }}
-          >
-            <InfoCard label="Platform" value={item.platform || "—"} />
-            <InfoCard label="Region" value={item.region || "—"} />
-            <InfoCard label="Condition" value={formatCondition(item.condition)} />
-            <InfoCard
-              label="Completeness"
-              value={formatCompleteness(item.completeness)}
-            />
-            <InfoCard
-              label="Valuation delta"
-              value={
-                marketDelta != null
-                  ? `${marketDelta > 0 ? "+" : ""}${marketDelta.toFixed(2)} €`
-                  : "—"
-              }
-            />
-            <InfoCard label="Valuation source" value={item.valuationSource || "—"} />
-            <InfoCard
-              label="Confidence"
-              value={
-                item.valuationConfidence != null
-                  ? `${Math.round(item.valuationConfidence * 100)}%`
-                  : "—"
-              }
-            />
-            <InfoCard
-              label="Last valuation"
-              value={
-                item.lastValuationAt
-                  ? new Date(item.lastValuationAt).toLocaleString()
-                  : "—"
-              }
-            />
-            <InfoCard label="Notes" value={item.notes?.trim() || "—"} />
-          </div>
-
-          <div
-            style={{
-              marginTop: 22,
-              color: theme.colors.textMuted,
-              fontSize: 14,
-              lineHeight: 1.8,
-              borderTop: `1px solid ${theme.colors.border}`,
-              paddingTop: 16
-            }}
-          >
-            <div>Created: {new Date(item.createdAt).toLocaleString()}</div>
-            <div>Updated: {new Date(item.updatedAt).toLocaleString()}</div>
-            <div>ID: {item.id}</div>
-          </div>
-        </section>
-
-        <section
-          style={{
-            marginTop: 18,
-            background: theme.colors.surface,
-            border: `1px solid ${theme.colors.border}`,
-            borderRadius: theme.radius.xl,
-            padding: 22,
-            boxShadow: theme.shadow.card
-          }}
-        >
-          <div
-            style={{
-              fontWeight: 800,
-              fontSize: 18,
-              marginBottom: 14
-            }}
-          >
-            Valuation history
-          </div>
-
-          {snapshots.length === 0 ? (
-            <div style={{ color: theme.colors.textMuted }}>
-              No valuation history yet.
-            </div>
-          ) : (
-            <>
+            <div>
               <div
                 style={{
-                  marginBottom: 18,
-                  border: `1px solid ${theme.colors.border}`,
-                  borderRadius: theme.radius.lg,
+                  display: "inline-block",
+                  padding: "5px 10px",
+                  borderRadius: 999,
                   background: theme.colors.surfaceAlt,
-                  padding: 14
+                  border: `1px solid ${theme.colors.border}`,
+                  fontSize: 12,
+                  color: theme.colors.textMuted,
+                  marginBottom: 12
                 }}
               >
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: theme.colors.textMuted,
-                    marginBottom: 10
-                  }}
-                >
-                  Market value trend
-                </div>
-
-                <MiniValuationChart snapshots={snapshots} />
+                {item.category}
               </div>
 
-              <div style={{ display: "grid", gap: 10 }}>
-                {snapshots.map((snapshot, index) => {
-                  const currentValue = Number(snapshot.marketValue);
-                  const previousValue =
-                    index < snapshots.length - 1
-                      ? Number(snapshots[index + 1].marketValue)
-                      : null;
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 34,
+                  lineHeight: 1.08,
+                  color: theme.colors.text
+                }}
+              >
+                {item.name}
+              </h1>
+            </div>
 
-                  const delta =
-                    previousValue != null ? currentValue - previousValue : null;
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, minmax(140px, 1fr))",
+                gap: 10,
+                minWidth: "min(100%, 480px)"
+              }}
+            >
+              <StatCard
+                label={text.price}
+                value={`${estimatedPrice.toFixed(2)} €`}
+              />
+              <StatCard
+                label={text.market}
+                value={
+                  marketValue != null
+                    ? `${marketValue.toFixed(2)} €`
+                    : text.notAvailable
+                }
+              />
+              <StatCard
+                label={text.qty}
+                value={String(item.quantity)}
+              />
+            </div>
+          </div>
 
-                  return (
-                    <div
-                      key={snapshot.id}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr auto auto auto",
-                        gap: 12,
-                        alignItems: "center",
-                        padding: "12px 14px",
-                        border: `1px solid ${theme.colors.border}`,
-                        borderRadius: theme.radius.lg,
-                        background: theme.colors.surfaceAlt
-                      }}
-                    >
-                      <div>
-                        <div style={{ fontWeight: 700 }}>
-                          {new Date(snapshot.recordedAt).toLocaleString()}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 12,
-                            color: theme.colors.textMuted,
-                            marginTop: 2
-                          }}
-                        >
-                          Source: {snapshot.source}
-                          {snapshot.confidence != null
-                            ? ` · ${Math.round(snapshot.confidence * 100)}% confidence`
-                            : ""}
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          fontWeight: 800,
-                          minWidth: 90,
-                          textAlign: "right"
-                        }}
-                      >
-                        {currentValue.toFixed(2)} €
-                      </div>
-
-                      <div style={{ minWidth: 80, textAlign: "right" }}>
-                        <SnapshotDeltaBadge delta={delta} />
-                      </div>
-
-                      <div
-                        style={{
-                          fontSize: 12,
-                          color: theme.colors.textMuted,
-                          minWidth: 70,
-                          textAlign: "right"
-                        }}
-                      >
-                        #{snapshots.length - index}
-                      </div>
-                    </div>
-                  );
-                })}
+          <div
+            style={{
+              marginTop: 18,
+              display: "grid",
+              gridTemplateColumns: "1.1fr 0.9fr",
+              gap: 18
+            }}
+          >
+            <section
+              style={{
+                background: theme.colors.surfaceAlt,
+                border: `1px solid ${theme.colors.border}`,
+                borderRadius: theme.radius.lg,
+                padding: 16
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 800,
+                  fontSize: 15,
+                  marginBottom: 12,
+                  color: theme.colors.text
+                }}
+              >
+                {text.metadata}
               </div>
-            </>
-          )}
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: 12
+                }}
+              >
+                <InfoRow label={text.name} value={item.name} />
+                <InfoRow label={text.category} value={item.category} />
+                <InfoRow label={text.platform} value={item.platform} />
+                <InfoRow label={text.region} value={item.region} />
+                <InfoRow
+                  label={text.condition}
+                  value={formatCondition(item.condition)}
+                />
+                <InfoRow
+                  label={text.completeness}
+                  value={formatCompleteness(item.completeness)}
+                />
+                <InfoRow
+                  label={text.created}
+                  value={new Date(item.createdAt).toLocaleString()}
+                />
+                <InfoRow
+                  label={text.updated}
+                  value={new Date(item.updatedAt).toLocaleString()}
+                />
+              </div>
+            </section>
+
+            <section
+              style={{
+                background: theme.colors.surfaceAlt,
+                border: `1px solid ${theme.colors.border}`,
+                borderRadius: theme.radius.lg,
+                padding: 16
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 800,
+                  fontSize: 15,
+                  marginBottom: 12,
+                  color: theme.colors.text
+                }}
+              >
+                {text.valuation}
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gap: 12
+                }}
+              >
+                <InfoRow
+                  label={text.price}
+                  value={`${estimatedPrice.toFixed(2)} €`}
+                />
+                <InfoRow
+                  label={text.market}
+                  value={
+                    marketValue != null
+                      ? `${marketValue.toFixed(2)} €`
+                      : text.notAvailable
+                  }
+                />
+                <InfoRow
+                  label={text.delta}
+                  value={<DeltaBadge delta={delta} />}
+                />
+                <InfoRow
+                  label={text.source}
+                  value={item.valuationSource || text.notAvailable}
+                />
+                <InfoRow
+                  label={text.confidence}
+                  value={
+                    typeof item.valuationConfidence === "number"
+                      ? `${item.valuationConfidence}%`
+                      : text.notAvailable
+                  }
+                />
+                <InfoRow
+                  label={text.lastValuation}
+                  value={
+                    item.lastValuationAt
+                      ? new Date(item.lastValuationAt).toLocaleString()
+                      : text.notAvailable
+                  }
+                />
+              </div>
+            </section>
+          </div>
+
+          <section
+            style={{
+              marginTop: 18,
+              background: theme.colors.surfaceAlt,
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.radius.lg,
+              padding: 16
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 800,
+                fontSize: 15,
+                marginBottom: 10,
+                color: theme.colors.text
+              }}
+            >
+              {text.notes}
+            </div>
+
+            <div
+              style={{
+                color: item.notes ? theme.colors.text : theme.colors.textMuted,
+                lineHeight: 1.7,
+                whiteSpace: "pre-wrap"
+              }}
+            >
+              {item.notes?.trim() || text.noNotes}
+            </div>
+          </section>
         </section>
       </div>
     </main>
   );
 }
 
-function InfoCard({
+function StatCard({
   label,
-  value,
-  highlight = false
+  value
 }: {
   label: string;
-  value: string | number;
-  highlight?: boolean;
+  value: string;
 }) {
   return (
     <div
       style={{
+        background: theme.colors.surfaceAlt,
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.lg,
-        padding: 14,
-        background: theme.colors.surfaceAlt,
-        boxShadow: theme.shadow.soft
+        padding: "14px 16px"
       }}
     >
       <div
@@ -390,7 +503,7 @@ function InfoCard({
         style={{
           fontSize: 22,
           fontWeight: 800,
-          color: highlight ? theme.colors.text : theme.colors.text
+          color: theme.colors.text
         }}
       >
         {value}
@@ -399,7 +512,50 @@ function InfoCard({
   );
 }
 
-function SnapshotDeltaBadge({ delta }: { delta: number | null }) {
+function InfoRow({
+  label,
+  value
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        background: theme.colors.surface,
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.md,
+        padding: "12px 14px"
+      }}
+    >
+      <div
+        style={{
+          fontSize: 12,
+          color: theme.colors.textMuted,
+          marginBottom: 6,
+          fontWeight: 800
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          color: theme.colors.text,
+          fontSize: 14
+        }}
+      >
+        {value || "—"}
+      </div>
+    </div>
+  );
+}
+
+function DeltaBadge({
+  delta
+}: {
+  delta: number | null;
+}) {
   if (delta == null) {
     return <span style={{ color: theme.colors.textMuted }}>—</span>;
   }
@@ -408,161 +564,28 @@ function SnapshotDeltaBadge({ delta }: { delta: number | null }) {
   const negative = delta < 0;
 
   const bg = positive ? "#ECFDF3" : negative ? "#FEF3F2" : "#F9FAFB";
-
   const color = positive
     ? "#027A48"
     : negative
       ? "#B42318"
       : theme.colors.textMuted;
 
-  const prefix = positive ? "+" : "";
-
   return (
     <span
       style={{
         display: "inline-block",
-        minWidth: 70,
-        textAlign: "center",
         padding: "4px 8px",
         borderRadius: 999,
         background: bg,
         color,
         fontSize: 12,
-        fontWeight: 700,
+        fontWeight: 800,
         border: `1px solid ${theme.colors.border}`
       }}
     >
-      {prefix}
+      {delta > 0 ? "+" : ""}
       {delta.toFixed(2)} €
     </span>
-  );
-}
-
-function MiniValuationChart({ snapshots }: { snapshots: Snapshot[] }) {
-  const points = [...snapshots].reverse().map((s) => Number(s.marketValue));
-
-  if (points.length === 0) {
-    return null;
-  }
-
-  const width = 760;
-  const height = 180;
-  const padding = 24;
-
-  const min = Math.min(...points);
-  const max = Math.max(...points);
-  const range = max - min || 1;
-
-  const toX = (index: number) => {
-    if (points.length === 1) return width / 2;
-    return (
-      padding + (index * (width - padding * 2)) / (points.length - 1)
-    );
-  };
-
-  const toY = (value: number) => {
-    return height - padding - ((value - min) / range) * (height - padding * 2);
-  };
-
-  const polylinePoints = points
-    .map((value, index) => `${toX(index)},${toY(value)}`)
-    .join(" ");
-
-  const latest = points[points.length - 1];
-  const first = points[0];
-
-  return (
-    <div>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        style={{
-          width: "100%",
-          height: "auto",
-          display: "block"
-        }}
-      >
-        <line
-          x1={padding}
-          y1={height - padding}
-          x2={width - padding}
-          y2={height - padding}
-          stroke="#E5E7EB"
-          strokeWidth="1"
-        />
-
-        <line
-          x1={padding}
-          y1={padding}
-          x2={padding}
-          y2={height - padding}
-          stroke="#E5E7EB"
-          strokeWidth="1"
-        />
-
-        <polyline
-          fill="none"
-          stroke={theme.colors.gold}
-          strokeWidth="3"
-          points={polylinePoints}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {points.map((value, index) => (
-          <g key={`${index}-${value}`}>
-            <circle
-              cx={toX(index)}
-              cy={toY(value)}
-              r="4"
-              fill={theme.colors.black}
-            />
-          </g>
-        ))}
-
-        <text
-          x={padding}
-          y={16}
-          fontSize="12"
-          fill="#6B7280"
-        >
-          Max: {max.toFixed(2)} €
-        </text>
-
-        <text
-          x={padding}
-          y={height - 6}
-          fontSize="12"
-          fill="#6B7280"
-        >
-          Min: {min.toFixed(2)} €
-        </text>
-
-        <text
-          x={width - padding}
-          y={18}
-          textAnchor="end"
-          fontSize="12"
-          fill="#111827"
-          fontWeight="700"
-        >
-          Current: {latest.toFixed(2)} €
-        </text>
-      </svg>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          marginTop: 8,
-          fontSize: 12,
-          color: theme.colors.textMuted
-        }}
-      >
-        <span>First: {first.toFixed(2)} €</span>
-        <span>{points.length} snapshot(s)</span>
-        <span>Latest: {latest.toFixed(2)} €</span>
-      </div>
-    </div>
   );
 }
 
@@ -577,6 +600,13 @@ function formatCondition(value?: string | null) {
 
 function formatCompleteness(value?: string | null) {
   if (!value) return "—";
-
   return value.toUpperCase();
 }
+
+const langSwitchLink: React.CSSProperties = {
+  textDecoration: "none",
+  padding: "8px 10px",
+  borderRadius: 999,
+  fontSize: 12,
+  fontWeight: 800
+};
