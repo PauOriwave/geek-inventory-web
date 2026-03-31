@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { theme } from "../theme";
+import { getSessionTokenFromCookie } from "../lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -25,8 +26,7 @@ export default function AddItemForm() {
   const [loading, setLoading] = useState(false);
 
   const text = {
-    title:
-      locale === "es" ? "Añadir nuevo objeto" : "Add new item",
+    title: locale === "es" ? "Añadir nuevo objeto" : "Add new item",
     subtitle:
       locale === "es"
         ? "Crea una nueva entrada para tu colección con sus datos clave."
@@ -40,14 +40,11 @@ export default function AddItemForm() {
     platform: locale === "es" ? "Plataforma" : "Platform",
     region: locale === "es" ? "Región" : "Region",
     condition: locale === "es" ? "Estado" : "Condition",
-    completeness:
-      locale === "es" ? "Completitud" : "Completeness",
+    completeness: locale === "es" ? "Completitud" : "Completeness",
     notes: locale === "es" ? "Notas" : "Notes",
 
-    create:
-      locale === "es" ? "Crear objeto" : "Create item",
-    creating:
-      locale === "es" ? "Creando..." : "Creating...",
+    create: locale === "es" ? "Crear objeto" : "Create item",
+    creating: locale === "es" ? "Creando..." : "Creating...",
 
     placeholderName:
       locale === "es" ? "Ej: Pokémon Azul" : "e.g. Pokémon Blue",
@@ -67,11 +64,22 @@ export default function AddItemForm() {
     selectCategory:
       locale === "es" ? "Seleccionar categoría" : "Select category",
 
+    videogame: locale === "es" ? "Videojuegos" : "Videogame",
+    book: locale === "es" ? "Libros" : "Book",
+    comic: locale === "es" ? "Cómics" : "Comic",
+    tcg: "TCG",
+    figure: locale === "es" ? "Figuras" : "Figure",
+    boardgame: locale === "es" ? "Juegos de mesa" : "Board Game",
+    lego: "LEGO",
+    movie: locale === "es" ? "Películas / VHS / DVD" : "Movie / DVD / VHS",
+    other: locale === "es" ? "Otros" : "Other",
+
     error:
       locale === "es"
         ? "No se pudo crear el objeto"
         : "Could not create item",
-
+    noSession:
+      locale === "es" ? "Sesión no encontrada" : "Session not found",
     required:
       locale === "es"
         ? "Nombre, categoría y precio son obligatorios"
@@ -80,6 +88,12 @@ export default function AddItemForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    const token = getSessionTokenFromCookie();
+    if (!token) {
+      alert(text.noSession);
+      return;
+    }
 
     if (!name.trim() || !category || !estimatedPrice.trim()) {
       alert(text.required);
@@ -92,9 +106,9 @@ export default function AddItemForm() {
       const res = await fetch(`${API}/items`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
         },
-        credentials: "include",
         body: JSON.stringify({
           name: name.trim(),
           category,
@@ -108,9 +122,10 @@ export default function AddItemForm() {
         })
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText || text.error);
+        throw new Error(data?.message || text.error);
       }
 
       setName("");
@@ -126,7 +141,7 @@ export default function AddItemForm() {
       router.refresh();
     } catch (err) {
       console.error(err);
-      alert(text.error);
+      alert(err instanceof Error ? err.message : text.error);
     } finally {
       setLoading(false);
     }
@@ -189,14 +204,15 @@ export default function AddItemForm() {
               style={inputStyle}
             >
               <option value="">{text.selectCategory}</option>
-              <option value="videogame">Videogame</option>
-              <option value="book">Book</option>
-              <option value="comic">Comic</option>
-              <option value="tcg">TCG</option>
-              <option value="figure">Figure</option>
-              <option value="boardgame">Board Game</option>
-              <option value="lego">LEGO</option>
-              <option value="other">Other</option>
+              <option value="videogame">{text.videogame}</option>
+              <option value="book">{text.book}</option>
+              <option value="comic">{text.comic}</option>
+              <option value="tcg">{text.tcg}</option>
+              <option value="figure">{text.figure}</option>
+              <option value="boardgame">{text.boardgame}</option>
+              <option value="lego">{text.lego}</option>
+              <option value="movie">{text.movie}</option>
+              <option value="other">{text.other}</option>
             </select>
           </Field>
 

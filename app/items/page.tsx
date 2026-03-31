@@ -15,6 +15,7 @@ import TrendingItems from "./TrendingItems";
 import LogoutButton from "./LogoutButton";
 import { theme } from "../theme";
 import { getLocale } from "../i18n";
+import { getCategoryLabel } from "./categoryLabels";
 
 type Item = {
   id: string;
@@ -500,7 +501,7 @@ export default async function ItemsPage({
                           color: theme.colors.textMuted
                         }}
                       >
-                        {it.category}
+                        {getCategoryLabel(it.category, locale)}
                       </span>
                     </Td>
 

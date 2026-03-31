@@ -28,7 +28,17 @@ export default function Filters() {
     priceAsc: locale === "es" ? "Precio ↑" : "Price ↑",
     priceDesc: locale === "es" ? "Precio ↓" : "Price ↓",
     newest: locale === "es" ? "Más recientes" : "Newest",
-    oldest: locale === "es" ? "Más antiguos" : "Oldest"
+    oldest: locale === "es" ? "Más antiguos" : "Oldest",
+
+    videogame: locale === "es" ? "Videojuegos" : "Videogame",
+    book: locale === "es" ? "Libros" : "Book",
+    comic: locale === "es" ? "Cómics" : "Comic",
+    tcg: "TCG",
+    figure: locale === "es" ? "Figuras" : "Figure",
+    boardgame: locale === "es" ? "Juegos de mesa" : "Board Game",
+    lego: "LEGO",
+    movie: locale === "es" ? "Películas / VHS / DVD" : "Movie / DVD / VHS",
+    other: locale === "es" ? "Otros" : "Other"
   };
 
   function applyFilters() {
@@ -66,7 +76,6 @@ export default function Filters() {
         alignItems: "center"
       }}
     >
-      {/* Search */}
       <input
         placeholder={text.search}
         value={q}
@@ -74,24 +83,23 @@ export default function Filters() {
         style={inputStyle}
       />
 
-      {/* Category */}
       <select
         value={category}
         onChange={(e) => setCategory(e.target.value)}
         style={inputStyle}
       >
         <option value="">{text.all}</option>
-        <option value="videogame">Videogame</option>
-        <option value="book">Book</option>
-        <option value="comic">Comic</option>
-        <option value="tcg">TCG</option>
-        <option value="figure">Figure</option>
-        <option value="boardgame">Board Game</option>
-        <option value="lego">LEGO</option>
-        <option value="other">Other</option>
+        <option value="videogame">{text.videogame}</option>
+        <option value="book">{text.book}</option>
+        <option value="comic">{text.comic}</option>
+        <option value="tcg">{text.tcg}</option>
+        <option value="figure">{text.figure}</option>
+        <option value="boardgame">{text.boardgame}</option>
+        <option value="lego">{text.lego}</option>
+        <option value="movie">{text.movie}</option>
+        <option value="other">{text.other}</option>
       </select>
 
-      {/* Min price */}
       <input
         type="number"
         placeholder={text.minPrice}
@@ -100,7 +108,6 @@ export default function Filters() {
         style={inputStyle}
       />
 
-      {/* Max price */}
       <input
         type="number"
         placeholder={text.maxPrice}
@@ -109,7 +116,6 @@ export default function Filters() {
         style={inputStyle}
       />
 
-      {/* Sort */}
       <select
         value={sort}
         onChange={(e) => setSort(e.target.value)}
@@ -122,7 +128,6 @@ export default function Filters() {
         <option value="oldest">{text.oldest}</option>
       </select>
 
-      {/* Buttons */}
       <button onClick={applyFilters} style={primaryButton}>
         {text.apply}
       </button>

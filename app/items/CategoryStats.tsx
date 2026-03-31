@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { theme } from "../theme";
+import { getCategoryLabel } from "./categoryLabels";
 
 type Row = {
   category: string;
@@ -67,7 +68,9 @@ export default async function CategoryStats({
         {rows.map((r) => (
           <a
             key={r.category}
-            href={`/items?category=${encodeURIComponent(r.category)}&page=1&pageSize=25&lang=${locale}`}
+            href={`/items?category=${encodeURIComponent(
+              r.category
+            )}&page=1&pageSize=25&lang=${locale}`}
             style={{
               textDecoration: "none",
               color: "inherit",
@@ -94,7 +97,7 @@ export default async function CategoryStats({
                   color: theme.colors.textMuted
                 }}
               >
-                {r.category}
+                {getCategoryLabel(r.category, locale)}
               </div>
 
               <TrendBadge trend={r.trend} delta={r.trendDelta} locale={locale} />

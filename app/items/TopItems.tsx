@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { theme } from "../theme";
+import { getCategoryLabel } from "./categoryLabels";
 
 type TopItem = {
   id: string;
@@ -52,8 +53,8 @@ export default async function TopItems({
   const text = {
     title: category
       ? locale === "es"
-        ? `Top ${capitalize(category)}`
-        : `Top ${capitalize(category)} items`
+        ? `Top ${getCategoryLabel(category, locale)}`
+        : `Top ${getCategoryLabel(category, locale)} items`
       : locale === "es"
         ? "Top 10 objetos"
         : "Top 10 items",
@@ -145,7 +146,8 @@ export default async function TopItems({
                 </div>
 
                 <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
-                  {it.quantity} × {it.estimatedPrice.toFixed(2)} €
+                  {getCategoryLabel(it.category, locale)} · {it.quantity} ×{" "}
+                  {it.estimatedPrice.toFixed(2)} €
                 </div>
               </div>
 
@@ -167,8 +169,4 @@ export default async function TopItems({
       </div>
     </section>
   );
-}
-
-function capitalize(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
 }
