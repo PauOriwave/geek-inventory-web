@@ -1,31 +1,46 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { theme } from "../theme";
 import { getSessionTokenFromCookie } from "../lib/auth";
+import { theme } from "../theme";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 export default function ValuateAllButton() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const locale = searchParams.get("lang") === "es" ? "es" : "en";
   const [loading, setLoading] = useState(false);
+
+  const text = {
+    label: locale === "es" ? "Valorar todo" : "Valuate all",
+    loading: locale === "es" ? "Valorando…" : "Valuating…",
+    confirm:
+      locale === "es"
+        ? "¿Valorar todos los objetos de tu colección? Esto creará nuevos snapshots."
+        : "Valuate all items in your collection? This will create new valuation snapshots.",
+    noSession: locale === "es" ? "No hay sesión activa" : "No active session",
+    failed:
+      locale === "es" ? "No se pudo valorar la colección" : "Valuate all failed",
+    result:
+      locale === "es"
+        ? (p: number, u: number, s: number) =>
+            `Procesados: ${p}\nActualizados: ${u}\nOmitidos: ${s}`
+        : (p: number, u: number, s: number) =>
+            `Processed: ${p}\nUpdated: ${u}\nSkipped: ${s}`
+  };
 
   async function handleValuateAll() {
     const token = getSessionTokenFromCookie();
 
     if (!token) {
-      alert("No active session");
+      alert(text.noSession);
       return;
     }
 
-    const ok = confirm(
-      "Valuate all items in your collection? This will create new valuation snapshots."
-    );
-
-    if (!ok) {
-      return;
-    }
+    const ok = confirm(text.confirm);
+    if (!ok) return;
 
     setLoading(true);
 
@@ -37,19 +52,16 @@ export default function ValuateAllButton() {
         }
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        throw new Error(data.message || "Valuate all failed");
+        throw new Error(data?.message || text.failed);
       }
 
-      alert(
-        `Processed: ${data.processed}\nUpdated: ${data.updated}\nSkipped: ${data.skipped}`
-      );
-
+      alert(text.result(data.processed, data.updated, data.skipped));
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Valuate all failed");
+      alert(err instanceof Error ? err.message : text.failed);
     } finally {
       setLoading(false);
     }
@@ -61,18 +73,17 @@ export default function ValuateAllButton() {
       onClick={handleValuateAll}
       disabled={loading}
       style={{
-        display: "inline-block",
+        border: "none",
         padding: "10px 12px",
-        borderRadius: theme.radius.sm,
-        border: `1px solid ${theme.colors.border}`,
+        borderRadius: 999,
         background: theme.colors.gold,
         color: theme.colors.black,
-        fontWeight: 800,
-        boxShadow: theme.shadow.soft,
-        cursor: loading ? "not-allowed" : "pointer"
+        fontWeight: 900,
+        cursor: loading ? "not-allowed" : "pointer",
+        boxShadow: theme.shadow.soft
       }}
     >
-      {loading ? "Valuating…" : "Valuate all"}
+      {loading ? text.loading : text.label}
     </button>
   );
 }

@@ -1,60 +1,62 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { theme } from "../theme";
 import { getSessionTokenFromCookie } from "../lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-const categories = [
-  "videogame",
-  "book",
-  "comic",
-  "tcg",
-  "figure",
-  "other"
-] as const;
-
-type Category = (typeof categories)[number];
-
 export default function AddItemForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const locale = searchParams.get("lang") === "es" ? "es" : "en";
 
   const [name, setName] = useState("");
-  const [category, setCategory] = useState<Category>("videogame");
-  const [estimatedPrice, setEstimatedPrice] = useState<number>(0);
-  const [quantity, setQuantity] = useState<number>(1);
-  const [condition, setCondition] = useState("");
+  const [category, setCategory] = useState("videogame");
+  const [estimatedPrice, setEstimatedPrice] = useState("");
+  const [quantity, setQuantity] = useState("1");
   const [platform, setPlatform] = useState("");
-  const [completeness, setCompleteness] = useState("");
   const [region, setRegion] = useState("");
+  const [condition, setCondition] = useState("");
+  const [completeness, setCompleteness] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  async function submit() {
-    setError("");
+  const text = {
+    title: locale === "es" ? "Añadir objeto" : "Add item",
+    name: locale === "es" ? "Nombre" : "Name",
+    category: locale === "es" ? "Categoría" : "Category",
+    price: locale === "es" ? "Precio estimado" : "Estimated price",
+    qty: locale === "es" ? "Cantidad" : "Quantity",
+    platform: locale === "es" ? "Plataforma" : "Platform",
+    region: locale === "es" ? "Región" : "Region",
+    condition: locale === "es" ? "Estado" : "Condition",
+    completeness: locale === "es" ? "Completitud" : "Completeness",
+    notes: locale === "es" ? "Notas" : "Notes",
+    submit: locale === "es" ? "Añadir" : "Add item",
+    adding: locale === "es" ? "Añadiendo…" : "Adding…",
+    error:
+      locale === "es"
+        ? "No se pudo crear el objeto"
+        : "Could not create item",
+    required:
+      locale === "es"
+        ? "Nombre, precio y cantidad son obligatorios"
+        : "Name, price and quantity are required"
+  };
 
-    if (!name.trim()) {
-      setError("Name is required");
-      return;
-    }
-
-    if (quantity < 1) {
-      setError("Quantity must be at least 1");
-      return;
-    }
-
-    if (estimatedPrice <= 0) {
-      setError("Price must be greater than 0");
-      return;
-    }
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
 
     const token = getSessionTokenFromCookie();
-
     if (!token) {
-      setError("No active session");
+      alert(locale === "es" ? "Sesión no encontrada" : "Session not found");
+      return;
+    }
+
+    if (!name.trim() || !estimatedPrice.trim() || !quantity.trim()) {
+      alert(text.required);
       return;
     }
 
@@ -70,35 +72,35 @@ export default function AddItemForm() {
         body: JSON.stringify({
           name: name.trim(),
           category,
-          estimatedPrice,
-          quantity,
-          condition: condition || undefined,
-          platform: platform || undefined,
-          completeness: completeness || undefined,
-          region: region || undefined,
-          notes: notes || undefined
+          estimatedPrice: Number(estimatedPrice),
+          quantity: Number(quantity),
+          platform: platform.trim() || null,
+          region: region.trim() || null,
+          condition: condition.trim() || null,
+          completeness: completeness.trim() || null,
+          notes: notes.trim() || null
         })
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Failed to create item");
+        throw new Error(data?.message || text.error);
       }
 
       setName("");
       setCategory("videogame");
-      setEstimatedPrice(0);
-      setQuantity(1);
-      setCondition("");
+      setEstimatedPrice("");
+      setQuantity("1");
       setPlatform("");
-      setCompleteness("");
       setRegion("");
+      setCondition("");
+      setCompleteness("");
       setNotes("");
 
       router.refresh();
-    } catch (e) {
-      console.error(e);
-      setError(e instanceof Error ? e.message : "Could not create item");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : text.error);
     } finally {
       setLoading(false);
     }
@@ -107,163 +109,183 @@ export default function AddItemForm() {
   return (
     <section
       style={{
+        marginTop: 12,
+        background: theme.colors.surface,
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.xl,
         padding: 16,
-        background: theme.colors.surface,
         boxShadow: theme.shadow.card
       }}
     >
       <div
         style={{
           fontWeight: 800,
-          marginBottom: 12,
+          fontSize: 15,
           color: theme.colors.text,
-          fontSize: 15
+          marginBottom: 12
         }}
       >
-        Add item
+        {text.title}
       </div>
 
-      <div
+      <form
+        onSubmit={onSubmit}
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(220px, 1.5fr) 1fr 120px 90px auto",
-          gap: 10,
-          alignItems: "center"
+          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          gap: 10
         }}
       >
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Name (e.g. Pokemon Azul)"
-          style={inputStyle}
-        />
+        <Field label={text.name}>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            style={inputStyle}
+          />
+        </Field>
 
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as Category)}
-          style={inputStyle}
-        >
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+        <Field label={text.category}>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            style={inputStyle}
+          >
+            <option value="videogame">Videogame</option>
+            <option value="book">Book</option>
+            <option value="comic">Comic</option>
+            <option value="tcg">TCG</option>
+            <option value="figure">Figure</option>
+            <option value="boardgame">Board Game</option>
+            <option value="lego">LEGO</option>
+            <option value="other">Other</option>
+          </select>
+        </Field>
 
-        <input
-          type="number"
-          min={0}
-          step="0.01"
-          value={estimatedPrice}
-          onChange={(e) => setEstimatedPrice(Number(e.target.value))}
-          placeholder="Price €"
-          style={inputStyle}
-        />
+        <Field label={text.price}>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={estimatedPrice}
+            onChange={(e) => setEstimatedPrice(e.target.value)}
+            style={inputStyle}
+          />
+        </Field>
 
-        <input
-          type="number"
-          min={1}
-          value={quantity}
-          onChange={(e) => setQuantity(Number(e.target.value))}
-          placeholder="Qty"
-          style={inputStyle}
-        />
+        <Field label={text.qty}>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            style={inputStyle}
+          />
+        </Field>
 
-        <button
-          onClick={submit}
-          disabled={loading}
-          style={{
-            padding: "10px 14px",
-            borderRadius: theme.radius.sm,
-            border: "none",
-            background: theme.colors.gold,
-            color: theme.colors.black,
-            fontWeight: 800,
-            cursor: loading ? "not-allowed" : "pointer",
-            boxShadow: theme.shadow.soft
-          }}
-        >
-          {loading ? "Adding…" : "Add"}
-        </button>
-      </div>
+        <Field label={text.platform}>
+          <input
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            style={inputStyle}
+          />
+        </Field>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "180px 180px 180px 180px 1fr",
-          gap: 10,
-          marginTop: 10
-        }}
-      >
-        <select
-          value={condition}
-          onChange={(e) => setCondition(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="">Condition</option>
-          <option value="mint">mint</option>
-          <option value="near_mint">near_mint</option>
-          <option value="very_good">very_good</option>
-          <option value="good">good</option>
-          <option value="fair">fair</option>
-          <option value="poor">poor</option>
-        </select>
+        <Field label={text.region}>
+          <input
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+            style={inputStyle}
+          />
+        </Field>
 
-        <input
-          value={platform}
-          onChange={(e) => setPlatform(e.target.value)}
-          placeholder="Platform (optional)"
-          style={inputStyle}
-        />
+        <Field label={text.condition}>
+          <input
+            value={condition}
+            onChange={(e) => setCondition(e.target.value)}
+            style={inputStyle}
+          />
+        </Field>
 
-        <select
-          value={completeness}
-          onChange={(e) => setCompleteness(e.target.value)}
-          style={inputStyle}
-        >
-          <option value="">Completeness</option>
-          <option value="loose">loose</option>
-          <option value="cib">cib</option>
-          <option value="sealed">sealed</option>
-        </select>
+        <Field label={text.completeness}>
+          <input
+            value={completeness}
+            onChange={(e) => setCompleteness(e.target.value)}
+            style={inputStyle}
+          />
+        </Field>
 
-        <input
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          placeholder="Region (optional)"
-          style={inputStyle}
-        />
+        <div style={{ gridColumn: "1 / -2" }}>
+          <Field label={text.notes}>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              style={{
+                ...inputStyle,
+                minHeight: 88,
+                resize: "vertical"
+              }}
+            />
+          </Field>
+        </div>
 
-        <input
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes (optional)"
-          style={inputStyle}
-        />
-      </div>
-
-      {error && (
         <div
           style={{
-            marginTop: 10,
-            color: theme.colors.danger,
-            fontSize: 13
+            display: "flex",
+            alignItems: "end"
           }}
         >
-          {error}
+          <button type="submit" disabled={loading} style={primaryButton}>
+            {loading ? text.adding : text.submit}
+          </button>
         </div>
-      )}
+      </form>
     </section>
   );
 }
 
+function Field({
+  label,
+  children
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label style={{ display: "grid", gap: 6 }}>
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 800,
+          color: theme.colors.textMuted
+        }}
+      >
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
 const inputStyle: React.CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
   padding: "10px 12px",
+  borderRadius: theme.radius.md,
   border: `1px solid ${theme.colors.border}`,
-  borderRadius: theme.radius.sm,
-  background: theme.colors.surface,
+  background: theme.colors.surfaceAlt,
   color: theme.colors.text,
+  fontSize: 14,
   outline: "none"
+};
+
+const primaryButton: React.CSSProperties = {
+  border: "none",
+  padding: "10px 14px",
+  borderRadius: 999,
+  background: theme.colors.gold,
+  color: theme.colors.black,
+  fontWeight: 900,
+  cursor: "pointer",
+  width: "100%"
 };

@@ -1,28 +1,35 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { theme } from "../theme";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getSessionTokenFromCookie } from "../lib/auth";
+import { theme } from "../theme";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 export default function ImportCsvButton() {
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  const searchParams = useSearchParams();
+  const locale = searchParams.get("lang") === "es" ? "es" : "en";
   const [loading, setLoading] = useState(false);
 
-  async function handleImport() {
-    const file = fileRef.current?.files?.[0];
+  const text = {
+    label: locale === "es" ? "Importar CSV" : "Import CSV",
+    loading: locale === "es" ? "Importando…" : "Importing…",
+    noSession: locale === "es" ? "No hay sesión activa" : "No active session",
+    failed: locale === "es" ? "Importación fallida" : "Import failed",
+    chooseFile:
+      locale === "es" ? "Selecciona un archivo CSV" : "Choose a CSV file"
+  };
+
+  async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     const token = getSessionTokenFromCookie();
-
     if (!token) {
-      alert("No active session");
-      return;
-    }
-
-    if (!file) {
-      alert("Select a CSV file first");
+      alert(text.noSession);
       return;
     }
 
@@ -32,7 +39,7 @@ export default function ImportCsvButton() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch(`${API}/import/items`, {
+      const res = await fetch(`${API}/import/csv`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`
@@ -40,61 +47,50 @@ export default function ImportCsvButton() {
         body: formData
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        throw new Error(data.message || "Import failed");
+        throw new Error(data?.message || text.failed);
       }
 
-      alert(`Imported: ${data.inserted}, Failed: ${data.failed}`);
       router.refresh();
-
-      if (fileRef.current) {
-        fileRef.current.value = "";
-      }
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Import failed");
+      alert(err instanceof Error ? err.message : text.failed);
     } finally {
       setLoading(false);
+      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: 8,
-        alignItems: "center",
-        flexWrap: "wrap"
-      }}
-    >
+    <>
       <input
-        ref={fileRef}
+        ref={inputRef}
         type="file"
-        accept=".csv"
-        style={{
-          fontSize: 13,
-          color: theme.colors.text
-        }}
+        accept=".csv,text/csv"
+        onChange={onFileChange}
+        style={{ display: "none" }}
       />
 
       <button
         type="button"
-        onClick={handleImport}
+        onClick={() => inputRef.current?.click()}
         disabled={loading}
-        style={{
-          padding: "10px 12px",
-          borderRadius: theme.radius.sm,
-          border: `1px solid ${theme.colors.border}`,
-          background: theme.colors.surface,
-          color: theme.colors.text,
-          fontWeight: 700,
-          boxShadow: theme.shadow.soft,
-          cursor: loading ? "not-allowed" : "pointer"
-        }}
+        title={text.chooseFile}
+        style={buttonStyle}
       >
-        {loading ? "Importing…" : "Import CSV"}
+        {loading ? text.loading : text.label}
       </button>
-    </div>
+    </>
   );
 }
+
+const buttonStyle: React.CSSProperties = {
+  border: `1px solid ${theme.colors.border}`,
+  padding: "10px 12px",
+  borderRadius: 999,
+  background: theme.colors.surface,
+  color: theme.colors.text,
+  fontWeight: 800,
+  cursor: "pointer"
+};

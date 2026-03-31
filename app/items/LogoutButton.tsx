@@ -1,31 +1,35 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { theme } from "../theme";
 
 export default function LogoutButton() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const locale = searchParams.get("lang") === "es" ? "es" : "en";
 
-  function handleLogout() {
-    document.cookie = "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    router.push("/login");
+  function onLogout() {
+    document.cookie =
+      "session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; samesite=lax";
+    router.push(`/login?lang=${locale}`);
     router.refresh();
   }
 
   return (
     <button
       type="button"
-      onClick={handleLogout}
+      onClick={onLogout}
       style={{
-        padding: "8px 12px",
-        borderRadius: 10,
-        border: "1px solid rgba(255,255,255,0.16)",
-        background: "transparent",
-        color: "white",
-        fontWeight: 700,
+        border: "none",
+        borderRadius: 999,
+        padding: "10px 14px",
+        background: theme.colors.gold,
+        color: theme.colors.black,
+        fontWeight: 900,
         cursor: "pointer"
       }}
     >
-      Logout
+      {locale === "es" ? "Salir" : "Logout"}
     </button>
   );
 }

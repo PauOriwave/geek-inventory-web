@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { theme } from "../theme";
 import { getSessionTokenFromCookie } from "../lib/auth";
+import { theme } from "../theme";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -27,29 +27,49 @@ export default function ItemActions({
   initialNotes?: string | null;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const locale = searchParams.get("lang") === "es" ? "es" : "en";
 
-  const [qty, setQty] = useState<number>(initialQty);
-  const [price, setPrice] = useState<number>(initialPrice);
-  const [condition, setCondition] = useState<string>(initialCondition ?? "");
-  const [platform, setPlatform] = useState<string>(initialPlatform ?? "");
-  const [completeness, setCompleteness] = useState<string>(
-    initialCompleteness ?? ""
-  );
-  const [region, setRegion] = useState<string>(initialRegion ?? "");
-  const [notes, setNotes] = useState<string>(initialNotes ?? "");
+  const [open, setOpen] = useState(false);
+  const [quantity, setQuantity] = useState(String(initialQty));
+  const [estimatedPrice, setEstimatedPrice] = useState(String(initialPrice));
+  const [condition, setCondition] = useState(initialCondition ?? "");
+  const [platform, setPlatform] = useState(initialPlatform ?? "");
+  const [completeness, setCompleteness] = useState(initialCompleteness ?? "");
+  const [region, setRegion] = useState(initialRegion ?? "");
+  const [notes, setNotes] = useState(initialNotes ?? "");
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
 
-  async function save() {
+  const text = {
+    edit: locale === "es" ? "Editar" : "Edit",
+    delete: locale === "es" ? "Eliminar" : "Delete",
+    save: locale === "es" ? "Guardar" : "Save",
+    cancel: locale === "es" ? "Cancelar" : "Cancel",
+    valuate: locale === "es" ? "Valuate" : "Valuate",
+    qty: locale === "es" ? "Cantidad" : "Quantity",
+    price: locale === "es" ? "Precio" : "Price",
+    condition: locale === "es" ? "Estado" : "Condition",
+    platform: locale === "es" ? "Plataforma" : "Platform",
+    completeness: locale === "es" ? "Completitud" : "Completeness",
+    region: locale === "es" ? "Región" : "Region",
+    notes: locale === "es" ? "Notas" : "Notes",
+    confirmDelete:
+      locale === "es"
+        ? "¿Seguro que quieres eliminar este objeto?"
+        : "Are you sure you want to delete this item?",
+    updateError:
+      locale === "es" ? "No se pudo actualizar" : "Could not update item",
+    deleteError:
+      locale === "es" ? "No se pudo eliminar" : "Could not delete item",
+    valuateError:
+      locale === "es" ? "No se pudo valorar" : "Could not valuate item"
+  };
+
+  async function handleSave() {
     const token = getSessionTokenFromCookie();
-
-    if (!token) {
-      setMsg("✕");
-      return;
-    }
+    if (!token) return;
 
     setLoading(true);
-    setMsg("");
 
     try {
       const res = await fetch(`${API}/items/${id}`, {
@@ -59,78 +79,39 @@ export default function ItemActions({
           Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({
-          quantity: qty,
-          estimatedPrice: price,
-          condition: condition || "",
-          platform: platform || "",
-          completeness: completeness || "",
-          region: region || "",
-          notes: notes || ""
+          quantity: Number(quantity),
+          estimatedPrice: Number(estimatedPrice),
+          condition,
+          platform,
+          completeness,
+          region,
+          notes
         })
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        throw new Error("Failed to update");
+        throw new Error(data?.message || text.updateError);
       }
 
-      setMsg("✓");
+      setOpen(false);
       router.refresh();
-    } catch (e) {
-      console.error(e);
-      setMsg("✕");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : text.updateError);
     } finally {
       setLoading(false);
-      setTimeout(() => setMsg(""), 1200);
     }
   }
 
-  async function valuate() {
-    const token = getSessionTokenFromCookie();
-
-    if (!token) {
-      setMsg("✕");
-      return;
-    }
-
-    setLoading(true);
-    setMsg("");
-
-    try {
-      const res = await fetch(`${API}/items/${id}/valuate`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to valuate");
-      }
-
-      setMsg("💎");
-      router.refresh();
-    } catch (e) {
-      console.error(e);
-      setMsg("✕");
-    } finally {
-      setLoading(false);
-      setTimeout(() => setMsg(""), 1500);
-    }
-  }
-
-  async function del() {
-    const token = getSessionTokenFromCookie();
-
-    if (!token) {
-      setMsg("✕");
-      return;
-    }
-
-    const ok = confirm("Delete this item? This cannot be undone.");
+  async function handleDelete() {
+    const ok = confirm(text.confirmDelete);
     if (!ok) return;
 
+    const token = getSessionTokenFromCookie();
+    if (!token) return;
+
     setLoading(true);
-    setMsg("");
 
     try {
       const res = await fetch(`${API}/items/${id}`, {
@@ -140,246 +121,238 @@ export default function ItemActions({
         }
       });
 
-      if (!res.ok && res.status !== 204) {
-        throw new Error("Failed to delete");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.message || text.deleteError);
       }
 
       router.refresh();
-    } catch (e) {
-      console.error(e);
-      setMsg("✕");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : text.deleteError);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleValuate() {
+    const token = getSessionTokenFromCookie();
+    if (!token) return;
+
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API}/items/${id}/valuate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || text.valuateError);
+      }
+
+      router.refresh();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : text.valuateError);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gap: 8,
-        justifyItems: "end"
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          justifyContent: "flex-end",
-          flexWrap: "wrap"
-        }}
-      >
-        <input
-          type="number"
-          min={1}
-          value={qty}
-          onChange={(e) => setQty(Number(e.target.value))}
-          style={smallInput}
-        />
+    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" onClick={() => setOpen((v) => !v)} style={chipButton}>
+            {text.edit}
+          </button>
 
-        <input
-          type="number"
-          min={0}
-          step="0.01"
-          value={price}
-          onChange={(e) => setPrice(Number(e.target.value))}
-          style={smallInputWide}
-        />
-      </div>
+          <button type="button" onClick={handleValuate} disabled={loading} style={goldButton}>
+            {text.valuate}
+          </button>
 
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          justifyContent: "flex-end",
-          flexWrap: "wrap"
-        }}
-      >
-        <select
-          value={condition}
-          onChange={(e) => setCondition(e.target.value)}
-          style={smallSelect}
-        >
-          <option value="">Condition</option>
-          <option value="mint">mint</option>
-          <option value="near_mint">near_mint</option>
-          <option value="very_good">very_good</option>
-          <option value="good">good</option>
-          <option value="fair">fair</option>
-          <option value="poor">poor</option>
-        </select>
+          <button type="button" onClick={handleDelete} disabled={loading} style={dangerButton}>
+            {text.delete}
+          </button>
+        </div>
 
-        <input
-          value={platform}
-          onChange={(e) => setPlatform(e.target.value)}
-          placeholder="Platform"
-          style={platformInput}
-        />
-
-        <select
-          value={completeness}
-          onChange={(e) => setCompleteness(e.target.value)}
-          style={smallSelect}
-        >
-          <option value="">Completeness</option>
-          <option value="loose">loose</option>
-          <option value="cib">cib</option>
-          <option value="sealed">sealed</option>
-        </select>
-
-        <input
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          placeholder="Region"
-          style={regionInput}
-        />
-
-        <input
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Notes"
-          style={notesInput}
-        />
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          justifyContent: "flex-end",
-          flexWrap: "wrap"
-        }}
-      >
-        <button
-          onClick={save}
-          disabled={loading}
-          style={primaryButton}
-        >
-          Save
-        </button>
-
-        <button
-          onClick={valuate}
-          disabled={loading}
-          style={secondaryButton}
-        >
-          Valuate
-        </button>
-
-        <button
-          onClick={del}
-          disabled={loading}
-          style={dangerButton}
-        >
-          Delete
-        </button>
-
-        {msg && (
-          <span
+        {open && (
+          <div
             style={{
-              width: 22,
-              textAlign: "center",
-              color: theme.colors.textMuted,
-              fontSize: 13
+              width: 360,
+              background: theme.colors.surfaceAlt,
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.radius.lg,
+              padding: 12,
+              boxShadow: theme.shadow.soft,
+              display: "grid",
+              gap: 10
             }}
           >
-            {msg}
-          </span>
+            <ActionField label={text.qty}>
+              <input
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                type="number"
+                min="1"
+                style={inputStyle}
+              />
+            </ActionField>
+
+            <ActionField label={text.price}>
+              <input
+                value={estimatedPrice}
+                onChange={(e) => setEstimatedPrice(e.target.value)}
+                type="number"
+                min="0"
+                step="0.01"
+                style={inputStyle}
+              />
+            </ActionField>
+
+            <ActionField label={text.condition}>
+              <input
+                value={condition}
+                onChange={(e) => setCondition(e.target.value)}
+                style={inputStyle}
+              />
+            </ActionField>
+
+            <ActionField label={text.platform}>
+              <input
+                value={platform}
+                onChange={(e) => setPlatform(e.target.value)}
+                style={inputStyle}
+              />
+            </ActionField>
+
+            <ActionField label={text.completeness}>
+              <input
+                value={completeness}
+                onChange={(e) => setCompleteness(e.target.value)}
+                style={inputStyle}
+              />
+            </ActionField>
+
+            <ActionField label={text.region}>
+              <input
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                style={inputStyle}
+              />
+            </ActionField>
+
+            <ActionField label={text.notes}>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  minHeight: 72,
+                  resize: "vertical"
+                }}
+              />
+            </ActionField>
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setOpen(false)} style={secondaryButton}>
+                {text.cancel}
+              </button>
+              <button type="button" onClick={handleSave} disabled={loading} style={primaryButton}>
+                {text.save}
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-const smallInput: React.CSSProperties = {
-  width: 60,
-  padding: "7px 8px",
+function ActionField({
+  label,
+  children
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label style={{ display: "grid", gap: 6 }}>
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 800,
+          color: theme.colors.textMuted
+        }}
+      >
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "10px 12px",
+  borderRadius: theme.radius.md,
   border: `1px solid ${theme.colors.border}`,
-  borderRadius: theme.radius.sm,
   background: theme.colors.surface,
   color: theme.colors.text,
+  fontSize: 14,
   outline: "none"
 };
 
-const smallInputWide: React.CSSProperties = {
-  width: 84,
-  padding: "7px 8px",
+const chipButton: React.CSSProperties = {
   border: `1px solid ${theme.colors.border}`,
-  borderRadius: theme.radius.sm,
   background: theme.colors.surface,
   color: theme.colors.text,
-  outline: "none"
-};
-
-const smallSelect: React.CSSProperties = {
-  width: 130,
-  padding: "7px 8px",
-  border: `1px solid ${theme.colors.border}`,
-  borderRadius: theme.radius.sm,
-  background: theme.colors.surface,
-  color: theme.colors.text,
-  outline: "none"
-};
-
-const platformInput: React.CSSProperties = {
-  width: 120,
-  padding: "7px 8px",
-  border: `1px solid ${theme.colors.border}`,
-  borderRadius: theme.radius.sm,
-  background: theme.colors.surface,
-  color: theme.colors.text,
-  outline: "none"
-};
-
-const regionInput: React.CSSProperties = {
-  width: 110,
-  padding: "7px 8px",
-  border: `1px solid ${theme.colors.border}`,
-  borderRadius: theme.radius.sm,
-  background: theme.colors.surface,
-  color: theme.colors.text,
-  outline: "none"
-};
-
-const notesInput: React.CSSProperties = {
-  width: 140,
-  padding: "7px 8px",
-  border: `1px solid ${theme.colors.border}`,
-  borderRadius: theme.radius.sm,
-  background: theme.colors.surface,
-  color: theme.colors.text,
-  outline: "none"
-};
-
-const primaryButton: React.CSSProperties = {
-  padding: "7px 10px",
-  borderRadius: theme.radius.sm,
-  border: "none",
-  background: theme.colors.gold,
-  color: theme.colors.black,
-  fontWeight: 700,
+  borderRadius: 999,
+  padding: "6px 10px",
+  fontWeight: 800,
   cursor: "pointer"
 };
 
-const secondaryButton: React.CSSProperties = {
-  padding: "7px 10px",
-  borderRadius: theme.radius.sm,
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.surface,
-  color: theme.colors.text,
-  fontWeight: 700,
+const goldButton: React.CSSProperties = {
+  border: "none",
+  background: theme.colors.gold,
+  color: theme.colors.black,
+  borderRadius: 999,
+  padding: "6px 10px",
+  fontWeight: 900,
   cursor: "pointer"
 };
 
 const dangerButton: React.CSSProperties = {
-  padding: "7px 10px",
-  borderRadius: theme.radius.sm,
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.surfaceAlt,
+  border: "none",
+  background: "#FEF3F2",
   color: theme.colors.danger,
-  fontWeight: 700,
+  borderRadius: 999,
+  padding: "6px 10px",
+  fontWeight: 900,
+  cursor: "pointer"
+};
+
+const secondaryButton: React.CSSProperties = {
+  border: `1px solid ${theme.colors.border}`,
+  background: theme.colors.surface,
+  color: theme.colors.text,
+  borderRadius: 999,
+  padding: "8px 12px",
+  fontWeight: 800,
+  cursor: "pointer"
+};
+
+const primaryButton: React.CSSProperties = {
+  border: "none",
+  background: theme.colors.black,
+  color: "white",
+  borderRadius: 999,
+  padding: "8px 12px",
+  fontWeight: 800,
   cursor: "pointer"
 };
