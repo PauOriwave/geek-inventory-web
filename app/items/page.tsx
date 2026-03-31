@@ -345,6 +345,7 @@ export default async function ItemsPage({
               category={category}
               minPrice={minPrice}
               maxPrice={maxPrice}
+              locale={locale}
             />
 
             <div
@@ -566,6 +567,11 @@ export default async function ItemsPage({
                         id={it.id}
                         initialQty={it.quantity}
                         initialPrice={Number(it.estimatedPrice)}
+                        initialCondition={it.condition}
+                        initialPlatform={it.platform}
+                        initialCompleteness={it.completeness}
+                        initialRegion={it.region}
+                        initialNotes={it.notes}
                       />
                     </Td>
                   </tr>
