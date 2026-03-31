@@ -14,7 +14,7 @@ import CollectionValueChart from "./CollectionValueChart";
 import TrendingItems from "./TrendingItems";
 import LogoutButton from "./LogoutButton";
 import { theme } from "../theme";
-import { getDictionary, getLocale } from "../i18n";
+import { getLocale } from "../i18n";
 
 type Item = {
   id: string;
@@ -107,7 +107,6 @@ export default async function ItemsPage({
     searchParams instanceof Promise ? await searchParams : searchParams ?? {};
 
   const locale = getLocale(sp);
-  const t = getDictionary(locale);
 
   const q = typeof sp.q === "string" ? sp.q : undefined;
   const category = typeof sp.category === "string" ? sp.category : undefined;
@@ -125,8 +124,8 @@ export default async function ItemsPage({
   if (sort) params.set("sort", sort);
   if (minPrice) params.set("minPrice", minPrice);
   if (maxPrice) params.set("maxPrice", maxPrice);
-  params.set("lang", locale);
 
+  params.set("lang", locale);
   params.set("page", String(Number.isFinite(page) && page >= 1 ? page : 1));
   params.set(
     "pageSize",
@@ -294,17 +293,17 @@ export default async function ItemsPage({
                 marginBottom: 14
               }}
             >
-              <Stat label={text.items} value={summary.totalItems} />
-              <Stat label={text.units} value={summary.totalUnits} />
-              <Stat
+              <StatCard label={text.items} value={summary.totalItems} />
+              <StatCard label={text.units} value={summary.totalUnits} />
+              <StatCard
                 label={text.totalValue}
                 value={`${summary.totalValue.toFixed(2)} €`}
               />
             </div>
 
-            <CollectionValueChart category={category} />
-            <TrendingItems category={category} />
-            <CategoryStats />
+            <CollectionValueChart category={category} locale={locale} />
+            <TrendingItems category={category} locale={locale} />
+            <CategoryStats locale={locale} />
 
             <p
               style={{
@@ -318,7 +317,7 @@ export default async function ItemsPage({
           </div>
 
           <div style={{ position: "sticky", top: 16 }}>
-            <TopItems category={category} />
+            <TopItems category={category} locale={locale} />
           </div>
         </div>
 
@@ -416,7 +415,7 @@ export default async function ItemsPage({
                   <tr key={it.id}>
                     <Td>
                       <a
-                        href={`/items/${it.id}`}
+                        href={`/items/${it.id}?lang=${locale}`}
                         style={{
                           color: theme.colors.text,
                           textDecoration: "none",
@@ -497,6 +496,7 @@ export default async function ItemsPage({
                     </Td>
 
                     <Td align="right">{it.quantity}</Td>
+
                     <Td>{new Date(it.createdAt).toLocaleString()}</Td>
 
                     <Td align="right">
@@ -504,11 +504,6 @@ export default async function ItemsPage({
                         id={it.id}
                         initialQty={it.quantity}
                         initialPrice={Number(it.estimatedPrice)}
-                        initialCondition={it.condition}
-                        initialPlatform={it.platform}
-                        initialCompleteness={it.completeness}
-                        initialRegion={it.region}
-                        initialNotes={it.notes}
                       />
                     </Td>
                   </tr>
@@ -582,7 +577,7 @@ export default async function ItemsPage({
   );
 }
 
-function Stat({
+function StatCard({
   label,
   value
 }: {
