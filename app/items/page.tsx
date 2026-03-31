@@ -155,6 +155,16 @@ export default async function ItemsPage({
     page: String(Math.min(totalPages, currentPage + 1))
   }).toString()}`;
 
+  const langEsHref = `/items?${new URLSearchParams({
+    ...baseParams,
+    lang: "es"
+  }).toString()}`;
+
+  const langEnHref = `/items?${new URLSearchParams({
+    ...baseParams,
+    lang: "en"
+  }).toString()}`;
+
   const text = {
     dashboard:
       locale === "es" ? "Panel de colección" : "Collection dashboard",
@@ -252,7 +262,15 @@ export default async function ItemsPage({
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              justifyContent: "flex-end"
+            }}
+          >
             <div
               style={{
                 fontSize: 12,
@@ -263,6 +281,50 @@ export default async function ItemsPage({
               }}
             >
               {text.dashboard}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6
+              }}
+            >
+              <a
+                href={langEnHref}
+                style={{
+                  ...langSwitchLink,
+                  background:
+                    locale === "en"
+                      ? "rgba(255,255,255,0.14)"
+                      : "transparent",
+                  color: "white",
+                  border:
+                    locale === "en"
+                      ? "1px solid rgba(255,255,255,0.18)"
+                      : "1px solid rgba(255,255,255,0.10)"
+                }}
+              >
+                EN
+              </a>
+
+              <a
+                href={langEsHref}
+                style={{
+                  ...langSwitchLink,
+                  background:
+                    locale === "es"
+                      ? "rgba(255,255,255,0.14)"
+                      : "transparent",
+                  color: "white",
+                  border:
+                    locale === "es"
+                      ? "1px solid rgba(255,255,255,0.18)"
+                      : "1px solid rgba(255,255,255,0.10)"
+                }}
+              >
+                ES
+              </a>
             </div>
 
             <LogoutButton />
@@ -722,3 +784,11 @@ function DeltaBadge({
     </span>
   );
 }
+
+const langSwitchLink: React.CSSProperties = {
+  textDecoration: "none",
+  padding: "8px 10px",
+  borderRadius: 999,
+  fontSize: 12,
+  fontWeight: 800
+};

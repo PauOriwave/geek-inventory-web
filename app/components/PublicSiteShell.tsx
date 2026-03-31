@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { theme } from "../theme";
 
 export default function PublicSiteShell({
@@ -11,11 +11,15 @@ export default function PublicSiteShell({
   children: ReactNode;
   compact?: boolean;
 }) {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const lang = searchParams.get("lang") === "es" ? "es" : "en";
 
-  function withLang(path: string) {
-    return `${path}?lang=${lang}`;
+  function withLang(path: string, targetLang = lang) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("lang", targetLang);
+    const query = params.toString();
+    return query ? `${path}?${query}` : path;
   }
 
   const text = {
@@ -140,7 +144,7 @@ export default function PublicSiteShell({
               }}
             >
               <a
-                href="/?lang=en"
+                href={withLang(pathname, "en")}
                 style={{
                   ...langSwitchLink,
                   background:
@@ -152,7 +156,7 @@ export default function PublicSiteShell({
               </a>
 
               <a
-                href="/?lang=es"
+                href={withLang(pathname, "es")}
                 style={{
                   ...langSwitchLink,
                   background:
