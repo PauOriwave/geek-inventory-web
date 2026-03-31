@@ -1,228 +1,163 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { theme } from "../theme";
 
 export default function Filters() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+
   const locale = searchParams.get("lang") === "es" ? "es" : "en";
 
-  const currentQ = searchParams.get("q") ?? "";
-  const currentCategory = searchParams.get("category") ?? "";
-  const currentSort = searchParams.get("sort") ?? "";
-  const currentMinPrice = searchParams.get("minPrice") ?? "";
-  const currentMaxPrice = searchParams.get("maxPrice") ?? "";
+  const [q, setQ] = useState(searchParams.get("q") || "");
+  const [category, setCategory] = useState(searchParams.get("category") || "");
+  const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "");
+  const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "");
+  const [sort, setSort] = useState(searchParams.get("sort") || "");
 
   const text = {
-    title: locale === "es" ? "Filtros" : "Filters",
-    search: locale === "es" ? "Buscar" : "Search",
-    searchPlaceholder:
-      locale === "es" ? "Nombre del objeto" : "Item name",
+    search: locale === "es" ? "Buscar..." : "Search...",
     category: locale === "es" ? "Categoría" : "Category",
-    allCategories:
-      locale === "es" ? "Todas las categorías" : "All categories",
-    sort: locale === "es" ? "Orden" : "Sort",
-    defaultSort:
-      locale === "es" ? "Por defecto" : "Default",
-    priceAsc:
-      locale === "es" ? "Precio ↑" : "Price ↑",
-    priceDesc:
-      locale === "es" ? "Precio ↓" : "Price ↓",
-    newest:
-      locale === "es" ? "Más recientes" : "Newest",
-    oldest:
-      locale === "es" ? "Más antiguos" : "Oldest",
-    minPrice:
-      locale === "es" ? "Precio mínimo" : "Min price",
-    maxPrice:
-      locale === "es" ? "Precio máximo" : "Max price",
-    apply:
-      locale === "es" ? "Aplicar filtros" : "Apply filters",
-    clear:
-      locale === "es" ? "Limpiar" : "Clear"
+    minPrice: locale === "es" ? "Precio mín." : "Min price",
+    maxPrice: locale === "es" ? "Precio máx." : "Max price",
+    sort: locale === "es" ? "Ordenar" : "Sort",
+    apply: locale === "es" ? "Aplicar filtros" : "Apply filters",
+    reset: locale === "es" ? "Resetear" : "Reset",
+    all: locale === "es" ? "Todas" : "All",
+    priceAsc: locale === "es" ? "Precio ↑" : "Price ↑",
+    priceDesc: locale === "es" ? "Precio ↓" : "Price ↓",
+    newest: locale === "es" ? "Más recientes" : "Newest",
+    oldest: locale === "es" ? "Más antiguos" : "Oldest"
   };
 
+  function applyFilters() {
+    const params = new URLSearchParams();
+
+    if (q) params.set("q", q);
+    if (category) params.set("category", category);
+    if (minPrice) params.set("minPrice", minPrice);
+    if (maxPrice) params.set("maxPrice", maxPrice);
+    if (sort) params.set("sort", sort);
+
+    params.set("lang", locale);
+    params.set("page", "1");
+    params.set("pageSize", "25");
+
+    router.push(`/items?${params.toString()}`);
+  }
+
+  function resetFilters() {
+    router.push(`/items?lang=${locale}`);
+  }
+
   return (
-    <section
+    <div
       style={{
-        marginTop: 12,
-        background: theme.colors.surface,
+        marginTop: 10,
+        padding: 14,
         border: `1px solid ${theme.colors.border}`,
-        borderRadius: theme.radius.xl,
-        padding: 16,
-        boxShadow: theme.shadow.card
+        borderRadius: theme.radius.lg,
+        background: theme.colors.surface,
+        boxShadow: theme.shadow.soft,
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 10,
+        alignItems: "center"
       }}
     >
-      <div
-        style={{
-          fontWeight: 800,
-          fontSize: 15,
-          color: theme.colors.text,
-          marginBottom: 12
-        }}
+      {/* Search */}
+      <input
+        placeholder={text.search}
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        style={inputStyle}
+      />
+
+      {/* Category */}
+      <select
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        style={inputStyle}
       >
-        {text.title}
-      </div>
+        <option value="">{text.all}</option>
+        <option value="videogame">Videogame</option>
+        <option value="book">Book</option>
+        <option value="comic">Comic</option>
+        <option value="tcg">TCG</option>
+        <option value="figure">Figure</option>
+        <option value="boardgame">Board Game</option>
+        <option value="lego">LEGO</option>
+        <option value="other">Other</option>
+      </select>
 
-      <form
-        action="/items"
-        method="GET"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-          gap: 10,
-          alignItems: "end"
-        }}
+      {/* Min price */}
+      <input
+        type="number"
+        placeholder={text.minPrice}
+        value={minPrice}
+        onChange={(e) => setMinPrice(e.target.value)}
+        style={inputStyle}
+      />
+
+      {/* Max price */}
+      <input
+        type="number"
+        placeholder={text.maxPrice}
+        value={maxPrice}
+        onChange={(e) => setMaxPrice(e.target.value)}
+        style={inputStyle}
+      />
+
+      {/* Sort */}
+      <select
+        value={sort}
+        onChange={(e) => setSort(e.target.value)}
+        style={inputStyle}
       >
-        <input type="hidden" name="lang" value={locale} />
-        <input type="hidden" name="page" value="1" />
-        <input type="hidden" name="pageSize" value="25" />
+        <option value="">{text.sort}</option>
+        <option value="price_asc">{text.priceAsc}</option>
+        <option value="price_desc">{text.priceDesc}</option>
+        <option value="newest">{text.newest}</option>
+        <option value="oldest">{text.oldest}</option>
+      </select>
 
-        <Field label={text.search}>
-          <input
-            name="q"
-            defaultValue={currentQ}
-            placeholder={text.searchPlaceholder}
-            style={inputStyle}
-          />
-        </Field>
+      {/* Buttons */}
+      <button onClick={applyFilters} style={primaryButton}>
+        {text.apply}
+      </button>
 
-        <Field label={text.category}>
-          <select
-            name="category"
-            defaultValue={currentCategory}
-            style={inputStyle}
-          >
-            <option value="">{text.allCategories}</option>
-            <option value="videogame">Videogame</option>
-            <option value="book">Book</option>
-            <option value="comic">Comic</option>
-            <option value="tcg">TCG</option>
-            <option value="figure">Figure</option>
-            <option value="boardgame">Board Game</option>
-            <option value="lego">LEGO</option>
-            <option value="other">Other</option>
-          </select>
-        </Field>
-
-        <Field label={text.sort}>
-          <select
-            name="sort"
-            defaultValue={currentSort}
-            style={inputStyle}
-          >
-            <option value="">{text.defaultSort}</option>
-            <option value="price_asc">{text.priceAsc}</option>
-            <option value="price_desc">{text.priceDesc}</option>
-            <option value="created_desc">{text.newest}</option>
-            <option value="created_asc">{text.oldest}</option>
-          </select>
-        </Field>
-
-        <Field label={text.minPrice}>
-          <input
-            name="minPrice"
-            defaultValue={currentMinPrice}
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            style={inputStyle}
-          />
-        </Field>
-
-        <Field label={text.maxPrice}>
-          <input
-            name="maxPrice"
-            defaultValue={currentMaxPrice}
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="9999.99"
-            style={inputStyle}
-          />
-        </Field>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap"
-          }}
-        >
-          <button type="submit" style={primaryButton}>
-            {text.apply}
-          </button>
-
-          <a
-            href={`/items?lang=${locale}`}
-            style={secondaryButton}
-          >
-            {text.clear}
-          </a>
-        </div>
-      </form>
-    </section>
-  );
-}
-
-function Field({
-  label,
-  children
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label
-      style={{
-        display: "grid",
-        gap: 6
-      }}
-    >
-      <span
-        style={{
-          fontSize: 12,
-          fontWeight: 800,
-          color: theme.colors.textMuted
-        }}
-      >
-        {label}
-      </span>
-      {children}
-    </label>
+      <button onClick={resetFilters} style={secondaryButton}>
+        {text.reset}
+      </button>
+    </div>
   );
 }
 
 const inputStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "10px 12px",
-  borderRadius: theme.radius.md,
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.surfaceAlt,
-  color: theme.colors.text,
-  fontSize: 14,
+  padding: "8px 10px",
+  borderRadius: 8,
+  border: "1px solid #e5e7eb",
+  fontSize: 13,
   outline: "none"
 };
 
 const primaryButton: React.CSSProperties = {
+  padding: "8px 12px",
+  borderRadius: 8,
   border: "none",
-  padding: "10px 14px",
-  borderRadius: 999,
   background: theme.colors.black,
   color: "white",
-  fontWeight: 800,
-  cursor: "pointer",
-  textDecoration: "none"
+  fontWeight: 700,
+  cursor: "pointer"
 };
 
 const secondaryButton: React.CSSProperties = {
-  padding: "10px 14px",
-  borderRadius: 999,
+  padding: "8px 12px",
+  borderRadius: 8,
   border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.surfaceAlt,
+  background: "white",
   color: theme.colors.text,
-  fontWeight: 800,
-  textDecoration: "none"
+  fontWeight: 700,
+  cursor: "pointer"
 };
