@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { theme } from "../../theme";
 import { getLocale } from "../../i18n";
+import { getCategoryLabel } from "../categoryLabels";
+import ItemSnapshotsPanel from "./ItemSnapshotsPanel";
 
 type ItemDetail = {
   id: string;
@@ -68,6 +70,11 @@ export default async function ItemDetailPage({
   const langEsHref = `/items/${item.id}?lang=es`;
   const langEnHref = `/items/${item.id}?lang=en`;
 
+  const estimatedPrice = Number(item.estimatedPrice);
+  const marketValue =
+    item.marketValue != null ? Number(item.marketValue) : null;
+  const delta = marketValue != null ? marketValue - estimatedPrice : null;
+
   const text = {
     back: locale === "es" ? "← Volver a colección" : "← Back to collection",
     dashboard:
@@ -75,6 +82,7 @@ export default async function ItemDetailPage({
     metadata: locale === "es" ? "Metadatos" : "Metadata",
     valuation: locale === "es" ? "Valoración" : "Valuation",
     notes: locale === "es" ? "Notas" : "Notes",
+    overview: locale === "es" ? "Resumen" : "Overview",
     name: locale === "es" ? "Nombre" : "Name",
     category: locale === "es" ? "Categoría" : "Category",
     price: locale === "es" ? "Precio estimado" : "Estimated price",
@@ -91,19 +99,16 @@ export default async function ItemDetailPage({
       locale === "es" ? "Última valoración" : "Last valuation",
     created: locale === "es" ? "Creado" : "Created",
     updated: locale === "es" ? "Actualizado" : "Updated",
-    noNotes:
-      locale === "es" ? "No hay notas para este objeto." : "No notes for this item.",
     tracker:
       locale === "es"
         ? "El rastreador universal de colecciones"
         : "The Universal Collection Tracker",
+    noNotes:
+      locale === "es"
+        ? "No hay notas para este objeto."
+        : "No notes for this item.",
     notAvailable: "—"
   };
-
-  const estimatedPrice = Number(item.estimatedPrice);
-  const marketValue =
-    item.marketValue != null ? Number(item.marketValue) : null;
-  const delta = marketValue != null ? marketValue - estimatedPrice : null;
 
   return (
     <main
@@ -273,7 +278,7 @@ export default async function ItemDetailPage({
                   marginBottom: 12
                 }}
               >
-                {item.category}
+                {getCategoryLabel(item.category, locale)}
               </div>
 
               <h1
@@ -291,9 +296,9 @@ export default async function ItemDetailPage({
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(140px, 1fr))",
+                gridTemplateColumns: "repeat(4, minmax(140px, 1fr))",
                 gap: 10,
-                minWidth: "min(100%, 480px)"
+                minWidth: "min(100%, 640px)"
               }}
             >
               <StatCard
@@ -307,6 +312,15 @@ export default async function ItemDetailPage({
                     ? `${marketValue.toFixed(2)} €`
                     : text.notAvailable
                 }
+              />
+              <StatCard
+                label={text.delta}
+                value={
+                  delta != null
+                    ? `${delta > 0 ? "+" : ""}${delta.toFixed(2)} €`
+                    : text.notAvailable
+                }
+                accent={delta}
               />
               <StatCard
                 label={text.qty}
@@ -350,7 +364,10 @@ export default async function ItemDetailPage({
                 }}
               >
                 <InfoRow label={text.name} value={item.name} />
-                <InfoRow label={text.category} value={item.category} />
+                <InfoRow
+                  label={text.category}
+                  value={getCategoryLabel(item.category, locale)}
+                />
                 <InfoRow label={text.platform} value={item.platform} />
                 <InfoRow label={text.region} value={item.region} />
                 <InfoRow
@@ -363,11 +380,11 @@ export default async function ItemDetailPage({
                 />
                 <InfoRow
                   label={text.created}
-                  value={new Date(item.createdAt).toLocaleString()}
+                  value={formatDate(item.createdAt, locale)}
                 />
                 <InfoRow
                   label={text.updated}
-                  value={new Date(item.updatedAt).toLocaleString()}
+                  value={formatDate(item.updatedAt, locale)}
                 />
               </div>
             </section>
@@ -419,17 +436,13 @@ export default async function ItemDetailPage({
                 />
                 <InfoRow
                   label={text.confidence}
-                  value={
-                    typeof item.valuationConfidence === "number"
-                      ? `${item.valuationConfidence}%`
-                      : text.notAvailable
-                  }
+                  value={formatConfidence(item.valuationConfidence)}
                 />
                 <InfoRow
                   label={text.lastValuation}
                   value={
                     item.lastValuationAt
-                      ? new Date(item.lastValuationAt).toLocaleString()
+                      ? formatDate(item.lastValuationAt, locale)
                       : text.notAvailable
                   }
                 />
@@ -468,6 +481,8 @@ export default async function ItemDetailPage({
             </div>
           </section>
         </section>
+
+        <ItemSnapshotsPanel id={item.id} locale={locale} />
       </div>
     </main>
   );
@@ -475,15 +490,35 @@ export default async function ItemDetailPage({
 
 function StatCard({
   label,
-  value
+  value,
+  accent
 }: {
   label: string;
   value: string;
+  accent?: number | null;
 }) {
+  const color =
+    accent == null
+      ? theme.colors.text
+      : accent > 0
+        ? "#027A48"
+        : accent < 0
+          ? "#B42318"
+          : theme.colors.text;
+
+  const bg =
+    accent == null
+      ? theme.colors.surfaceAlt
+      : accent > 0
+        ? "#ECFDF3"
+        : accent < 0
+          ? "#FEF3F2"
+          : theme.colors.surfaceAlt;
+
   return (
     <div
       style={{
-        background: theme.colors.surfaceAlt,
+        background: bg,
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.lg,
         padding: "14px 16px"
@@ -503,7 +538,7 @@ function StatCard({
         style={{
           fontSize: 22,
           fontWeight: 800,
-          color: theme.colors.text
+          color
         }}
       >
         {value}
@@ -601,6 +636,26 @@ function formatCondition(value?: string | null) {
 function formatCompleteness(value?: string | null) {
   if (!value) return "—";
   return value.toUpperCase();
+}
+
+function formatDate(value: string, locale: "en" | "es") {
+  return new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function formatConfidence(value?: number | null) {
+  if (typeof value !== "number") return "—";
+
+  if (value <= 1) {
+    return `${Math.round(value * 100)}%`;
+  }
+
+  return `${Math.round(value)}%`;
 }
 
 const langSwitchLink: React.CSSProperties = {
