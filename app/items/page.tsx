@@ -328,6 +328,21 @@ export default async function ItemsPage({
               </a>
             </div>
 
+            <a
+              href={`/profile?lang=${locale}`}
+              style={{
+                textDecoration: "none",
+                borderRadius: 999,
+                padding: "10px 14px",
+                background: "rgba(255,255,255,0.10)",
+                color: "white",
+                fontWeight: 800,
+                border: "1px solid rgba(255,255,255,0.12)"
+              }}
+            >
+              {locale === "es" ? "Perfil" : "Profile"}
+            </a>
+
             <LogoutButton />
           </div>
         </div>
