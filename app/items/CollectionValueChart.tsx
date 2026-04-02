@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { theme } from "../theme";
+import { getCategoryLabel } from "./categoryLabels";
 
 type HistoryPoint = {
   date: string;
@@ -40,30 +41,156 @@ export default async function CollectionValueChart({
 
   const points = await getCollectionHistory(cookieHeader, category);
 
-  const text = {
-    title: category
-      ? locale === "es"
-        ? `Tendencia de valor de ${capitalize(category)}`
-        : `${capitalize(category)} value trend`
-      : locale === "es"
-        ? "Tendencia de valor de la colección"
-        : "Collection value trend",
-    subtitle:
-      category
-        ? locale === "es"
-          ? "filtrado por categoría"
-          : "filtered by category"
-        : locale === "es"
-          ? "historial de snapshots"
-          : "snapshots history",
-    empty: category
-      ? locale === "es"
-        ? `Todavía no hay historial de valoración para "${category}". Usa “Valuate” en los objetos de esta categoría para construir el gráfico.`
-        : `No valuation history yet for "${category}". Use “Valuate” on items in this category to build the chart.`
-      : locale === "es"
-        ? "Todavía no hay historial de valoración. Usa “Valuate” en tus objetos para construir el gráfico."
-        : "No valuation history yet. Use “Valuate” on your items to build the chart."
+  const title = category
+    ? locale === "es"
+      ? `Evolución de ${getCategoryLabel(category, locale)}`
+      : `${getCategoryLabel(category, locale)} trend`
+    : locale === "es"
+      ? "Evolución del valor de la colección"
+      : "Collection value evolution";
+
+  const subtitle = category
+    ? locale === "es"
+      ? "Histórico filtrado por categoría"
+      : "History filtered by category"
+    : locale === "es"
+      ? "Histórico global de snapshots"
+      : "Global snapshot history";
+
+  if (points.length === 0) {
+    return (
+      <section
+        style={{
+          marginTop: 14,
+          background: theme.colors.surface,
+          border: `1px solid ${theme.colors.border}`,
+          borderRadius: theme.radius.xl,
+          padding: 18,
+          boxShadow: theme.shadow.card
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            alignItems: "baseline",
+            marginBottom: 8
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontWeight: 800,
+                fontSize: 16,
+                color: theme.colors.text
+              }}
+            >
+              {title}
+            </div>
+            <div
+              style={{
+                fontSize: 12,
+                color: theme.colors.textMuted,
+                marginTop: 4
+              }}
+            >
+              {subtitle}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 16,
+            border: `1px dashed ${theme.colors.border}`,
+            borderRadius: theme.radius.lg,
+            padding: 24,
+            textAlign: "center",
+            background: theme.colors.surfaceAlt,
+            color: theme.colors.textMuted
+          }}
+        >
+          {locale === "es"
+            ? "Todavía no hay suficientes snapshots para mostrar la evolución. Valora tus objetos para empezar a construir el histórico."
+            : "There are not enough snapshots yet to show evolution. Valuate your items to start building history."}
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <CollectionChartCard
+      points={points}
+      title={title}
+      subtitle={subtitle}
+      locale={locale}
+    />
+  );
+}
+
+function CollectionChartCard({
+  points,
+  title,
+  subtitle,
+  locale
+}: {
+  points: HistoryPoint[];
+  title: string;
+  subtitle: string;
+  locale: "en" | "es";
+}) {
+  const width = 880;
+  const height = 280;
+  const paddingX = 26;
+  const paddingTop = 28;
+  const paddingBottom = 38;
+
+  const values = points.map((p) => p.total);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const first = points[0].total;
+  const latest = points[points.length - 1].total;
+  const delta = latest - first;
+  const percent = first > 0 ? (delta / first) * 100 : 0;
+
+  const positive = delta > 0;
+  const negative = delta < 0;
+
+  const toX = (index: number) => {
+    if (points.length === 1) return width / 2;
+    return (
+      paddingX +
+      (index * (width - paddingX * 2)) / Math.max(1, points.length - 1)
+    );
   };
+
+  const toY = (value: number) => {
+    const usableHeight = height - paddingTop - paddingBottom;
+    return paddingTop + (1 - (value - min) / range) * usableHeight;
+  };
+
+  const linePoints = points
+    .map((point, index) => `${toX(index)},${toY(point.total)}`)
+    .join(" ");
+
+  const areaPoints = [
+    `${toX(0)},${height - paddingBottom}`,
+    ...points.map((point, index) => `${toX(index)},${toY(point.total)}`),
+    `${toX(points.length - 1)},${height - paddingBottom}`
+  ].join(" ");
+
+  const trendColor = positive
+    ? "#027A48"
+    : negative
+      ? "#B42318"
+      : theme.colors.textMuted;
+
+  const trendBg = positive ? "#ECFDF3" : negative ? "#FEF3F2" : "#F9FAFB";
+
+  const yTicks = buildYTicks(min, max);
 
   return (
     <section
@@ -72,7 +199,7 @@ export default async function CollectionValueChart({
         background: theme.colors.surface,
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.xl,
-        padding: 16,
+        padding: 18,
         boxShadow: theme.shadow.card
       }}
     >
@@ -80,204 +207,188 @@ export default async function CollectionValueChart({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "baseline",
-          marginBottom: 12
+          alignItems: "flex-start",
+          gap: 16,
+          flexWrap: "wrap"
         }}
       >
-        <div
-          style={{
-            fontWeight: 800,
-            fontSize: 15,
-            color: theme.colors.text
-          }}
-        >
-          {text.title}
+        <div>
+          <div
+            style={{
+              fontWeight: 800,
+              fontSize: 16,
+              color: theme.colors.text
+            }}
+          >
+            {title}
+          </div>
+
+          <div
+            style={{
+              fontSize: 12,
+              color: theme.colors.textMuted,
+              marginTop: 4
+            }}
+          >
+            {subtitle}
+          </div>
         </div>
 
         <div
           style={{
-            fontSize: 12,
-            color: theme.colors.textMuted
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "flex-end"
           }}
         >
-          {text.subtitle}
+          <MetricPill
+            label={locale === "es" ? "Inicial" : "Initial"}
+            value={`${first.toFixed(2)} €`}
+          />
+          <MetricPill
+            label={locale === "es" ? "Actual" : "Current"}
+            value={`${latest.toFixed(2)} €`}
+          />
+          <MetricPill
+            label={locale === "es" ? "Cambio" : "Change"}
+            value={`${positive ? "+" : ""}${delta.toFixed(2)} €`}
+            bg={trendBg}
+            color={trendColor}
+          />
+          <MetricPill
+            label={locale === "es" ? "Variación" : "Variation"}
+            value={`${percent >= 0 ? "+" : ""}${percent.toFixed(1)}%`}
+            bg={trendBg}
+            color={trendColor}
+          />
         </div>
       </div>
 
-      {points.length === 0 ? (
-        <div style={{ color: theme.colors.textMuted }}>{text.empty}</div>
-      ) : (
-        <MiniCollectionChart points={points} locale={locale} />
-      )}
+      <div
+        style={{
+          marginTop: 16,
+          borderRadius: theme.radius.lg,
+          overflow: "hidden",
+          border: `1px solid ${theme.colors.border}`,
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(249,250,251,1) 100%)"
+        }}
+      >
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          style={{
+            width: "100%",
+            height: "auto",
+            display: "block"
+          }}
+        >
+          {yTicks.map((tick) => {
+            const y = toY(tick);
+            return (
+              <g key={tick}>
+                <line
+                  x1={paddingX}
+                  y1={y}
+                  x2={width - paddingX}
+                  y2={y}
+                  stroke="#E5E7EB"
+                  strokeDasharray="4 4"
+                />
+                <text
+                  x={paddingX}
+                  y={y - 6}
+                  fontSize="11"
+                  fill="#6B7280"
+                >
+                  {tick.toFixed(0)} €
+                </text>
+              </g>
+            );
+          })}
+
+          <polyline
+            fill="rgba(200,164,77,0.16)"
+            stroke="none"
+            points={areaPoints}
+          />
+
+          <polyline
+            fill="none"
+            stroke={theme.colors.gold}
+            strokeWidth="4"
+            points={linePoints}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {points.map((point, index) => {
+            const x = toX(index);
+            const y = toY(point.total);
+
+            return (
+              <g key={`${point.date}-${index}`}>
+                <circle
+                  cx={x}
+                  cy={y}
+                  r="5"
+                  fill={theme.colors.black}
+                />
+                <circle
+                  cx={x}
+                  cy={y}
+                  r="10"
+                  fill="transparent"
+                >
+                  <title>{`${point.date} — ${point.total.toFixed(2)} €`}</title>
+                </circle>
+              </g>
+            );
+          })}
+
+          <line
+            x1={paddingX}
+            y1={height - paddingBottom}
+            x2={width - paddingX}
+            y2={height - paddingBottom}
+            stroke="#D1D5DB"
+          />
+        </svg>
+      </div>
+
+      <div
+        style={{
+          marginTop: 10,
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 12,
+          color: theme.colors.textMuted,
+          fontSize: 12,
+          flexWrap: "wrap"
+        }}
+      >
+        <span>{formatChartDate(points[0].date, locale)}</span>
+        <span>
+          {locale === "es" ? "Snapshots" : "Snapshots"}: {points.length}
+        </span>
+        <span>{formatChartDate(points[points.length - 1].date, locale)}</span>
+      </div>
     </section>
   );
 }
 
-function MiniCollectionChart({
-  points,
-  locale
-}: {
-  points: HistoryPoint[];
-  locale: "en" | "es";
-}) {
-  const width = 760;
-  const height = 220;
-  const padding = 28;
-
-  const values = points.map((p) => p.total);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-
-  const toX = (index: number) => {
-    if (points.length === 1) return width / 2;
-    return padding + (index * (width - padding * 2)) / (points.length - 1);
-  };
-
-  const toY = (value: number) => {
-    return height - padding - ((value - min) / range) * (height - padding * 2);
-  };
-
-  const polylinePoints = points
-    .map((point, index) => `${toX(index)},${toY(point.total)}`)
-    .join(" ");
-
-  const first = points[0].total;
-  const latest = points[points.length - 1].total;
-  const delta = latest - first;
-  const positive = delta > 0;
-
-  const labels = {
-    max: locale === "es" ? "Máx" : "Max",
-    min: locale === "es" ? "Mín" : "Min",
-    current: locale === "es" ? "Actual" : "Current",
-    first: locale === "es" ? "Primero" : "First",
-    latest: locale === "es" ? "Último" : "Latest",
-    change: locale === "es" ? "Cambio" : "Change",
-    points: locale === "es" ? "Puntos" : "Points"
-  };
-
-  return (
-    <div>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        style={{
-          width: "100%",
-          height: "auto",
-          display: "block"
-        }}
-      >
-        <line
-          x1={padding}
-          y1={height - padding}
-          x2={width - padding}
-          y2={height - padding}
-          stroke="#E5E7EB"
-          strokeWidth="1"
-        />
-
-        <line
-          x1={padding}
-          y1={padding}
-          x2={padding}
-          y2={height - padding}
-          stroke="#E5E7EB"
-          strokeWidth="1"
-        />
-
-        <polyline
-          fill="none"
-          stroke={theme.colors.gold}
-          strokeWidth="3"
-          points={polylinePoints}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {points.map((point, index) => (
-          <circle
-            key={`${point.date}-${index}`}
-            cx={toX(index)}
-            cy={toY(point.total)}
-            r="4"
-            fill={theme.colors.black}
-          />
-        ))}
-
-        <text x={padding} y={16} fontSize="12" fill="#6B7280">
-          {labels.max}: {max.toFixed(2)} €
-        </text>
-
-        <text x={padding} y={height - 6} fontSize="12" fill="#6B7280">
-          {labels.min}: {min.toFixed(2)} €
-        </text>
-
-        <text
-          x={width - padding}
-          y={18}
-          textAnchor="end"
-          fontSize="12"
-          fill="#111827"
-          fontWeight="700"
-        >
-          {labels.current}: {latest.toFixed(2)} €
-        </text>
-      </svg>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          marginTop: 10,
-          flexWrap: "wrap"
-        }}
-      >
-        <StatPill label={labels.first} value={`${first.toFixed(2)} €`} />
-        <StatPill label={labels.latest} value={`${latest.toFixed(2)} €`} />
-        <StatPill
-          label={labels.change}
-          value={`${positive ? "+" : ""}${delta.toFixed(2)} €`}
-          positive={positive}
-          negative={delta < 0}
-        />
-        <StatPill label={labels.points} value={String(points.length)} />
-      </div>
-
-      <div
-        style={{
-          marginTop: 10,
-          display: "flex",
-          justifyContent: "space-between",
-          fontSize: 12,
-          color: theme.colors.textMuted
-        }}
-      >
-        <span>{points[0].date}</span>
-        <span>{points[points.length - 1].date}</span>
-      </div>
-    </div>
-  );
-}
-
-function StatPill({
+function MetricPill({
   label,
   value,
-  positive = false,
-  negative = false
+  bg = theme.colors.surfaceAlt,
+  color = theme.colors.text
 }: {
   label: string;
   value: string;
-  positive?: boolean;
-  negative?: boolean;
+  bg?: string;
+  color?: string;
 }) {
-  const bg = positive ? "#ECFDF3" : negative ? "#FEF3F2" : "#F9FAFB";
-  const color = positive
-    ? "#027A48"
-    : negative
-      ? "#B42318"
-      : theme.colors.text;
-
   return (
     <div
       style={{
@@ -294,6 +405,26 @@ function StatPill({
   );
 }
 
-function capitalize(value: string) {
-  return value.charAt(0).toUpperCase() + value.slice(1);
+function buildYTicks(min: number, max: number) {
+  if (min === max) {
+    return [min];
+  }
+
+  const steps = 4;
+  const ticks: number[] = [];
+
+  for (let i = 0; i <= steps; i++) {
+    ticks.push(min + ((max - min) * i) / steps);
+  }
+
+  return ticks;
+}
+
+function formatChartDate(value: string, locale: "en" | "es") {
+  const date = new Date(value);
+  return new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).format(date);
 }
