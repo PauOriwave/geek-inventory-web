@@ -1,6 +1,7 @@
 import PublicSiteShell from "../components/PublicSiteShell";
-import { availableThemes, theme } from "../theme";
+import { availableThemes, getThemeById } from "../theme";
 import { getLocale } from "../i18n";
+import { getServerTheme } from "../getServerTheme";
 
 export default async function PricingPage({
   searchParams
@@ -13,6 +14,7 @@ export default async function PricingPage({
     searchParams instanceof Promise ? await searchParams : searchParams ?? {};
 
   const locale = getLocale(sp);
+  const currentTheme = await getServerTheme();
   const premiumThemes = availableThemes.filter((item) => item.premium);
 
   const text = {
@@ -153,13 +155,11 @@ export default async function PricingPage({
         : "Build your vault now and grow into Pro when you need more depth.",
     startFree:
       locale === "es" ? "Empezar gratis" : "Start free",
-    login: locale === "es" ? "Entrar" : "Login",
-
-    defaultTheme: locale === "es" ? "por defecto" : "default"
+    login: locale === "es" ? "Entrar" : "Login"
   };
 
   return (
-    <PublicSiteShell compact>
+    <PublicSiteShell compact themeId={currentTheme.id}>
       <section
         style={{
           maxWidth: 1180,
@@ -179,9 +179,9 @@ export default async function PricingPage({
               display: "inline-block",
               padding: "6px 12px",
               borderRadius: 999,
-              background: theme.colors.surfaceAlt,
-              border: `1px solid ${theme.colors.border}`,
-              color: theme.colors.link,
+              background: currentTheme.colors.surfaceAlt,
+              border: `1px solid ${currentTheme.colors.border}`,
+              color: currentTheme.colors.link,
               fontWeight: 800,
               fontSize: 12,
               marginBottom: 14
@@ -195,7 +195,8 @@ export default async function PricingPage({
               fontSize: 42,
               lineHeight: 1.08,
               margin: 0,
-              fontWeight: 900
+              fontWeight: 900,
+              color: currentTheme.colors.text
             }}
           >
             {text.title}
@@ -204,7 +205,7 @@ export default async function PricingPage({
           <p
             style={{
               marginTop: 16,
-              color: theme.colors.textMuted,
+              color: currentTheme.colors.textMuted,
               fontSize: 17,
               lineHeight: 1.7
             }}
@@ -235,6 +236,7 @@ export default async function PricingPage({
             features={text.freeFeatures}
             cta={text.freeCta}
             href={`/register?lang=${locale}`}
+            currentTheme={currentTheme}
           />
 
           <PlanCard
@@ -246,6 +248,7 @@ export default async function PricingPage({
             href={`/register?lang=${locale}`}
             highlight
             badge={text.proBadge}
+            currentTheme={currentTheme}
           />
 
           <PlanCard
@@ -255,6 +258,7 @@ export default async function PricingPage({
             features={text.collectorFeatures}
             cta={text.collectorCta}
             href={`/register?lang=${locale}`}
+            currentTheme={currentTheme}
           />
         </div>
       </section>
@@ -268,11 +272,11 @@ export default async function PricingPage({
       >
         <div
           style={{
-            background: theme.colors.surface,
-            border: `1px solid ${theme.colors.border}`,
+            background: currentTheme.colors.surface,
+            border: `1px solid ${currentTheme.colors.border}`,
             borderRadius: 28,
             padding: 24,
-            boxShadow: theme.shadow.card
+            boxShadow: currentTheme.shadow.card
           }}
         >
           <div
@@ -287,7 +291,7 @@ export default async function PricingPage({
             <div style={{ maxWidth: 760 }}>
               <div
                 style={{
-                  color: theme.colors.link,
+                  color: currentTheme.colors.link,
                   fontWeight: 800,
                   fontSize: 13,
                   marginBottom: 8
@@ -299,7 +303,8 @@ export default async function PricingPage({
               <h2
                 style={{
                   margin: 0,
-                  fontSize: 30
+                  fontSize: 30,
+                  color: currentTheme.colors.text
                 }}
               >
                 {text.loyaltyTitle}
@@ -309,7 +314,7 @@ export default async function PricingPage({
                 style={{
                   marginTop: 12,
                   marginBottom: 0,
-                  color: theme.colors.textMuted,
+                  color: currentTheme.colors.textMuted,
                   lineHeight: 1.7
                 }}
               >
@@ -317,7 +322,10 @@ export default async function PricingPage({
               </p>
             </div>
 
-            <a href={`/register?lang=${locale}`} style={secondaryCta}>
+            <a
+              href={`/register?lang=${locale}`}
+              style={secondaryCta(currentTheme)}
+            >
               {text.createAccount}
             </a>
           </div>
@@ -334,10 +342,10 @@ export default async function PricingPage({
               <div
                 key={item.id}
                 style={{
-                  border: `1px solid ${theme.colors.border}`,
+                  border: `1px solid ${currentTheme.colors.border}`,
                   borderRadius: 22,
                   padding: 16,
-                  background: theme.colors.surfaceAlt
+                  background: currentTheme.colors.surfaceAlt
                 }}
               >
                 <div
@@ -348,14 +356,21 @@ export default async function PricingPage({
                     alignItems: "center"
                   }}
                 >
-                  <div style={{ fontWeight: 800 }}>{item.label}</div>
+                  <div
+                    style={{
+                      fontWeight: 800,
+                      color: currentTheme.colors.text
+                    }}
+                  >
+                    {item.label}
+                  </div>
 
                   <span
                     style={{
                       fontSize: 11,
                       borderRadius: 999,
                       padding: "4px 8px",
-                      background: theme.colors.black,
+                      background: currentTheme.colors.black,
                       color: "white"
                     }}
                   >
@@ -366,7 +381,7 @@ export default async function PricingPage({
                 <div
                   style={{
                     marginTop: 8,
-                    color: theme.colors.textMuted,
+                    color: currentTheme.colors.textMuted,
                     fontSize: 13,
                     minHeight: 36
                   }}
@@ -408,18 +423,19 @@ export default async function PricingPage({
         >
           <div
             style={{
-              background: theme.colors.surface,
-              border: `1px solid ${theme.colors.border}`,
+              background: currentTheme.colors.surface,
+              border: `1px solid ${currentTheme.colors.border}`,
               borderRadius: 24,
               padding: 20,
-              boxShadow: theme.shadow.soft
+              boxShadow: currentTheme.shadow.soft
             }}
           >
             <div
               style={{
                 fontWeight: 800,
                 fontSize: 18,
-                marginBottom: 10
+                marginBottom: 10,
+                color: currentTheme.colors.text
               }}
             >
               {text.includedTitle}
@@ -429,7 +445,7 @@ export default async function PricingPage({
               style={{
                 display: "grid",
                 gap: 10,
-                color: theme.colors.textMuted,
+                color: currentTheme.colors.textMuted,
                 lineHeight: 1.7,
                 fontSize: 14
               }}
@@ -442,11 +458,11 @@ export default async function PricingPage({
 
           <div
             style={{
-              background: theme.colors.black,
+              background: currentTheme.colors.black,
               color: "white",
               borderRadius: 24,
               padding: 20,
-              boxShadow: theme.shadow.card
+              boxShadow: currentTheme.shadow.card
             }}
           >
             <div
@@ -478,7 +494,7 @@ export default async function PricingPage({
                 flexWrap: "wrap"
               }}
             >
-              <a href={`/register?lang=${locale}`} style={primaryCta}>
+              <a href={`/register?lang=${locale}`} style={primaryCta(currentTheme)}>
                 {text.startFree}
               </a>
               <a href={`/login?lang=${locale}`} style={ghostCta}>
@@ -500,7 +516,8 @@ function PlanCard({
   cta,
   href,
   highlight = false,
-  badge
+  badge,
+  currentTheme
 }: {
   title: string;
   price: string;
@@ -510,17 +527,18 @@ function PlanCard({
   href: string;
   highlight?: boolean;
   badge?: string;
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   return (
     <div
       style={{
         border: highlight
-          ? `2px solid ${theme.colors.gold}`
-          : `1px solid ${theme.colors.border}`,
+          ? `2px solid ${currentTheme.colors.gold}`
+          : `1px solid ${currentTheme.colors.border}`,
         borderRadius: 26,
         padding: 22,
-        background: theme.colors.surface,
-        boxShadow: highlight ? theme.shadow.card : theme.shadow.soft,
+        background: currentTheme.colors.surface,
+        boxShadow: highlight ? currentTheme.shadow.card : currentTheme.shadow.soft,
         position: "relative"
       }}
     >
@@ -534,8 +552,8 @@ function PlanCard({
             fontWeight: 800,
             borderRadius: 999,
             padding: "5px 8px",
-            background: theme.colors.gold,
-            color: theme.colors.black
+            background: currentTheme.colors.gold,
+            color: currentTheme.colors.black
           }}
         >
           {badge}
@@ -545,7 +563,8 @@ function PlanCard({
       <div
         style={{
           fontSize: 22,
-          fontWeight: 900
+          fontWeight: 900,
+          color: currentTheme.colors.text
         }}
       >
         {title}
@@ -554,7 +573,7 @@ function PlanCard({
       <div
         style={{
           marginTop: 6,
-          color: theme.colors.textMuted,
+          color: currentTheme.colors.textMuted,
           fontSize: 14
         }}
       >
@@ -565,7 +584,8 @@ function PlanCard({
         style={{
           marginTop: 18,
           fontSize: 34,
-          fontWeight: 900
+          fontWeight: 900,
+          color: currentTheme.colors.text
         }}
       >
         {price}
@@ -576,7 +596,7 @@ function PlanCard({
           marginTop: 18,
           display: "grid",
           gap: 10,
-          color: theme.colors.textMuted,
+          color: currentTheme.colors.textMuted,
           fontSize: 14,
           lineHeight: 1.6
         }}
@@ -592,8 +612,8 @@ function PlanCard({
           display: "inline-block",
           marginTop: 22,
           textDecoration: "none",
-          background: highlight ? theme.colors.gold : theme.colors.black,
-          color: highlight ? theme.colors.black : "white",
+          background: highlight ? currentTheme.colors.gold : currentTheme.colors.black,
+          color: highlight ? currentTheme.colors.black : "white",
           padding: "12px 16px",
           borderRadius: 999,
           fontWeight: 800
@@ -620,24 +640,32 @@ function Swatch({ color }: { color: string }) {
   );
 }
 
-const secondaryCta: React.CSSProperties = {
-  textDecoration: "none",
-  border: `1px solid ${theme.colors.border}`,
-  color: theme.colors.text,
-  padding: "11px 16px",
-  borderRadius: 999,
-  fontWeight: 800,
-  background: theme.colors.surfaceAlt
-};
+function secondaryCta(
+  currentTheme: ReturnType<typeof getThemeById>
+): React.CSSProperties {
+  return {
+    textDecoration: "none",
+    border: `1px solid ${currentTheme.colors.border}`,
+    color: currentTheme.colors.text,
+    padding: "11px 16px",
+    borderRadius: 999,
+    fontWeight: 800,
+    background: currentTheme.colors.surfaceAlt
+  };
+}
 
-const primaryCta: React.CSSProperties = {
-  textDecoration: "none",
-  background: theme.colors.gold,
-  color: theme.colors.black,
-  padding: "12px 18px",
-  borderRadius: 999,
-  fontWeight: 800
-};
+function primaryCta(
+  currentTheme: ReturnType<typeof getThemeById>
+): React.CSSProperties {
+  return {
+    textDecoration: "none",
+    background: currentTheme.colors.gold,
+    color: currentTheme.colors.black,
+    padding: "12px 18px",
+    borderRadius: 999,
+    fontWeight: 800
+  };
+}
 
 const ghostCta: React.CSSProperties = {
   textDecoration: "none",

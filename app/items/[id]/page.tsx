@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { theme } from "../../theme";
 import { getLocale } from "../../i18n";
 import { getCategoryLabel } from "../categoryLabels";
 import ItemSnapshotsPanel from "./ItemSnapshotsPanel";
+import { AppThemeId, getThemeById } from "../../theme";
 
 type ItemDetail = {
   id: string;
@@ -59,6 +59,10 @@ export default async function ItemDetailPage({
     redirect("/login");
   }
 
+  const themeId =
+    (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
+  const currentTheme = getThemeById(themeId);
+
   const resolvedParams = params instanceof Promise ? await params : params;
   const sp =
     searchParams instanceof Promise ? await searchParams : searchParams ?? {};
@@ -82,7 +86,6 @@ export default async function ItemDetailPage({
     metadata: locale === "es" ? "Metadatos" : "Metadata",
     valuation: locale === "es" ? "Valoración" : "Valuation",
     notes: locale === "es" ? "Notas" : "Notes",
-    overview: locale === "es" ? "Resumen" : "Overview",
     name: locale === "es" ? "Nombre" : "Name",
     category: locale === "es" ? "Categoría" : "Category",
     price: locale === "es" ? "Precio estimado" : "Estimated price",
@@ -114,8 +117,8 @@ export default async function ItemDetailPage({
     <main
       style={{
         minHeight: "100vh",
-        background: theme.colors.bg,
-        color: theme.colors.text,
+        background: currentTheme.colors.bg,
+        color: currentTheme.colors.text,
         fontFamily: "system-ui",
         padding: 24
       }}
@@ -128,16 +131,16 @@ export default async function ItemDetailPage({
       >
         <div
           style={{
-            background: theme.colors.black,
+            background: currentTheme.colors.black,
             color: "white",
-            borderRadius: theme.radius.xl,
+            borderRadius: currentTheme.radius.xl,
             padding: "16px 20px",
             marginBottom: 18,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             gap: 16,
-            boxShadow: theme.shadow.card,
+            boxShadow: currentTheme.shadow.card,
             flexWrap: "wrap"
           }}
         >
@@ -147,8 +150,8 @@ export default async function ItemDetailPage({
                 width: 42,
                 height: 42,
                 borderRadius: 999,
-                background: theme.colors.gold,
-                color: theme.colors.black,
+                background: currentTheme.colors.gold,
+                color: currentTheme.colors.black,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -162,7 +165,7 @@ export default async function ItemDetailPage({
 
             <div>
               <div style={{ fontWeight: 800, fontSize: 18 }}>DrakoryVault</div>
-              <div style={{ fontSize: 12, color: "#D1D5DB" }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.78)" }}>
                 {text.tracker}
               </div>
             </div>
@@ -179,7 +182,7 @@ export default async function ItemDetailPage({
             <div
               style={{
                 fontSize: 12,
-                color: "#D1D5DB",
+                color: "rgba(255,255,255,0.78)",
                 padding: "6px 10px",
                 border: "1px solid rgba(255,255,255,0.12)",
                 borderRadius: 999
@@ -239,7 +242,7 @@ export default async function ItemDetailPage({
           style={{
             display: "inline-block",
             marginBottom: 14,
-            color: theme.colors.text,
+            color: currentTheme.colors.text,
             textDecoration: "none",
             fontWeight: 800
           }}
@@ -249,11 +252,11 @@ export default async function ItemDetailPage({
 
         <section
           style={{
-            background: theme.colors.surface,
-            border: `1px solid ${theme.colors.border}`,
-            borderRadius: theme.radius.xl,
+            background: currentTheme.colors.surface,
+            border: `1px solid ${currentTheme.colors.border}`,
+            borderRadius: currentTheme.radius.xl,
             padding: 20,
-            boxShadow: theme.shadow.card
+            boxShadow: currentTheme.shadow.card
           }}
         >
           <div
@@ -271,10 +274,10 @@ export default async function ItemDetailPage({
                   display: "inline-block",
                   padding: "5px 10px",
                   borderRadius: 999,
-                  background: theme.colors.surfaceAlt,
-                  border: `1px solid ${theme.colors.border}`,
+                  background: currentTheme.colors.surfaceAlt,
+                  border: `1px solid ${currentTheme.colors.border}`,
                   fontSize: 12,
-                  color: theme.colors.textMuted,
+                  color: currentTheme.colors.textMuted,
                   marginBottom: 12
                 }}
               >
@@ -286,7 +289,7 @@ export default async function ItemDetailPage({
                   margin: 0,
                   fontSize: 34,
                   lineHeight: 1.08,
-                  color: theme.colors.text
+                  color: currentTheme.colors.text
                 }}
               >
                 {item.name}
@@ -304,6 +307,7 @@ export default async function ItemDetailPage({
               <StatCard
                 label={text.price}
                 value={`${estimatedPrice.toFixed(2)} €`}
+                currentTheme={currentTheme}
               />
               <StatCard
                 label={text.market}
@@ -312,6 +316,7 @@ export default async function ItemDetailPage({
                     ? `${marketValue.toFixed(2)} €`
                     : text.notAvailable
                 }
+                currentTheme={currentTheme}
               />
               <StatCard
                 label={text.delta}
@@ -321,10 +326,12 @@ export default async function ItemDetailPage({
                     : text.notAvailable
                 }
                 accent={delta}
+                currentTheme={currentTheme}
               />
               <StatCard
                 label={text.qty}
                 value={String(item.quantity)}
+                currentTheme={currentTheme}
               />
             </div>
           </div>
@@ -339,9 +346,9 @@ export default async function ItemDetailPage({
           >
             <section
               style={{
-                background: theme.colors.surfaceAlt,
-                border: `1px solid ${theme.colors.border}`,
-                borderRadius: theme.radius.lg,
+                background: currentTheme.colors.surfaceAlt,
+                border: `1px solid ${currentTheme.colors.border}`,
+                borderRadius: currentTheme.radius.lg,
                 padding: 16
               }}
             >
@@ -350,7 +357,7 @@ export default async function ItemDetailPage({
                   fontWeight: 800,
                   fontSize: 15,
                   marginBottom: 12,
-                  color: theme.colors.text
+                  color: currentTheme.colors.text
                 }}
               >
                 {text.metadata}
@@ -363,37 +370,42 @@ export default async function ItemDetailPage({
                   gap: 12
                 }}
               >
-                <InfoRow label={text.name} value={item.name} />
+                <InfoRow label={text.name} value={item.name} currentTheme={currentTheme} />
                 <InfoRow
                   label={text.category}
                   value={getCategoryLabel(item.category, locale)}
+                  currentTheme={currentTheme}
                 />
-                <InfoRow label={text.platform} value={item.platform} />
-                <InfoRow label={text.region} value={item.region} />
+                <InfoRow label={text.platform} value={item.platform} currentTheme={currentTheme} />
+                <InfoRow label={text.region} value={item.region} currentTheme={currentTheme} />
                 <InfoRow
                   label={text.condition}
                   value={formatCondition(item.condition)}
+                  currentTheme={currentTheme}
                 />
                 <InfoRow
                   label={text.completeness}
                   value={formatCompleteness(item.completeness)}
+                  currentTheme={currentTheme}
                 />
                 <InfoRow
                   label={text.created}
                   value={formatDate(item.createdAt, locale)}
+                  currentTheme={currentTheme}
                 />
                 <InfoRow
                   label={text.updated}
                   value={formatDate(item.updatedAt, locale)}
+                  currentTheme={currentTheme}
                 />
               </div>
             </section>
 
             <section
               style={{
-                background: theme.colors.surfaceAlt,
-                border: `1px solid ${theme.colors.border}`,
-                borderRadius: theme.radius.lg,
+                background: currentTheme.colors.surfaceAlt,
+                border: `1px solid ${currentTheme.colors.border}`,
+                borderRadius: currentTheme.radius.lg,
                 padding: 16
               }}
             >
@@ -402,7 +414,7 @@ export default async function ItemDetailPage({
                   fontWeight: 800,
                   fontSize: 15,
                   marginBottom: 12,
-                  color: theme.colors.text
+                  color: currentTheme.colors.text
                 }}
               >
                 {text.valuation}
@@ -417,6 +429,7 @@ export default async function ItemDetailPage({
                 <InfoRow
                   label={text.price}
                   value={`${estimatedPrice.toFixed(2)} €`}
+                  currentTheme={currentTheme}
                 />
                 <InfoRow
                   label={text.market}
@@ -425,18 +438,22 @@ export default async function ItemDetailPage({
                       ? `${marketValue.toFixed(2)} €`
                       : text.notAvailable
                   }
+                  currentTheme={currentTheme}
                 />
                 <InfoRow
                   label={text.delta}
-                  value={<DeltaBadge delta={delta} />}
+                  value={<DeltaBadge delta={delta} currentTheme={currentTheme} />}
+                  currentTheme={currentTheme}
                 />
                 <InfoRow
                   label={text.source}
                   value={item.valuationSource || text.notAvailable}
+                  currentTheme={currentTheme}
                 />
                 <InfoRow
                   label={text.confidence}
                   value={formatConfidence(item.valuationConfidence)}
+                  currentTheme={currentTheme}
                 />
                 <InfoRow
                   label={text.lastValuation}
@@ -445,6 +462,7 @@ export default async function ItemDetailPage({
                       ? formatDate(item.lastValuationAt, locale)
                       : text.notAvailable
                   }
+                  currentTheme={currentTheme}
                 />
               </div>
             </section>
@@ -453,9 +471,9 @@ export default async function ItemDetailPage({
           <section
             style={{
               marginTop: 18,
-              background: theme.colors.surfaceAlt,
-              border: `1px solid ${theme.colors.border}`,
-              borderRadius: theme.radius.lg,
+              background: currentTheme.colors.surfaceAlt,
+              border: `1px solid ${currentTheme.colors.border}`,
+              borderRadius: currentTheme.radius.lg,
               padding: 16
             }}
           >
@@ -464,7 +482,7 @@ export default async function ItemDetailPage({
                 fontWeight: 800,
                 fontSize: 15,
                 marginBottom: 10,
-                color: theme.colors.text
+                color: currentTheme.colors.text
               }}
             >
               {text.notes}
@@ -472,7 +490,7 @@ export default async function ItemDetailPage({
 
             <div
               style={{
-                color: item.notes ? theme.colors.text : theme.colors.textMuted,
+                color: item.notes ? currentTheme.colors.text : currentTheme.colors.textMuted,
                 lineHeight: 1.7,
                 whiteSpace: "pre-wrap"
               }}
@@ -491,43 +509,45 @@ export default async function ItemDetailPage({
 function StatCard({
   label,
   value,
-  accent
+  accent,
+  currentTheme
 }: {
   label: string;
   value: string;
   accent?: number | null;
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   const color =
     accent == null
-      ? theme.colors.text
+      ? currentTheme.colors.text
       : accent > 0
-        ? "#027A48"
+        ? currentTheme.colors.success
         : accent < 0
-          ? "#B42318"
-          : theme.colors.text;
+          ? currentTheme.colors.danger
+          : currentTheme.colors.text;
 
   const bg =
     accent == null
-      ? theme.colors.surfaceAlt
+      ? currentTheme.colors.surfaceAlt
       : accent > 0
-        ? "#ECFDF3"
+        ? "rgba(34,197,94,0.14)"
         : accent < 0
-          ? "#FEF3F2"
-          : theme.colors.surfaceAlt;
+          ? "rgba(244,63,94,0.14)"
+          : currentTheme.colors.surfaceAlt;
 
   return (
     <div
       style={{
         background: bg,
-        border: `1px solid ${theme.colors.border}`,
-        borderRadius: theme.radius.lg,
+        border: `1px solid ${currentTheme.colors.border}`,
+        borderRadius: currentTheme.radius.lg,
         padding: "14px 16px"
       }}
     >
       <div
         style={{
           fontSize: 12,
-          color: theme.colors.textMuted,
+          color: currentTheme.colors.textMuted,
           marginBottom: 6
         }}
       >
@@ -549,24 +569,26 @@ function StatCard({
 
 function InfoRow({
   label,
-  value
+  value,
+  currentTheme
 }: {
   label: string;
   value: React.ReactNode;
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   return (
     <div
       style={{
-        background: theme.colors.surface,
-        border: `1px solid ${theme.colors.border}`,
-        borderRadius: theme.radius.md,
+        background: currentTheme.colors.surface,
+        border: `1px solid ${currentTheme.colors.border}`,
+        borderRadius: currentTheme.radius.md,
         padding: "12px 14px"
       }}
     >
       <div
         style={{
           fontSize: 12,
-          color: theme.colors.textMuted,
+          color: currentTheme.colors.textMuted,
           marginBottom: 6,
           fontWeight: 800
         }}
@@ -576,7 +598,7 @@ function InfoRow({
 
       <div
         style={{
-          color: theme.colors.text,
+          color: currentTheme.colors.text,
           fontSize: 14
         }}
       >
@@ -587,23 +609,30 @@ function InfoRow({
 }
 
 function DeltaBadge({
-  delta
+  delta,
+  currentTheme
 }: {
   delta: number | null;
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   if (delta == null) {
-    return <span style={{ color: theme.colors.textMuted }}>—</span>;
+    return <span style={{ color: currentTheme.colors.textMuted }}>—</span>;
   }
 
   const positive = delta > 0;
   const negative = delta < 0;
 
-  const bg = positive ? "#ECFDF3" : negative ? "#FEF3F2" : "#F9FAFB";
-  const color = positive
-    ? "#027A48"
+  const bg = positive
+    ? "rgba(34,197,94,0.14)"
     : negative
-      ? "#B42318"
-      : theme.colors.textMuted;
+      ? "rgba(244,63,94,0.14)"
+      : currentTheme.colors.surfaceAlt;
+
+  const color = positive
+    ? currentTheme.colors.success
+    : negative
+      ? currentTheme.colors.danger
+      : currentTheme.colors.textMuted;
 
   return (
     <span
@@ -615,7 +644,7 @@ function DeltaBadge({
         color,
         fontSize: 12,
         fontWeight: 800,
-        border: `1px solid ${theme.colors.border}`
+        border: `1px solid ${currentTheme.colors.border}`
       }}
     >
       {delta > 0 ? "+" : ""}
