@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { theme } from "../theme";
 import { getLocale } from "../i18n";
+import { AppThemeId, getThemeById } from "../theme";
+import ThemeSelector from "./ThemeSelector";
 
 type Me = {
   id: string;
@@ -47,6 +48,9 @@ export default async function ProfilePage({
   const locale = getLocale(sp);
   const me = await getMe(cookieHeader);
 
+  const themeId = (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
+  const currentTheme = getThemeById(themeId);
+
   const email = me.email || "collector@drakoryvault.local";
   const createdAt = me.createdAt || new Date().toISOString();
 
@@ -72,12 +76,10 @@ export default async function ProfilePage({
     language: locale === "es" ? "Idioma" : "Language",
     languageValue: locale === "es" ? "Español / Inglés" : "English / Spanish",
     theme: locale === "es" ? "Tema activo" : "Active theme",
-    themeValue:
-      locale === "es" ? "Clásico DrakoryVault" : "Classic DrakoryVault",
     themeText:
       locale === "es"
-        ? "Aquí vivirá el selector de temas desbloqueables y premium."
-        : "This is where unlockable and premium theme selection will live.",
+        ? "Este selector ya funciona como MVP y prepara la futura versión premium con desbloqueos y fidelización."
+        : "This selector already works as an MVP and prepares the future premium version with unlocks and loyalty.",
     achievementsText:
       locale === "es"
         ? "Aquí mostraremos hitos como tamaño de colección, categorías dominadas, antigüedad y objetivos desbloqueados."
@@ -89,16 +91,16 @@ export default async function ProfilePage({
     status: locale === "es" ? "Estado" : "Status",
     statusValue:
       locale === "es" ? "Cuenta activa" : "Active account",
-    editSoon:
-      locale === "es" ? "Editable pronto" : "Editable soon"
+    currentThemeLabel:
+      locale === "es" ? "Tema actual" : "Current theme"
   };
 
   return (
     <main
       style={{
         minHeight: "100vh",
-        background: theme.colors.bg,
-        color: theme.colors.text,
+        background: currentTheme.colors.bg,
+        color: currentTheme.colors.text,
         fontFamily: "system-ui",
         padding: 24
       }}
@@ -114,7 +116,7 @@ export default async function ProfilePage({
           style={{
             display: "inline-block",
             marginBottom: 14,
-            color: theme.colors.text,
+            color: currentTheme.colors.text,
             textDecoration: "none",
             fontWeight: 800
           }}
@@ -124,11 +126,11 @@ export default async function ProfilePage({
 
         <section
           style={{
-            background: theme.colors.black,
+            background: currentTheme.colors.black,
             color: "white",
-            borderRadius: theme.radius.xl,
+            borderRadius: currentTheme.radius.xl,
             padding: "20px 22px",
-            boxShadow: theme.shadow.card,
+            boxShadow: currentTheme.shadow.card,
             marginBottom: 18
           }}
         >
@@ -155,7 +157,7 @@ export default async function ProfilePage({
               <div
                 style={{
                   marginTop: 6,
-                  color: "#D1D5DB",
+                  color: "rgba(255,255,255,0.78)",
                   fontSize: 14,
                   maxWidth: 760
                 }}
@@ -169,8 +171,8 @@ export default async function ProfilePage({
                 width: 64,
                 height: 64,
                 borderRadius: 999,
-                background: theme.colors.gold,
-                color: theme.colors.black,
+                background: currentTheme.colors.gold,
+                color: currentTheme.colors.black,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -190,35 +192,65 @@ export default async function ProfilePage({
             gap: 18
           }}
         >
-          <Card title={text.account}>
-            <InfoRow label={text.email} value={email} />
+          <Card title={text.account} currentTheme={currentTheme}>
+            <InfoRow
+              label={text.email}
+              value={email}
+              currentTheme={currentTheme}
+            />
             <InfoRow
               label={text.memberSince}
               value={formatDate(createdAt, locale)}
+              currentTheme={currentTheme}
             />
-            <InfoRow label={text.status} value={text.statusValue} />
+            <InfoRow
+              label={text.status}
+              value={text.statusValue}
+              currentTheme={currentTheme}
+            />
           </Card>
 
-          <Card title={text.collectorIdentity}>
-            <InfoRow label={text.collectorRank} value={text.rankValue} />
-            <InfoRow label={text.language} value={text.languageValue} />
-            <InfoRow label={text.status} value={text.editSoon} />
-          </Card>
-
-          <Card title={text.preferences}>
-            <InfoRow label={text.theme} value={text.themeValue} />
-            <MutedParagraph>{text.themeText}</MutedParagraph>
-          </Card>
-
-          <Card title={text.achievements}>
-            <MutedParagraph>{text.achievementsText}</MutedParagraph>
+          <Card title={text.collectorIdentity} currentTheme={currentTheme}>
+            <InfoRow
+              label={text.collectorRank}
+              value={text.rankValue}
+              currentTheme={currentTheme}
+            />
+            <InfoRow
+              label={text.language}
+              value={text.languageValue}
+              currentTheme={currentTheme}
+            />
+            <InfoRow
+              label={text.currentThemeLabel}
+              value={currentTheme.label}
+              currentTheme={currentTheme}
+            />
           </Card>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <Card title={text.social}>
-              <MutedParagraph>{text.socialText}</MutedParagraph>
+            <Card title={text.preferences} currentTheme={currentTheme}>
+              <MutedParagraph currentTheme={currentTheme}>
+                {text.themeText}
+              </MutedParagraph>
+
+              <div style={{ marginTop: 14 }}>
+                <ThemeSelector currentThemeId={currentTheme.id} locale={locale} />
+              </div>
             </Card>
           </div>
+
+          <Card title={text.achievements} currentTheme={currentTheme}>
+            <MutedParagraph currentTheme={currentTheme}>
+              {text.achievementsText}
+            </MutedParagraph>
+          </Card>
+
+          <Card title={text.social} currentTheme={currentTheme}>
+            <MutedParagraph currentTheme={currentTheme}>
+              {text.socialText}
+            </MutedParagraph>
+          </Card>
         </div>
       </div>
     </main>
@@ -227,19 +259,21 @@ export default async function ProfilePage({
 
 function Card({
   title,
-  children
+  children,
+  currentTheme
 }: {
   title: string;
   children: React.ReactNode;
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   return (
     <section
       style={{
-        background: theme.colors.surface,
-        border: `1px solid ${theme.colors.border}`,
-        borderRadius: theme.radius.xl,
+        background: currentTheme.colors.surface,
+        border: `1px solid ${currentTheme.colors.border}`,
+        borderRadius: currentTheme.radius.xl,
         padding: 18,
-        boxShadow: theme.shadow.card
+        boxShadow: currentTheme.shadow.card
       }}
     >
       <div
@@ -247,7 +281,7 @@ function Card({
           fontWeight: 800,
           fontSize: 16,
           marginBottom: 12,
-          color: theme.colors.text
+          color: currentTheme.colors.text
         }}
       >
         {title}
@@ -260,25 +294,27 @@ function Card({
 
 function InfoRow({
   label,
-  value
+  value,
+  currentTheme
 }: {
   label: string;
   value: string;
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   return (
     <div
       style={{
-        border: `1px solid ${theme.colors.border}`,
-        borderRadius: theme.radius.lg,
+        border: `1px solid ${currentTheme.colors.border}`,
+        borderRadius: currentTheme.radius.lg,
         padding: "12px 14px",
-        background: theme.colors.surfaceAlt,
+        background: currentTheme.colors.surfaceAlt,
         marginBottom: 10
       }}
     >
       <div
         style={{
           fontSize: 12,
-          color: theme.colors.textMuted,
+          color: currentTheme.colors.textMuted,
           marginBottom: 6,
           fontWeight: 800
         }}
@@ -289,7 +325,7 @@ function InfoRow({
       <div
         style={{
           fontSize: 14,
-          color: theme.colors.text,
+          color: currentTheme.colors.text,
           fontWeight: 700
         }}
       >
@@ -300,15 +336,17 @@ function InfoRow({
 }
 
 function MutedParagraph({
-  children
+  children,
+  currentTheme
 }: {
   children: React.ReactNode;
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   return (
     <p
       style={{
         margin: 0,
-        color: theme.colors.textMuted,
+        color: currentTheme.colors.textMuted,
         lineHeight: 1.7,
         fontSize: 14
       }}

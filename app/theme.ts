@@ -1,176 +1,160 @@
-export type ThemeId =
-  | "vault"
-  | "fantasy"
+export type AppThemeId =
+  | "classic"
   | "cyberpunk"
-  | "ember-dragon";
+  | "fantasy"
+  | "retro";
+
+type ThemeColors = {
+  bg: string;
+  surface: string;
+  surfaceAlt: string;
+  text: string;
+  textMuted: string;
+  border: string;
+  gold: string;
+  black: string;
+  success: string;
+  danger: string;
+  link: string;
+};
+
+type ThemeRadius = {
+  sm: number;
+  md: number;
+  lg: number;
+  xl: number;
+};
+
+type ThemeShadow = {
+  soft: string;
+  card: string;
+};
 
 export type AppTheme = {
-  id: ThemeId;
+  id: AppThemeId;
   label: string;
   description: string;
   premium: boolean;
   loyaltyMonthsRequired: number;
-  colors: {
-    bg: string;
-    surface: string;
-    surfaceAlt: string;
-    text: string;
-    textMuted: string;
-    border: string;
-    black: string;
-    gold: string;
-    link: string;
-    danger: string;
-    success: string;
-  };
-  radius: {
-    sm: number;
-    md: number;
-    lg: number;
-    xl: number;
-  };
-  shadow: {
-    soft: string;
-    card: string;
-  };
+  colors: ThemeColors;
+  radius: ThemeRadius;
+  shadow: ThemeShadow;
 };
 
-const themes: Record<ThemeId, AppTheme> = {
-  vault: {
-    id: "vault",
-    label: "Vault",
-    description: "Classic premium collector look",
+const radius: ThemeRadius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24
+};
+
+const shadow: ThemeShadow = {
+  soft: "0 8px 24px rgba(15,23,42,0.06)",
+  card: "0 20px 40px rgba(15,23,42,0.10)"
+};
+
+export const availableThemes: AppTheme[] = [
+  {
+    id: "classic",
+    label: "Classic",
+    description: "La identidad base de DrakoryVault.",
     premium: false,
     loyaltyMonthsRequired: 0,
     colors: {
       bg: "#F5F3EE",
       surface: "#FFFFFF",
-      surfaceAlt: "#FAF8F3",
+      surfaceAlt: "#F9FAFB",
       text: "#171717",
       textMuted: "#6B7280",
-      border: "#E7E2D8",
-      black: "#171717",
+      border: "#E5E7EB",
       gold: "#C8A44D",
-      link: "#8B6A20",
+      black: "#171717",
+      success: "#027A48",
       danger: "#B42318",
-      success: "#027A48"
+      link: "#8B6B26"
     },
-    radius: {
-      sm: 10,
-      md: 14,
-      lg: 18,
-      xl: 24
-    },
-    shadow: {
-      soft: "0 6px 18px rgba(23, 23, 23, 0.05)",
-      card: "0 10px 30px rgba(23, 23, 23, 0.08)"
-    }
+    radius,
+    shadow
   },
-
-  fantasy: {
-    id: "fantasy",
-    label: "Fantasy",
-    description: "Arcane collector vault",
+  {
+    id: "cyberpunk",
+    label: "Cyberpunk",
+    description: "Neón oscuro, alto contraste y energía arcade.",
     premium: true,
     loyaltyMonthsRequired: 3,
     colors: {
-      bg: "#F4EFE8",
-      surface: "#FFFDF8",
-      surfaceAlt: "#F8F1E5",
-      text: "#231815",
-      textMuted: "#7A6A5A",
-      border: "#E7D8C6",
-      black: "#231815",
-      gold: "#B88A3B",
-      link: "#8A5E1A",
-      danger: "#A63D2F",
-      success: "#2D7A4A"
+      bg: "#0D0B1A",
+      surface: "#161228",
+      surfaceAlt: "#211B3A",
+      text: "#F9FAFB",
+      textMuted: "#A1A1AA",
+      border: "#2E2750",
+      gold: "#00E5FF",
+      black: "#09090B",
+      success: "#22C55E",
+      danger: "#F43F5E",
+      link: "#67E8F9"
     },
-    radius: {
-      sm: 10,
-      md: 14,
-      lg: 18,
-      xl: 24
-    },
+    radius,
     shadow: {
-      soft: "0 6px 18px rgba(56, 33, 15, 0.06)",
-      card: "0 10px 30px rgba(56, 33, 15, 0.10)"
+      soft: "0 8px 24px rgba(0,229,255,0.10)",
+      card: "0 20px 40px rgba(0,0,0,0.35)"
     }
   },
-
-  cyberpunk: {
-    id: "cyberpunk",
-    label: "Cyberpunk",
-    description: "Neon market lab",
+  {
+    id: "fantasy",
+    label: "Fantasy",
+    description: "Tonos cálidos, dorados y una estética más épica.",
     premium: true,
     loyaltyMonthsRequired: 6,
     colors: {
-      bg: "#0D1117",
-      surface: "#111827",
-      surfaceAlt: "#161F2D",
-      text: "#F3F4F6",
-      textMuted: "#9CA3AF",
-      border: "#263041",
-      black: "#05070A",
-      gold: "#EAB308",
-      link: "#67E8F9",
-      danger: "#FB7185",
-      success: "#34D399"
+      bg: "#F4EFE6",
+      surface: "#FFF8EE",
+      surfaceAlt: "#F7EEDC",
+      text: "#2A2118",
+      textMuted: "#7A6857",
+      border: "#E8D9BE",
+      gold: "#B88746",
+      black: "#2A2118",
+      success: "#2F855A",
+      danger: "#C05621",
+      link: "#8B5E34"
     },
-    radius: {
-      sm: 10,
-      md: 14,
-      lg: 18,
-      xl: 24
-    },
+    radius,
     shadow: {
-      soft: "0 6px 18px rgba(0, 0, 0, 0.24)",
-      card: "0 10px 30px rgba(0, 0, 0, 0.35)"
+      soft: "0 8px 24px rgba(184,135,70,0.10)",
+      card: "0 20px 40px rgba(90,62,28,0.12)"
     }
   },
-
-  "ember-dragon": {
-    id: "ember-dragon",
-    label: "Ember Dragon",
-    description: "Legendary long-term supporter theme",
+  {
+    id: "retro",
+    label: "Retro CRT",
+    description: "Inspirado en interfaces retro y vitrinas clásicas.",
     premium: true,
-    loyaltyMonthsRequired: 12,
+    loyaltyMonthsRequired: 9,
     colors: {
-      bg: "#140D0B",
-      surface: "#1B1210",
-      surfaceAlt: "#241815",
-      text: "#F8F3EE",
-      textMuted: "#C2A89A",
-      border: "#3C2721",
-      black: "#0E0908",
-      gold: "#D4AF37",
-      link: "#F59E0B",
-      danger: "#F87171",
-      success: "#4ADE80"
+      bg: "#ECE8D9",
+      surface: "#F8F3E3",
+      surfaceAlt: "#EFE6C8",
+      text: "#2B2B1F",
+      textMuted: "#6D6A52",
+      border: "#D5CBA7",
+      gold: "#6AA84F",
+      black: "#2B2B1F",
+      success: "#3C8D40",
+      danger: "#B85450",
+      link: "#4A7C59"
     },
-    radius: {
-      sm: 10,
-      md: 14,
-      lg: 18,
-      xl: 24
-    },
+    radius,
     shadow: {
-      soft: "0 6px 18px rgba(0, 0, 0, 0.25)",
-      card: "0 10px 30px rgba(0, 0, 0, 0.4)"
+      soft: "0 8px 24px rgba(106,168,79,0.08)",
+      card: "0 20px 40px rgba(60,80,40,0.10)"
     }
   }
-};
+];
 
-export const defaultThemeId: ThemeId = "vault";
-
-export function getTheme(themeId?: string): AppTheme {
-  if (!themeId) {
-    return themes[defaultThemeId];
-  }
-
-  return themes[themeId as ThemeId] ?? themes[defaultThemeId];
+export function getThemeById(id?: string | null): AppTheme {
+  return availableThemes.find((item) => item.id === id) ?? availableThemes[0];
 }
 
-export const theme = getTheme();
-
-export const availableThemes = Object.values(themes);
+export const theme = getThemeById("classic");
