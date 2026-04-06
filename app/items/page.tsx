@@ -13,9 +13,9 @@ import CategoryStats from "./CategoryStats";
 import CollectionValueChart from "./CollectionValueChart";
 import TrendingItems from "./TrendingItems";
 import LogoutButton from "./LogoutButton";
-import { theme } from "../theme";
 import { getLocale } from "../i18n";
 import { getCategoryLabel } from "./categoryLabels";
+import { AppThemeId, getThemeById } from "../theme";
 
 type Item = {
   id: string;
@@ -103,6 +103,10 @@ export default async function ItemsPage({
   if (!session) {
     redirect("/login");
   }
+
+  const themeId =
+    (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
+  const currentTheme = getThemeById(themeId);
 
   const sp =
     searchParams instanceof Promise ? await searchParams : searchParams ?? {};
@@ -208,8 +212,8 @@ export default async function ItemsPage({
     <main
       style={{
         minHeight: "100vh",
-        background: theme.colors.bg,
-        color: theme.colors.text,
+        background: currentTheme.colors.bg,
+        color: currentTheme.colors.text,
         fontFamily: "system-ui",
         padding: 24
       }}
@@ -222,16 +226,16 @@ export default async function ItemsPage({
       >
         <div
           style={{
-            background: theme.colors.black,
+            background: currentTheme.colors.black,
             color: "white",
-            borderRadius: theme.radius.xl,
+            borderRadius: currentTheme.radius.xl,
             padding: "16px 20px",
             marginBottom: 18,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
             gap: 16,
-            boxShadow: theme.shadow.card
+            boxShadow: currentTheme.shadow.card
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -240,8 +244,8 @@ export default async function ItemsPage({
                 width: 42,
                 height: 42,
                 borderRadius: 999,
-                background: theme.colors.gold,
-                color: theme.colors.black,
+                background: currentTheme.colors.gold,
+                color: currentTheme.colors.black,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -255,7 +259,7 @@ export default async function ItemsPage({
 
             <div>
               <div style={{ fontWeight: 800, fontSize: 18 }}>DrakoryVault</div>
-              <div style={{ fontSize: 12, color: "#D1D5DB" }}>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.78)" }}>
                 {locale === "es"
                   ? "El rastreador universal de colecciones"
                   : "The Universal Collection Tracker"}
@@ -275,7 +279,7 @@ export default async function ItemsPage({
             <div
               style={{
                 fontSize: 12,
-                color: "#D1D5DB",
+                color: "rgba(255,255,255,0.78)",
                 padding: "6px 10px",
                 border: "1px solid rgba(255,255,255,0.12)",
                 borderRadius: 999
@@ -372,11 +376,20 @@ export default async function ItemsPage({
                 marginBottom: 14
               }}
             >
-              <StatCard label={text.items} value={summary.totalItems} />
-              <StatCard label={text.units} value={summary.totalUnits} />
+              <StatCard
+                label={text.items}
+                value={summary.totalItems}
+                currentTheme={currentTheme}
+              />
+              <StatCard
+                label={text.units}
+                value={summary.totalUnits}
+                currentTheme={currentTheme}
+              />
               <StatCard
                 label={text.totalValue}
                 value={`${summary.totalValue.toFixed(2)} €`}
+                currentTheme={currentTheme}
               />
             </div>
 
@@ -386,7 +399,7 @@ export default async function ItemsPage({
 
             <p
               style={{
-                color: theme.colors.textMuted,
+                color: currentTheme.colors.textMuted,
                 margin: "14px 0 0 0",
                 fontSize: 14
               }}
@@ -414,7 +427,7 @@ export default async function ItemsPage({
             style={{
               fontWeight: 800,
               fontSize: 15,
-              color: theme.colors.text
+              color: currentTheme.colors.text
             }}
           >
             {text.collectionControls}
@@ -445,18 +458,18 @@ export default async function ItemsPage({
         <section
           style={{
             marginTop: 18,
-            background: theme.colors.surface,
-            border: `1px solid ${theme.colors.border}`,
-            borderRadius: theme.radius.xl,
+            background: currentTheme.colors.surface,
+            border: `1px solid ${currentTheme.colors.border}`,
+            borderRadius: currentTheme.radius.xl,
             overflow: "hidden",
-            boxShadow: theme.shadow.card
+            boxShadow: currentTheme.shadow.card
           }}
         >
           <div
             style={{
               padding: "14px 16px",
-              borderBottom: `1px solid ${theme.colors.border}`,
-              background: theme.colors.surfaceAlt,
+              borderBottom: `1px solid ${currentTheme.colors.border}`,
+              background: currentTheme.colors.surfaceAlt,
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center"
@@ -465,7 +478,7 @@ export default async function ItemsPage({
             <div style={{ fontWeight: 800, fontSize: 15 }}>
               {text.collectionItems}
             </div>
-            <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
+            <div style={{ fontSize: 12, color: currentTheme.colors.textMuted }}>
               {text.totalRecords}
             </div>
           </div>
@@ -474,29 +487,39 @@ export default async function ItemsPage({
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  <Th>{text.name}</Th>
-                  <Th>{text.category}</Th>
-                  <Th>{text.platform}</Th>
-                  <Th>{text.region}</Th>
-                  <Th>{text.condition}</Th>
-                  <Th>{text.completeness}</Th>
-                  <Th align="right">{text.price}</Th>
-                  <Th align="right">{text.market}</Th>
-                  <Th align="right">Δ</Th>
-                  <Th align="right">{text.qty}</Th>
-                  <Th>{text.created}</Th>
-                  <Th align="right">{text.actions}</Th>
+                  <Th currentTheme={currentTheme}>{text.name}</Th>
+                  <Th currentTheme={currentTheme}>{text.category}</Th>
+                  <Th currentTheme={currentTheme}>{text.platform}</Th>
+                  <Th currentTheme={currentTheme}>{text.region}</Th>
+                  <Th currentTheme={currentTheme}>{text.condition}</Th>
+                  <Th currentTheme={currentTheme}>{text.completeness}</Th>
+                  <Th align="right" currentTheme={currentTheme}>
+                    {text.price}
+                  </Th>
+                  <Th align="right" currentTheme={currentTheme}>
+                    {text.market}
+                  </Th>
+                  <Th align="right" currentTheme={currentTheme}>
+                    Δ
+                  </Th>
+                  <Th align="right" currentTheme={currentTheme}>
+                    {text.qty}
+                  </Th>
+                  <Th currentTheme={currentTheme}>{text.created}</Th>
+                  <Th align="right" currentTheme={currentTheme}>
+                    {text.actions}
+                  </Th>
                 </tr>
               </thead>
 
               <tbody>
                 {items.map((it) => (
                   <tr key={it.id}>
-                    <Td>
+                    <Td currentTheme={currentTheme}>
                       <a
                         href={`/items/${it.id}?lang=${locale}`}
                         style={{
-                          color: theme.colors.text,
+                          color: currentTheme.colors.text,
                           textDecoration: "none",
                           fontWeight: 700
                         }}
@@ -505,80 +528,85 @@ export default async function ItemsPage({
                       </a>
                     </Td>
 
-                    <Td>
+                    <Td currentTheme={currentTheme}>
                       <span
                         style={{
                           display: "inline-block",
                           padding: "4px 8px",
                           borderRadius: 999,
-                          background: "#F3F4F6",
+                          background: currentTheme.colors.surfaceAlt,
                           fontSize: 12,
-                          color: theme.colors.textMuted
+                          color: currentTheme.colors.textMuted
                         }}
                       >
                         {getCategoryLabel(it.category, locale)}
                       </span>
                     </Td>
 
-                    <Td>{it.platform || "—"}</Td>
-                    <Td>{it.region || "—"}</Td>
+                    <Td currentTheme={currentTheme}>{it.platform || "—"}</Td>
+                    <Td currentTheme={currentTheme}>{it.region || "—"}</Td>
 
-                    <Td>
+                    <Td currentTheme={currentTheme}>
                       <span
                         style={{
                           display: "inline-block",
                           padding: "4px 8px",
                           borderRadius: 999,
-                          background: "#F9FAFB",
+                          background: currentTheme.colors.surfaceAlt,
                           fontSize: 12,
-                          color: theme.colors.textMuted,
-                          border: `1px solid ${theme.colors.border}`
+                          color: currentTheme.colors.textMuted,
+                          border: `1px solid ${currentTheme.colors.border}`
                         }}
                       >
                         {formatCondition(it.condition)}
                       </span>
                     </Td>
 
-                    <Td>
+                    <Td currentTheme={currentTheme}>
                       <span
                         style={{
                           display: "inline-block",
                           padding: "4px 8px",
                           borderRadius: 999,
-                          background: "#F9FAFB",
+                          background: currentTheme.colors.surfaceAlt,
                           fontSize: 12,
-                          color: theme.colors.textMuted,
-                          border: `1px solid ${theme.colors.border}`
+                          color: currentTheme.colors.textMuted,
+                          border: `1px solid ${currentTheme.colors.border}`
                         }}
                       >
                         {formatCompleteness(it.completeness)}
                       </span>
                     </Td>
 
-                    <Td align="right">
+                    <Td align="right" currentTheme={currentTheme}>
                       {Number(it.estimatedPrice).toFixed(2)} €
                     </Td>
 
-                    <Td align="right">
+                    <Td align="right" currentTheme={currentTheme}>
                       {it.marketValue != null
                         ? `${Number(it.marketValue).toFixed(2)} €`
                         : "—"}
                     </Td>
 
-                    <Td align="right">
+                    <Td align="right" currentTheme={currentTheme}>
                       <DeltaBadge
                         estimatedPrice={Number(it.estimatedPrice)}
                         marketValue={
                           it.marketValue != null ? Number(it.marketValue) : null
                         }
+                        currentTheme={currentTheme}
                       />
                     </Td>
 
-                    <Td align="right">{it.quantity}</Td>
+                    <Td align="right" currentTheme={currentTheme}>
+                      {it.quantity}
+                    </Td>
 
-                    <Td>{new Date(it.createdAt).toLocaleString()}</Td>
+                    <Td currentTheme={currentTheme}>
+                      {new Date(it.createdAt).toLocaleString()}
+                    </Td>
 
-                    <Td align="right">
+                    <Td align="right" currentTheme={currentTheme}>
                       <ItemActions
                         id={it.id}
                         initialQty={it.quantity}
@@ -599,7 +627,7 @@ export default async function ItemsPage({
                       colSpan={12}
                       style={{
                         padding: 18,
-                        color: theme.colors.textMuted
+                        color: currentTheme.colors.textMuted
                       }}
                     >
                       {text.noItems}
@@ -626,17 +654,17 @@ export default async function ItemsPage({
               pointerEvents: currentPage === 1 ? "none" : "auto",
               opacity: currentPage === 1 ? 0.4 : 1,
               textDecoration: "none",
-              color: theme.colors.text,
+              color: currentTheme.colors.text,
               padding: "8px 12px",
-              borderRadius: theme.radius.sm,
-              border: `1px solid ${theme.colors.border}`,
-              background: theme.colors.surface
+              borderRadius: currentTheme.radius.sm,
+              border: `1px solid ${currentTheme.colors.border}`,
+              background: currentTheme.colors.surface
             }}
           >
             {text.prev}
           </a>
 
-          <div style={{ color: theme.colors.textMuted, fontSize: 14 }}>
+          <div style={{ color: currentTheme.colors.textMuted, fontSize: 14 }}>
             {text.page} {currentPage} / {totalPages}
           </div>
 
@@ -646,11 +674,11 @@ export default async function ItemsPage({
               pointerEvents: currentPage === totalPages ? "none" : "auto",
               opacity: currentPage === totalPages ? 0.4 : 1,
               textDecoration: "none",
-              color: theme.colors.text,
+              color: currentTheme.colors.text,
               padding: "8px 12px",
-              borderRadius: theme.radius.sm,
-              border: `1px solid ${theme.colors.border}`,
-              background: theme.colors.surface
+              borderRadius: currentTheme.radius.sm,
+              border: `1px solid ${currentTheme.colors.border}`,
+              background: currentTheme.colors.surface
             }}
           >
             {text.next}
@@ -663,25 +691,27 @@ export default async function ItemsPage({
 
 function StatCard({
   label,
-  value
+  value,
+  currentTheme
 }: {
   label: string;
   value: string | number;
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   return (
     <div
       style={{
-        background: theme.colors.surface,
-        border: `1px solid ${theme.colors.border}`,
-        borderRadius: theme.radius.lg,
+        background: currentTheme.colors.surface,
+        border: `1px solid ${currentTheme.colors.border}`,
+        borderRadius: currentTheme.radius.lg,
         padding: "16px 18px",
-        boxShadow: theme.shadow.soft
+        boxShadow: currentTheme.shadow.soft
       }}
     >
       <div
         style={{
           fontSize: 12,
-          color: theme.colors.textMuted,
+          color: currentTheme.colors.textMuted,
           marginBottom: 6
         }}
       >
@@ -692,7 +722,7 @@ function StatCard({
         style={{
           fontSize: 24,
           fontWeight: 800,
-          color: theme.colors.text
+          color: currentTheme.colors.text
         }}
       >
         {value}
@@ -703,10 +733,12 @@ function StatCard({
 
 function Th({
   children,
-  align
+  align,
+  currentTheme
 }: {
   children: ReactNode;
   align?: "left" | "right";
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   return (
     <th
@@ -714,9 +746,9 @@ function Th({
         textAlign: align ?? "left",
         padding: 12,
         fontSize: 12,
-        color: theme.colors.textMuted,
-        borderBottom: `1px solid ${theme.colors.border}`,
-        background: theme.colors.surfaceAlt
+        color: currentTheme.colors.textMuted,
+        borderBottom: `1px solid ${currentTheme.colors.border}`,
+        background: currentTheme.colors.surfaceAlt
       }}
     >
       {children}
@@ -726,18 +758,20 @@ function Th({
 
 function Td({
   children,
-  align
+  align,
+  currentTheme
 }: {
   children: ReactNode;
   align?: "left" | "right";
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   return (
     <td
       style={{
         textAlign: align ?? "left",
         padding: 12,
-        borderBottom: "1px solid #F3F4F6",
-        background: theme.colors.surface,
+        borderBottom: `1px solid ${currentTheme.colors.border}`,
+        background: currentTheme.colors.surface,
         verticalAlign: "top"
       }}
     >
@@ -763,26 +797,32 @@ function formatCompleteness(value?: string | null) {
 
 function DeltaBadge({
   estimatedPrice,
-  marketValue
+  marketValue,
+  currentTheme
 }: {
   estimatedPrice: number;
   marketValue: number | null;
+  currentTheme: ReturnType<typeof getThemeById>;
 }) {
   if (marketValue == null) {
-    return <span style={{ color: theme.colors.textMuted }}>—</span>;
+    return <span style={{ color: currentTheme.colors.textMuted }}>—</span>;
   }
 
   const delta = marketValue - estimatedPrice;
   const positive = delta > 0;
   const negative = delta < 0;
 
-  const bg = positive ? "#ECFDF3" : negative ? "#FEF3F2" : "#F9FAFB";
+  const bg = positive
+    ? "rgba(34,197,94,0.14)"
+    : negative
+      ? "rgba(244,63,94,0.14)"
+      : currentTheme.colors.surfaceAlt;
 
   const color = positive
-    ? "#027A48"
+    ? currentTheme.colors.success
     : negative
-      ? "#B42318"
-      : theme.colors.textMuted;
+      ? currentTheme.colors.danger
+      : currentTheme.colors.textMuted;
 
   const prefix = positive ? "+" : "";
 
@@ -798,7 +838,7 @@ function DeltaBadge({
         color,
         fontSize: 12,
         fontWeight: 700,
-        border: `1px solid ${theme.colors.border}`
+        border: `1px solid ${currentTheme.colors.border}`
       }}
     >
       {prefix}

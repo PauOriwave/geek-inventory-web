@@ -2,18 +2,21 @@
 
 import type { ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { theme } from "../theme";
+import { getThemeById, type AppThemeId } from "../theme";
 
 export default function PublicSiteShell({
   children,
-  compact = false
+  compact = false,
+  themeId = "classic"
 }: {
   children: ReactNode;
   compact?: boolean;
+  themeId?: AppThemeId;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const lang = searchParams.get("lang") === "es" ? "es" : "en";
+  const currentTheme = getThemeById(themeId);
 
   function withLang(path: string, targetLang = lang) {
     const params = new URLSearchParams(searchParams.toString());
@@ -42,8 +45,8 @@ export default function PublicSiteShell({
     <main
       style={{
         minHeight: "100vh",
-        background: theme.colors.bg,
-        color: theme.colors.text,
+        background: currentTheme.colors.bg,
+        color: currentTheme.colors.text,
         fontFamily: "system-ui"
       }}
     >
@@ -53,8 +56,11 @@ export default function PublicSiteShell({
           top: 0,
           zIndex: 20,
           backdropFilter: "blur(10px)",
-          background: "rgba(245,243,238,0.88)",
-          borderBottom: `1px solid ${theme.colors.border}`
+          background:
+            themeId === "classic"
+              ? "rgba(245,243,238,0.88)"
+              : `${currentTheme.colors.bg}E6`,
+          borderBottom: `1px solid ${currentTheme.colors.border}`
         }}
       >
         <div
@@ -76,7 +82,7 @@ export default function PublicSiteShell({
               alignItems: "center",
               gap: 12,
               textDecoration: "none",
-              color: theme.colors.text
+              color: currentTheme.colors.text
             }}
           >
             <div
@@ -84,15 +90,15 @@ export default function PublicSiteShell({
                 width: 42,
                 height: 42,
                 borderRadius: 999,
-                background: theme.colors.gold,
-                color: theme.colors.black,
+                background: currentTheme.colors.gold,
+                color: currentTheme.colors.black,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontWeight: 900,
                 fontSize: 18,
                 flexShrink: 0,
-                boxShadow: theme.shadow.soft
+                boxShadow: currentTheme.shadow.soft
               }}
             >
               D
@@ -103,7 +109,7 @@ export default function PublicSiteShell({
               <div
                 style={{
                   fontSize: 12,
-                  color: theme.colors.textMuted
+                  color: currentTheme.colors.textMuted
                 }}
               >
                 {text.tagline}
@@ -119,19 +125,19 @@ export default function PublicSiteShell({
               flexWrap: "wrap"
             }}
           >
-            <a href={withLang("/")} style={navLink}>
+            <a href={withLang("/")} style={navLink(currentTheme)}>
               {text.home}
             </a>
 
-            <a href={withLang("/pricing")} style={navLink}>
+            <a href={withLang("/pricing")} style={navLink(currentTheme)}>
               {text.pricing}
             </a>
 
-            <a href={withLang("/login")} style={navLink}>
+            <a href={withLang("/login")} style={navLink(currentTheme)}>
               {text.login}
             </a>
 
-            <a href={withLang("/register")} style={primaryCta}>
+            <a href={withLang("/register")} style={primaryCta(currentTheme)}>
               {text.startFree}
             </a>
 
@@ -146,10 +152,12 @@ export default function PublicSiteShell({
               <a
                 href={withLang(pathname, "en")}
                 style={{
-                  ...langSwitchLink,
+                  ...langSwitchLink(currentTheme),
                   background:
-                    lang === "en" ? theme.colors.surfaceAlt : "transparent",
-                  color: theme.colors.text
+                    lang === "en"
+                      ? currentTheme.colors.surfaceAlt
+                      : "transparent",
+                  color: currentTheme.colors.text
                 }}
               >
                 EN
@@ -158,10 +166,12 @@ export default function PublicSiteShell({
               <a
                 href={withLang(pathname, "es")}
                 style={{
-                  ...langSwitchLink,
+                  ...langSwitchLink(currentTheme),
                   background:
-                    lang === "es" ? theme.colors.surfaceAlt : "transparent",
-                  color: theme.colors.text
+                    lang === "es"
+                      ? currentTheme.colors.surfaceAlt
+                      : "transparent",
+                  color: currentTheme.colors.text
                 }}
               >
                 ES
@@ -176,8 +186,8 @@ export default function PublicSiteShell({
       <footer
         style={{
           marginTop: 56,
-          borderTop: `1px solid ${theme.colors.border}`,
-          background: theme.colors.surface
+          borderTop: `1px solid ${currentTheme.colors.border}`,
+          background: currentTheme.colors.surface
         }}
       >
         <div
@@ -197,7 +207,7 @@ export default function PublicSiteShell({
             <div
               style={{
                 fontSize: 13,
-                color: theme.colors.textMuted,
+                color: currentTheme.colors.textMuted,
                 marginTop: 4
               }}
             >
@@ -213,16 +223,16 @@ export default function PublicSiteShell({
               fontSize: 13
             }}
           >
-            <a href={withLang("/")} style={footerLink}>
+            <a href={withLang("/")} style={footerLink(currentTheme)}>
               {text.home}
             </a>
-            <a href={withLang("/pricing")} style={footerLink}>
+            <a href={withLang("/pricing")} style={footerLink(currentTheme)}>
               {text.pricing}
             </a>
-            <a href={withLang("/login")} style={footerLink}>
+            <a href={withLang("/login")} style={footerLink(currentTheme)}>
               {text.login}
             </a>
-            <a href={withLang("/register")} style={footerLink}>
+            <a href={withLang("/register")} style={footerLink(currentTheme)}>
               {text.register}
             </a>
           </div>
@@ -232,34 +242,48 @@ export default function PublicSiteShell({
   );
 }
 
-const navLink: React.CSSProperties = {
-  textDecoration: "none",
-  color: theme.colors.text,
-  padding: "10px 12px",
-  borderRadius: 999,
-  fontWeight: 700
-};
+function navLink(currentTheme: ReturnType<typeof getThemeById>): React.CSSProperties {
+  return {
+    textDecoration: "none",
+    color: currentTheme.colors.text,
+    padding: "10px 12px",
+    borderRadius: 999,
+    fontWeight: 700
+  };
+}
 
-const primaryCta: React.CSSProperties = {
-  textDecoration: "none",
-  background: theme.colors.black,
-  color: "white",
-  padding: "11px 16px",
-  borderRadius: 999,
-  fontWeight: 800,
-  boxShadow: theme.shadow.soft
-};
+function primaryCta(
+  currentTheme: ReturnType<typeof getThemeById>
+): React.CSSProperties {
+  return {
+    textDecoration: "none",
+    background: currentTheme.colors.black,
+    color: "white",
+    padding: "11px 16px",
+    borderRadius: 999,
+    fontWeight: 800,
+    boxShadow: currentTheme.shadow.soft
+  };
+}
 
-const footerLink: React.CSSProperties = {
-  textDecoration: "none",
-  color: theme.colors.textMuted
-};
+function footerLink(
+  currentTheme: ReturnType<typeof getThemeById>
+): React.CSSProperties {
+  return {
+    textDecoration: "none",
+    color: currentTheme.colors.textMuted
+  };
+}
 
-const langSwitchLink: React.CSSProperties = {
-  textDecoration: "none",
-  padding: "8px 10px",
-  borderRadius: 999,
-  border: `1px solid ${theme.colors.border}`,
-  fontSize: 12,
-  fontWeight: 800
-};
+function langSwitchLink(
+  currentTheme: ReturnType<typeof getThemeById>
+): React.CSSProperties {
+  return {
+    textDecoration: "none",
+    padding: "8px 10px",
+    borderRadius: 999,
+    border: `1px solid ${currentTheme.colors.border}`,
+    fontSize: 12,
+    fontWeight: 800
+  };
+}
