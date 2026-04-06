@@ -1,7 +1,7 @@
 import PublicSiteShell from "../components/PublicSiteShell";
 import { getLocale } from "../i18n";
 import { getServerTheme } from "../getServerTheme";
-import LoginForm from "./LoginForm";
+import LoginForm from "./login-form";
 
 export default async function LoginPage({
   searchParams

@@ -1,7 +1,7 @@
 import PublicSiteShell from "../components/PublicSiteShell";
 import { getLocale } from "../i18n";
 import { getServerTheme } from "../getServerTheme";
-import RegisterForm from "./RegisterForm";
+import RegisterForm from "./register-form";
 
 export default async function RegisterPage({
   searchParams
