@@ -3,8 +3,6 @@ import { AppThemeId, getThemeById } from "../theme";
 
 type Achievement = {
   id: string;
-  title: string;
-  description: string;
   unlocked: boolean;
   progress: number;
   target: number;
@@ -110,9 +108,12 @@ export default async function AchievementsPanel({
         }}
       >
         {achievements.map((achievement) => {
-          const ratio = achievement.target > 0
-            ? (achievement.progress / achievement.target) * 100
-            : 0;
+          const ratio =
+            achievement.target > 0
+              ? (achievement.progress / achievement.target) * 100
+              : 0;
+
+          const copy = getAchievementCopy(achievement.id, locale);
 
           return (
             <div
@@ -163,7 +164,7 @@ export default async function AchievementsPanel({
                         color: currentTheme.colors.text
                       }}
                     >
-                      {achievement.title}
+                      {copy.title}
                     </div>
 
                     <div
@@ -174,7 +175,7 @@ export default async function AchievementsPanel({
                         lineHeight: 1.55
                       }}
                     >
-                      {achievement.description}
+                      {copy.description}
                     </div>
                   </div>
                 </div>
@@ -242,4 +243,117 @@ export default async function AchievementsPanel({
       </div>
     </section>
   );
+}
+
+function getAchievementCopy(id: string, locale: "en" | "es") {
+  const copy: Record<
+    string,
+    {
+      en: { title: string; description: string };
+      es: { title: string; description: string };
+    }
+  > = {
+    first_piece: {
+      en: {
+        title: "First Piece",
+        description: "Add your first item to the vault."
+      },
+      es: {
+        title: "Primera pieza",
+        description: "Añade tu primer objeto al vault."
+      }
+    },
+    collector_initiate: {
+      en: {
+        title: "Collector Initiate",
+        description: "Reach 10 items in your collection."
+      },
+      es: {
+        title: "Iniciado coleccionista",
+        description: "Alcanza 10 objetos en tu colección."
+      }
+    },
+    shelf_builder: {
+      en: {
+        title: "Shelf Builder",
+        description: "Reach 25 items in your collection."
+      },
+      es: {
+        title: "Constructor de estanterías",
+        description: "Alcanza 25 objetos en tu colección."
+      }
+    },
+    vault_keeper: {
+      en: {
+        title: "Vault Keeper",
+        description: "Reach 50 items in your collection."
+      },
+      es: {
+        title: "Guardián del vault",
+        description: "Alcanza 50 objetos en tu colección."
+      }
+    },
+    category_explorer: {
+      en: {
+        title: "Category Explorer",
+        description: "Own items from 3 different categories."
+      },
+      es: {
+        title: "Explorador de categorías",
+        description: "Ten objetos de 3 categorías distintas."
+      }
+    },
+    valuation_rookie: {
+      en: {
+        title: "Valuation Rookie",
+        description: "Generate your first valuation snapshot."
+      },
+      es: {
+        title: "Novato en valoraciones",
+        description: "Genera tu primer snapshot de valoración."
+      }
+    },
+    market_watcher: {
+      en: {
+        title: "Market Watcher",
+        description: "Reach 10 valuation snapshots."
+      },
+      es: {
+        title: "Vigilante del mercado",
+        description: "Alcanza 10 snapshots de valoración."
+      }
+    },
+    retro_curator: {
+      en: {
+        title: "Retro Curator",
+        description: "Add 5 videogames to your vault."
+      },
+      es: {
+        title: "Curador retro",
+        description: "Añade 5 videojuegos a tu vault."
+      }
+    },
+    brick_starter: {
+      en: {
+        title: "Brick Starter",
+        description: "Add 3 LEGO items to your vault."
+      },
+      es: {
+        title: "Inicio de ladrillos",
+        description: "Añade 3 objetos LEGO a tu vault."
+      }
+    },
+    board_tactician: {
+      en: {
+        title: "Board Tactician",
+        description: "Add 3 board games to your vault."
+      },
+      es: {
+        title: "Táctico de mesa",
+        description: "Añade 3 juegos de mesa a tu vault."
+      }
+    }
+  };
+
+  return copy[id]?.[locale] ?? copy[id]?.en ?? { title: id, description: id };
 }
