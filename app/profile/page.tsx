@@ -4,6 +4,7 @@ import { getLocale } from "../i18n";
 import { AppThemeId, getThemeById } from "../theme";
 import ThemeSelector from "./ThemeSelector";
 import AchievementsPanel from "./AchievementsPanel";
+import CollectorLevelPanel from "./CollectorLevelPanel";
 
 type Me = {
   id: string;
@@ -223,6 +224,10 @@ export default async function ProfilePage({
               currentTheme={currentTheme}
             />
           </Card>
+
+          <div style={{ gridColumn: "1 / -1" }}>
+            <CollectorLevelPanel locale={locale} />
+          </div>
 
           <div style={{ gridColumn: "1 / -1" }}>
             <Card title={text.preferences} currentTheme={currentTheme}>
