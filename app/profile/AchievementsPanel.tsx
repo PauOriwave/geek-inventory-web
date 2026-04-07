@@ -54,14 +54,25 @@ export default async function AchievementsPanel({
       locale === "es"
         ? "Estimado según tu progresión actual"
         : "Estimated from your current progression",
+    nextAchievement:
+      locale === "es" ? "Próximo logro" : "Next achievement",
+    nextAchievementHint:
+      locale === "es"
+        ? "Tu siguiente objetivo dentro del vault"
+        : "Your next goal inside the vault",
     noUnlockedYet:
       locale === "es"
         ? "Todavía no has desbloqueado logros."
-        : "You have not unlocked any achievements yet."
+        : "You have not unlocked any achievements yet.",
+    everythingUnlocked:
+      locale === "es"
+        ? "Ya has desbloqueado todos los logros de esta versión."
+        : "You have already unlocked every achievement in this version."
   };
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
   const latestUnlocked = getLatestUnlockedAchievement(achievements);
+  const nextAchievement = getNextAchievement(achievements);
 
   return (
     <section
@@ -113,42 +124,91 @@ export default async function AchievementsPanel({
 
       <div
         style={{
-          marginBottom: 16,
-          border: `1px solid ${currentTheme.colors.border}`,
-          borderRadius: currentTheme.radius.lg,
-          padding: 16,
-          background: currentTheme.colors.surfaceAlt
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 12,
+          marginBottom: 16
         }}
       >
         <div
           style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: currentTheme.colors.textMuted,
-            marginBottom: 8
+            border: `1px solid ${currentTheme.colors.border}`,
+            borderRadius: currentTheme.radius.lg,
+            padding: 16,
+            background: currentTheme.colors.surfaceAlt
           }}
         >
-          {text.latestUnlocked}
-        </div>
-
-        {latestUnlocked ? (
-          <LatestUnlockedCard
-            achievement={latestUnlocked}
-            locale={locale}
-            currentTheme={currentTheme}
-            hint={text.latestUnlockedHint}
-            unlockedLabel={text.unlocked}
-          />
-        ) : (
           <div
             style={{
+              fontSize: 12,
+              fontWeight: 800,
               color: currentTheme.colors.textMuted,
-              fontSize: 14
+              marginBottom: 8
             }}
           >
-            {text.noUnlockedYet}
+            {text.latestUnlocked}
           </div>
-        )}
+
+          {latestUnlocked ? (
+            <LatestUnlockedCard
+              achievement={latestUnlocked}
+              locale={locale}
+              currentTheme={currentTheme}
+              hint={text.latestUnlockedHint}
+              badgeLabel={text.unlocked}
+              darkBadge
+            />
+          ) : (
+            <div
+              style={{
+                color: currentTheme.colors.textMuted,
+                fontSize: 14
+              }}
+            >
+              {text.noUnlockedYet}
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            border: `1px solid ${currentTheme.colors.border}`,
+            borderRadius: currentTheme.radius.lg,
+            padding: 16,
+            background: currentTheme.colors.surfaceAlt
+          }}
+        >
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: currentTheme.colors.textMuted,
+              marginBottom: 8
+            }}
+          >
+            {text.nextAchievement}
+          </div>
+
+          {nextAchievement ? (
+            <NextAchievementCard
+              achievement={nextAchievement}
+              locale={locale}
+              currentTheme={currentTheme}
+              hint={text.nextAchievementHint}
+              progressLabel={text.progress}
+              badgeLabel={text.locked}
+            />
+          ) : (
+            <div
+              style={{
+                color: currentTheme.colors.textMuted,
+                fontSize: 14
+              }}
+            >
+              {text.everythingUnlocked}
+            </div>
+          )}
+        </div>
       </div>
 
       <div
@@ -301,13 +361,15 @@ function LatestUnlockedCard({
   locale,
   currentTheme,
   hint,
-  unlockedLabel
+  badgeLabel,
+  darkBadge = false
 }: {
   achievement: Achievement;
   locale: "en" | "es";
   currentTheme: ReturnType<typeof getThemeById>;
   hint: string;
-  unlockedLabel: string;
+  badgeLabel: string;
+  darkBadge?: boolean;
 }) {
   const copy = getAchievementCopy(achievement.id, locale);
 
@@ -381,12 +443,152 @@ function LatestUnlockedCard({
           fontWeight: 900,
           borderRadius: 999,
           padding: "6px 10px",
-          background: currentTheme.colors.black,
-          color: "white"
+          background: darkBadge ? currentTheme.colors.black : currentTheme.colors.gold,
+          color: darkBadge ? "white" : currentTheme.colors.black
         }}
       >
-        {unlockedLabel}
+        {badgeLabel}
       </span>
+    </div>
+  );
+}
+
+function NextAchievementCard({
+  achievement,
+  locale,
+  currentTheme,
+  hint,
+  progressLabel,
+  badgeLabel
+}: {
+  achievement: Achievement;
+  locale: "en" | "es";
+  currentTheme: ReturnType<typeof getThemeById>;
+  hint: string;
+  progressLabel: string;
+  badgeLabel: string;
+}) {
+  const copy = getAchievementCopy(achievement.id, locale);
+  const ratio =
+    achievement.target > 0
+      ? (achievement.progress / achievement.target) * 100
+      : 0;
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 14,
+          alignItems: "center",
+          flexWrap: "wrap"
+        }}
+      >
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div
+            style={{
+              width: 52,
+              height: 52,
+              borderRadius: 999,
+              background: currentTheme.colors.surface,
+              color: currentTheme.colors.text,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 24,
+              fontWeight: 900,
+              border: `1px solid ${currentTheme.colors.border}`
+            }}
+          >
+            {achievement.icon}
+          </div>
+
+          <div>
+            <div
+              style={{
+                fontWeight: 900,
+                fontSize: 16,
+                color: currentTheme.colors.text
+              }}
+            >
+              {copy.title}
+            </div>
+
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 13,
+                color: currentTheme.colors.textMuted,
+                lineHeight: 1.6
+              }}
+            >
+              {copy.description}
+            </div>
+
+            <div
+              style={{
+                marginTop: 6,
+                fontSize: 12,
+                color: currentTheme.colors.textMuted
+              }}
+            >
+              {hint}
+            </div>
+          </div>
+        </div>
+
+        <span
+          style={{
+            whiteSpace: "nowrap",
+            fontSize: 12,
+            fontWeight: 900,
+            borderRadius: 999,
+            padding: "6px 10px",
+            background: currentTheme.colors.surface,
+            color: currentTheme.colors.textMuted,
+            border: `1px solid ${currentTheme.colors.border}`
+          }}
+        >
+          {badgeLabel}
+        </span>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 10,
+            fontSize: 12,
+            color: currentTheme.colors.textMuted,
+            marginBottom: 6
+          }}
+        >
+          <span>{progressLabel}</span>
+          <span>
+            {achievement.progress} / {achievement.target}
+          </span>
+        </div>
+
+        <div
+          style={{
+            height: 8,
+            borderRadius: 999,
+            background: currentTheme.colors.surface,
+            overflow: "hidden",
+            border: `1px solid ${currentTheme.colors.border}`
+          }}
+        >
+          <div
+            style={{
+              width: `${Math.min(ratio, 100)}%`,
+              height: "100%",
+              background: currentTheme.colors.black
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -398,19 +600,7 @@ function getLatestUnlockedAchievement(achievements: Achievement[]) {
     return null;
   }
 
-  const achievementOrder = [
-    "first_piece",
-    "valuation_rookie",
-    "collector_initiate",
-    "category_explorer",
-    "retro_curator",
-    "brick_starter",
-    "board_tactician",
-    "market_watcher",
-    "shelf_builder",
-    "vault_keeper"
-  ];
-
+  const achievementOrder = getAchievementOrder();
   const orderMap = new Map(
     achievementOrder.map((id, index) => [id, index])
   );
@@ -422,6 +612,50 @@ function getLatestUnlockedAchievement(achievements: Achievement[]) {
   });
 
   return unlocked[0];
+}
+
+function getNextAchievement(achievements: Achievement[]) {
+  const locked = achievements.filter((achievement) => !achievement.unlocked);
+
+  if (locked.length === 0) {
+    return null;
+  }
+
+  const achievementOrder = getAchievementOrder();
+  const orderMap = new Map(
+    achievementOrder.map((id, index) => [id, index])
+  );
+
+  locked.sort((a, b) => {
+    const aOrder = orderMap.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+    const bOrder = orderMap.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+
+    if (aOrder !== bOrder) {
+      return aOrder - bOrder;
+    }
+
+    const aRatio = a.target > 0 ? a.progress / a.target : 0;
+    const bRatio = b.target > 0 ? b.progress / b.target : 0;
+
+    return bRatio - aRatio;
+  });
+
+  return locked[0];
+}
+
+function getAchievementOrder() {
+  return [
+    "first_piece",
+    "valuation_rookie",
+    "collector_initiate",
+    "category_explorer",
+    "retro_curator",
+    "brick_starter",
+    "board_tactician",
+    "market_watcher",
+    "shelf_builder",
+    "vault_keeper"
+  ];
 }
 
 function getAchievementCopy(id: string, locale: "en" | "es") {
