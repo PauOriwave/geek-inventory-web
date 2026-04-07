@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getLocale } from "../i18n";
 import { AppThemeId, getThemeById } from "../theme";
 import ThemeSelector from "./ThemeSelector";
+import AchievementsPanel from "./AchievementsPanel";
 
 type Me = {
   id: string;
@@ -48,7 +49,8 @@ export default async function ProfilePage({
   const locale = getLocale(sp);
   const me = await getMe(cookieHeader);
 
-  const themeId = (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
+  const themeId =
+    (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
   const currentTheme = getThemeById(themeId);
 
   const email = me.email || "collector@drakoryvault.local";
@@ -66,7 +68,6 @@ export default async function ProfilePage({
     preferences: locale === "es" ? "Preferencias" : "Preferences",
     collectorIdentity:
       locale === "es" ? "Identidad de coleccionista" : "Collector identity",
-    achievements: locale === "es" ? "Logros" : "Achievements",
     social: locale === "es" ? "Perfil público y compartir" : "Public profile & sharing",
     email: locale === "es" ? "Email" : "Email",
     memberSince: locale === "es" ? "Miembro desde" : "Member since",
@@ -75,24 +76,19 @@ export default async function ProfilePage({
     rankValue: "Vault Explorer",
     language: locale === "es" ? "Idioma" : "Language",
     languageValue: locale === "es" ? "Español / Inglés" : "English / Spanish",
-    theme: locale === "es" ? "Tema activo" : "Active theme",
     themeText:
       locale === "es"
         ? "Este selector ya funciona como MVP y prepara la futura versión premium con desbloqueos y fidelización."
         : "This selector already works as an MVP and prepares the future premium version with unlocks and loyalty.",
-    achievementsText:
-      locale === "es"
-        ? "Aquí mostraremos hitos como tamaño de colección, categorías dominadas, antigüedad y objetivos desbloqueados."
-        : "This is where milestones like collection size, mastered categories, account age and unlocked goals will appear.",
-    socialText:
-      locale === "es"
-        ? "Más adelante podrás tener un perfil público y compartir tus vitrinas, hitos y colección en redes."
-        : "Later you will be able to have a public profile and share your showcases, milestones and collection on social media.",
     status: locale === "es" ? "Estado" : "Status",
     statusValue:
       locale === "es" ? "Cuenta activa" : "Active account",
     currentThemeLabel:
-      locale === "es" ? "Tema actual" : "Current theme"
+      locale === "es" ? "Tema actual" : "Current theme",
+    socialText:
+      locale === "es"
+        ? "Más adelante podrás tener un perfil público y compartir tus vitrinas, hitos y colección en redes."
+        : "Later you will be able to have a public profile and share your showcases, milestones and collection on social media."
   };
 
   return (
@@ -240,17 +236,17 @@ export default async function ProfilePage({
             </Card>
           </div>
 
-          <Card title={text.achievements} currentTheme={currentTheme}>
-            <MutedParagraph currentTheme={currentTheme}>
-              {text.achievementsText}
-            </MutedParagraph>
-          </Card>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <AchievementsPanel locale={locale} />
+          </div>
 
-          <Card title={text.social} currentTheme={currentTheme}>
-            <MutedParagraph currentTheme={currentTheme}>
-              {text.socialText}
-            </MutedParagraph>
-          </Card>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <Card title={text.social} currentTheme={currentTheme}>
+              <MutedParagraph currentTheme={currentTheme}>
+                {text.socialText}
+              </MutedParagraph>
+            </Card>
+          </div>
         </div>
       </div>
     </main>
