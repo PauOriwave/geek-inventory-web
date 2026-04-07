@@ -16,6 +16,7 @@ import LogoutButton from "./LogoutButton";
 import { getLocale } from "../i18n";
 import { getCategoryLabel } from "./categoryLabels";
 import { AppThemeId, getThemeById } from "../theme";
+import { getCollectorLevelData } from "../lib/collector-level";
 
 type Item = {
   id: string;
@@ -47,6 +48,14 @@ type ItemsResponse = {
   total: number;
   page: number;
   pageSize: number;
+};
+
+type Achievement = {
+  id: string;
+  unlocked: boolean;
+  progress: number;
+  target: number;
+  icon: string;
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -84,6 +93,21 @@ async function getSummary(
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Failed to fetch summary (${res.status}): ${text}`);
+  }
+
+  return res.json();
+}
+
+async function getAchievements(cookieHeader: string): Promise<Achievement[]> {
+  const res = await fetch(`${API}/achievements`, {
+    cache: "no-store",
+    headers: {
+      cookie: cookieHeader
+    }
+  });
+
+  if (!res.ok) {
+    return [];
   }
 
   return res.json();
@@ -139,10 +163,18 @@ export default async function ItemsPage({
 
   const queryString = `?${params.toString()}`;
 
-  const [itemsRes, summary] = await Promise.all([
+  const [itemsRes, summary, achievements] = await Promise.all([
     getItems(queryString, cookieHeader),
-    getSummary(queryString, cookieHeader)
+    getSummary(queryString, cookieHeader),
+    getAchievements(cookieHeader)
   ]);
+
+  const unlockedAchievements = achievements.filter((a) => a.unlocked).length;
+  const collectorLevel = getCollectorLevelData({
+    totalItems: summary.totalItems,
+    unlockedAchievements,
+    locale
+  });
 
   const items = itemsRes.items;
   const totalPages = Math.max(1, Math.ceil(itemsRes.total / itemsRes.pageSize));
@@ -205,7 +237,10 @@ export default async function ItemsPage({
     market: locale === "es" ? "Mercado" : "Market",
     qty: locale === "es" ? "Cant." : "Qty",
     created: locale === "es" ? "Creado" : "Created",
-    actions: locale === "es" ? "Acciones" : "Actions"
+    actions: locale === "es" ? "Acciones" : "Actions",
+    level: locale === "es" ? "Nivel" : "Level",
+    pointsToNext:
+      locale === "es" ? "pts para subir" : "pts to level up"
   };
 
   return (
@@ -258,11 +293,38 @@ export default async function ItemsPage({
             </div>
 
             <div>
-              <div style={{ fontWeight: 800, fontSize: 18 }}>DrakoryVault</div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  flexWrap: "wrap"
+                }}
+              >
+                <div style={{ fontWeight: 800, fontSize: 18 }}>DrakoryVault</div>
+
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "5px 10px",
+                    borderRadius: 999,
+                    background: currentTheme.colors.gold,
+                    color: currentTheme.colors.black,
+                    fontWeight: 900,
+                    fontSize: 12
+                  }}
+                >
+                  {text.level} {collectorLevel.level}
+                </span>
+              </div>
+
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.78)" }}>
-                {locale === "es"
-                  ? "El rastreador universal de colecciones"
-                  : "The Universal Collection Tracker"}
+                {collectorLevel.currentTitle}
+                {collectorLevel.nextLevel
+                  ? ` · ${collectorLevel.pointsToNext} ${text.pointsToNext}`
+                  : ""}
               </div>
             </div>
           </div>
