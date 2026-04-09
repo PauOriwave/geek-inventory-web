@@ -1,89 +1,142 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { getSessionTokenFromCookie } from "../lib/auth";
-import { theme } from "../theme";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-export default function ValuateAllButton() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const locale = searchParams.get("lang") === "es" ? "es" : "en";
+export default function ValuateAllButton({
+  plan = "free",
+  locale = "en"
+}: {
+  plan?: string;
+  locale?: "en" | "es";
+}) {
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const isPremium = plan === "premium";
 
   const text = {
     label: locale === "es" ? "Valorar todo" : "Valuate all",
-    loading: locale === "es" ? "Valorando…" : "Valuating…",
-    confirm:
+    loading: locale === "es" ? "Valorando..." : "Valuating...",
+    premiumOnly:
       locale === "es"
-        ? "¿Valorar todos los objetos de tu colección? Esto creará nuevos snapshots."
-        : "Valuate all items in your collection? This will create new valuation snapshots.",
-    noSession: locale === "es" ? "No hay sesión activa" : "No active session",
-    failed:
-      locale === "es" ? "No se pudo valorar la colección" : "Valuate all failed",
-    result:
+        ? "Esta función está disponible solo en Premium."
+        : "This feature is available only on Premium.",
+    premiumHint:
       locale === "es"
-        ? (p: number, u: number, s: number) =>
-            `Procesados: ${p}\nActualizados: ${u}\nOmitidos: ${s}`
-        : (p: number, u: number, s: number) =>
-            `Processed: ${p}\nUpdated: ${u}\nSkipped: ${s}`
+        ? "Actualiza tu plan para valorar toda la colección de una vez."
+        : "Upgrade your plan to valuate your whole collection at once.",
+    success:
+      locale === "es"
+        ? "Colección valorada correctamente."
+        : "Collection valuated successfully.",
+    networkError:
+      locale === "es"
+        ? "Error de red al valorar la colección."
+        : "Network error while valuating collection.",
+    genericError:
+      locale === "es"
+        ? "No se pudo valorar la colección."
+        : "Could not valuate collection.",
+    pro: "PRO",
+    updated: locale === "es" ? "Actualizados" : "Updated",
+    skipped: locale === "es" ? "Omitidos" : "Skipped",
+    processed: locale === "es" ? "Procesados" : "Processed"
   };
 
-  async function handleValuateAll() {
-    const token = getSessionTokenFromCookie();
-
-    if (!token) {
-      alert(text.noSession);
+  async function handleClick() {
+    if (!isPremium) {
+      setMessage(`${text.premiumOnly} ${text.premiumHint}`);
       return;
     }
 
-    const ok = confirm(text.confirm);
-    if (!ok) return;
-
-    setLoading(true);
-
     try {
+      setLoading(true);
+      setMessage(null);
+
       const res = await fetch(`${API}/items/valuate-all`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        credentials: "include"
       });
 
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        throw new Error(data?.message || text.failed);
+        if (res.status === 403) {
+          setMessage(`${text.premiumOnly} ${text.premiumHint}`);
+          return;
+        }
+
+        setMessage(data?.message || text.genericError);
+        return;
       }
 
-      alert(text.result(data.processed, data.updated, data.skipped));
-      router.refresh();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : text.failed);
+      setMessage(
+        `${text.success} ${text.processed}: ${data?.processed ?? 0} · ${text.updated}: ${data?.updated ?? 0} · ${text.skipped}: ${data?.skipped ?? 0}`
+      );
+    } catch {
+      setMessage(text.networkError);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleValuateAll}
-      disabled={loading}
-      style={{
-        border: "none",
-        padding: "10px 12px",
-        borderRadius: 999,
-        background: theme.colors.gold,
-        color: theme.colors.black,
-        fontWeight: 900,
-        cursor: loading ? "not-allowed" : "pointer",
-        boxShadow: theme.shadow.soft
-      }}
-    >
-      {loading ? text.loading : text.label}
-    </button>
+    <div style={{ display: "grid", gap: 8 }}>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={loading}
+        title={!isPremium ? text.premiumOnly : undefined}
+        style={{
+          border: "none",
+          borderRadius: 999,
+          padding: "10px 14px",
+          fontWeight: 800,
+          cursor: loading ? "wait" : "pointer",
+          background: isPremium ? "#171717" : "#9CA3AF",
+          color: "white",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          opacity: loading ? 0.85 : 1,
+          boxShadow: isPremium
+            ? "0 8px 24px rgba(15,23,42,0.16)"
+            : "none"
+        }}
+      >
+        <span>{loading ? text.loading : text.label}</span>
+
+        {!isPremium && (
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 900,
+              padding: "3px 7px",
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.18)",
+              color: "white",
+              lineHeight: 1
+            }}
+          >
+            {text.pro}
+          </span>
+        )}
+      </button>
+
+      {message && (
+        <div
+          style={{
+            fontSize: 12,
+            color: "#6B7280",
+            lineHeight: 1.5,
+            maxWidth: 360
+          }}
+        >
+          {message}
+        </div>
+      )}
+    </div>
   );
 }

@@ -58,6 +58,13 @@ type Achievement = {
   icon: string;
 };
 
+type Me = {
+  id: string;
+  email?: string;
+  createdAt?: string;
+  plan?: string;
+};
+
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function getItems(
@@ -113,6 +120,21 @@ async function getAchievements(cookieHeader: string): Promise<Achievement[]> {
   return res.json();
 }
 
+async function getMe(cookieHeader: string): Promise<Me | null> {
+  const res = await fetch(`${API}/auth/me`, {
+    cache: "no-store",
+    headers: {
+      cookie: cookieHeader
+    }
+  });
+
+  if (!res.ok) {
+    return null;
+  }
+
+  return res.json();
+}
+
 export default async function ItemsPage({
   searchParams
 }: {
@@ -163,10 +185,11 @@ export default async function ItemsPage({
 
   const queryString = `?${params.toString()}`;
 
-  const [itemsRes, summary, achievements] = await Promise.all([
+  const [itemsRes, summary, achievements, me] = await Promise.all([
     getItems(queryString, cookieHeader),
     getSummary(queryString, cookieHeader),
-    getAchievements(cookieHeader)
+    getAchievements(cookieHeader),
+    getMe(cookieHeader)
   ]);
 
   const unlockedAchievements = achievements.filter((a) => a.unlocked).length;
@@ -503,7 +526,7 @@ export default async function ItemsPage({
               flexWrap: "wrap"
             }}
           >
-            <ValuateAllButton />
+            <ValuateAllButton plan={me?.plan ?? "free"} locale={locale} />
             <ImportCsvButton />
             <ExportCsvButton />
           </div>
