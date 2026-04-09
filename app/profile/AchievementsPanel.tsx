@@ -9,35 +9,19 @@ type Achievement = {
   icon: string;
 };
 
-const API = process.env.NEXT_PUBLIC_API_URL!;
-
-async function getAchievements(cookieHeader: string): Promise<Achievement[]> {
-  const res = await fetch(`${API}/achievements`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieHeader
-    }
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch achievements");
-  }
-
-  return res.json();
-}
-
 export default async function AchievementsPanel({
-  locale = "en"
+  locale = "en",
+  achievements = []
 }: {
   locale?: "en" | "es";
+  achievements?: Achievement[];
 }) {
   const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
   const themeId =
     (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
   const currentTheme = getThemeById(themeId);
 
-  const achievements = await getAchievements(cookieHeader);
+  const safeAchievements = Array.isArray(achievements) ? achievements : [];
 
   const text = {
     title: locale === "es" ? "Logros" : "Achievements",
@@ -70,9 +54,9 @@ export default async function AchievementsPanel({
         : "You have already unlocked every achievement in this version."
   };
 
-  const unlockedCount = achievements.filter((a) => a.unlocked).length;
-  const latestUnlocked = getLatestUnlockedAchievement(achievements);
-  const nextAchievement = getNextAchievement(achievements);
+  const unlockedCount = safeAchievements.filter((a) => a.unlocked).length;
+  const latestUnlocked = getLatestUnlockedAchievement(safeAchievements);
+  const nextAchievement = getNextAchievement(safeAchievements);
 
   return (
     <section
@@ -118,7 +102,7 @@ export default async function AchievementsPanel({
             color: currentTheme.colors.text
           }}
         >
-          {unlockedCount} / {achievements.length} {text.unlocked.toLowerCase()}
+          {unlockedCount} / {safeAchievements.length} {text.unlocked.toLowerCase()}
         </div>
       </div>
 
@@ -218,7 +202,7 @@ export default async function AchievementsPanel({
           gap: 12
         }}
       >
-        {achievements.map((achievement) => {
+        {safeAchievements.map((achievement) => {
           const ratio =
             achievement.target > 0
               ? (achievement.progress / achievement.target) * 100

@@ -1,7 +1,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale } from "../i18n";
-import { AppThemeId, getThemeById, getPremiumMonths } from "../theme";
+import {
+  AppThemeId,
+  getThemeById,
+  getPremiumMonths
+} from "../theme";
 import ThemeSelector from "./ThemeSelector";
 import AchievementsPanel from "./AchievementsPanel";
 import CollectorLevelPanel from "./CollectorLevelPanel";
@@ -14,21 +18,43 @@ type Me = {
   premiumStartedAt?: string | null;
 };
 
+type Achievement = {
+  id: string;
+  unlocked: boolean;
+  progress: number;
+  target: number;
+  icon: string;
+};
+
+type Summary = {
+  totalItems: number;
+  totalUnits: number;
+  totalValue: number;
+};
+
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-async function getMe(cookieHeader: string): Promise<Me> {
-  const res = await fetch(`${API}/auth/me`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieHeader
+async function safeFetchJson<T>(
+  path: string,
+  cookieHeader: string,
+  fallback: T
+): Promise<T> {
+  try {
+    const res = await fetch(`${API}${path}`, {
+      cache: "no-store",
+      headers: {
+        cookie: cookieHeader
+      }
+    });
+
+    if (!res.ok) {
+      return fallback;
     }
-  });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch user");
+    return (await res.json()) as T;
+  } catch {
+    return fallback;
   }
-
-  return res.json();
 }
 
 export default async function ProfilePage({
@@ -50,17 +76,28 @@ export default async function ProfilePage({
     searchParams instanceof Promise ? await searchParams : searchParams ?? {};
 
   const locale = getLocale(sp);
-  const me = await getMe(cookieHeader);
 
   const themeId =
     (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
   const currentTheme = getThemeById(themeId);
 
-  const email = me.email || "collector@drakoryvault.local";
-  const createdAt = me.createdAt || new Date().toISOString();
-  const plan = me.plan ?? "free";
+  const [me, achievements, summary] = await Promise.all([
+    safeFetchJson<Me | null>("/auth/me", cookieHeader, null),
+    safeFetchJson<Achievement[]>("/achievements", cookieHeader, []),
+    safeFetchJson<Summary>("/stats/summary", cookieHeader, {
+      totalItems: 0,
+      totalUnits: 0,
+      totalValue: 0
+    })
+  ]);
+
+  const safeAchievements = Array.isArray(achievements) ? achievements : [];
+
+  const email = me?.email || "collector@drakoryvault.local";
+  const createdAt = me?.createdAt || new Date().toISOString();
+  const plan = me?.plan ?? "free";
   const isPremium = plan === "premium";
-  const premiumMonths = getPremiumMonths(me.premiumStartedAt ?? null);
+  const premiumMonths = getPremiumMonths(me?.premiumStartedAt ?? null);
 
   const text = {
     title: locale === "es" ? "Perfil del coleccionista" : "Collector profile",
@@ -74,13 +111,15 @@ export default async function ProfilePage({
     collectorIdentity:
       locale === "es" ? "Identidad de coleccionista" : "Collector identity",
     preferences: locale === "es" ? "Preferencias" : "Preferences",
-    social: locale === "es" ? "Perfil público y compartir" : "Public profile & sharing",
+    social:
+      locale === "es"
+        ? "Perfil público y compartir"
+        : "Public profile & sharing",
     planTitle: locale === "es" ? "Plan y desbloqueos" : "Plan & unlocks",
     email: locale === "es" ? "Email" : "Email",
     memberSince: locale === "es" ? "Miembro desde" : "Member since",
     status: locale === "es" ? "Estado" : "Status",
-    statusValue:
-      locale === "es" ? "Cuenta activa" : "Active account",
+    statusValue: locale === "es" ? "Cuenta activa" : "Active account",
     collectorRank:
       locale === "es" ? "Rango de coleccionista" : "Collector rank",
     rankValue: "Vault Explorer",
@@ -106,14 +145,11 @@ export default async function ProfilePage({
       locale === "es"
         ? "Tienes acceso ampliado y una ruta de fidelización para desbloquear nuevos themes con el tiempo."
         : "You have expanded access and a loyalty path to unlock new themes over time.",
-    upgrade:
-      locale === "es" ? "Ver Premium" : "See Premium",
+    upgrade: locale === "es" ? "Ver Premium" : "See Premium",
     premiumActive:
       locale === "es" ? "Premium activo" : "Premium active",
-    included:
-      locale === "es" ? "Incluido" : "Included",
-    locked:
-      locale === "es" ? "Bloqueado en Free" : "Locked on Free",
+    included: locale === "es" ? "Incluido" : "Included",
+    locked: locale === "es" ? "Bloqueado en Free" : "Locked on Free",
     freeFeatures:
       locale === "es"
         ? [
@@ -298,7 +334,11 @@ export default async function ProfilePage({
           </div>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <CollectorLevelPanel locale={locale} />
+            <CollectorLevelPanel
+              locale={locale}
+              summary={summary}
+              achievements={safeAchievements}
+            />
           </div>
 
           <div style={{ gridColumn: "1 / -1" }}>
@@ -309,9 +349,9 @@ export default async function ProfilePage({
 
               <div style={{ marginTop: 14 }}>
                 <ThemeSelector
-                  currentThemeId={currentTheme.id}
+                  currentThemeId={currentTheme.id as AppThemeId}
                   plan={plan}
-                  premiumStartedAt={me.premiumStartedAt ?? null}
+                  premiumStartedAt={me?.premiumStartedAt ?? null}
                   locale={locale}
                 />
               </div>
@@ -319,7 +359,10 @@ export default async function ProfilePage({
           </div>
 
           <div style={{ gridColumn: "1 / -1" }}>
-            <AchievementsPanel locale={locale} />
+            <AchievementsPanel
+              locale={locale}
+              achievements={safeAchievements}
+            />
           </div>
 
           <div style={{ gridColumn: "1 / -1" }}>

@@ -15,55 +15,22 @@ type Summary = {
   totalValue: number;
 };
 
-const API = process.env.NEXT_PUBLIC_API_URL!;
-
-async function getAchievements(cookieHeader: string): Promise<Achievement[]> {
-  const res = await fetch(`${API}/achievements`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieHeader
-    }
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch achievements");
-  }
-
-  return res.json();
-}
-
-async function getSummary(cookieHeader: string): Promise<Summary> {
-  const res = await fetch(`${API}/stats/summary`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieHeader
-    }
-  });
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch summary");
-  }
-
-  return res.json();
-}
-
 export default async function CollectorLevelPanel({
-  locale = "en"
+  locale = "en",
+  achievements = [],
+  summary
 }: {
   locale?: "en" | "es";
+  achievements?: Achievement[];
+  summary: Summary;
 }) {
   const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
   const themeId =
     (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
   const currentTheme = getThemeById(themeId);
 
-  const [achievements, summary] = await Promise.all([
-    getAchievements(cookieHeader),
-    getSummary(cookieHeader)
-  ]);
-
-  const unlockedAchievements = achievements.filter((a) => a.unlocked).length;
+  const safeAchievements = Array.isArray(achievements) ? achievements : [];
+  const unlockedAchievements = safeAchievements.filter((a) => a.unlocked).length;
   const score = summary.totalItems + unlockedAchievements * 5;
 
   const levels = [
