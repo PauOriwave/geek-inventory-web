@@ -689,7 +689,11 @@ export default async function ItemsPage({
         </div>
 
         <div style={{ marginTop: 12 }}>
-          <AddItemForm />
+          <AddItemForm 
+            locale={locale}
+            plan={plan}
+            currentCount={summary.totalItems}
+          />
         </div>
 
         <section

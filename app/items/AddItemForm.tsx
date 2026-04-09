@@ -1,147 +1,133 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { theme } from "../theme";
-import { getSessionTokenFromCookie } from "../lib/auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
+const FREE_ITEM_LIMIT = 50;
 
-export default function AddItemForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+const categories = [
+  "videogame",
+  "book",
+  "comic",
+  "tcg",
+  "figure",
+  "boardgame",
+  "lego",
+  "movie",
+  "other"
+] as const;
 
-  const locale = searchParams.get("lang") === "es" ? "es" : "en";
-
+export default function AddItemForm({
+  locale = "en",
+  plan = "free",
+  currentCount = 0
+}: {
+  locale?: "en" | "es";
+  plan?: string;
+  currentCount?: number;
+}) {
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] =
+    useState<(typeof categories)[number]>("videogame");
   const [estimatedPrice, setEstimatedPrice] = useState("");
   const [quantity, setQuantity] = useState("1");
-  const [platform, setPlatform] = useState("");
-  const [region, setRegion] = useState("");
   const [condition, setCondition] = useState("");
+  const [platform, setPlatform] = useState("");
   const [completeness, setCompleteness] = useState("");
+  const [region, setRegion] = useState("");
   const [notes, setNotes] = useState("");
-
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const isPremium = plan === "premium";
+  const freeLimitReached = !isPremium && currentCount >= FREE_ITEM_LIMIT;
 
   const text = {
     title: locale === "es" ? "Añadir nuevo objeto" : "Add new item",
-    subtitle:
-      locale === "es"
-        ? "Crea una nueva entrada para tu colección con sus datos clave."
-        : "Create a new entry for your collection with its key metadata.",
-
     name: locale === "es" ? "Nombre" : "Name",
     category: locale === "es" ? "Categoría" : "Category",
-    estimatedPrice:
-      locale === "es" ? "Precio estimado" : "Estimated price",
+    estimatedPrice: locale === "es" ? "Precio estimado" : "Estimated price",
     quantity: locale === "es" ? "Cantidad" : "Quantity",
-    platform: locale === "es" ? "Plataforma" : "Platform",
-    region: locale === "es" ? "Región" : "Region",
     condition: locale === "es" ? "Estado" : "Condition",
+    platform: locale === "es" ? "Plataforma" : "Platform",
     completeness: locale === "es" ? "Completitud" : "Completeness",
+    region: locale === "es" ? "Región" : "Region",
     notes: locale === "es" ? "Notas" : "Notes",
-
-    create: locale === "es" ? "Crear objeto" : "Create item",
+    submit: locale === "es" ? "Crear objeto" : "Create item",
     creating: locale === "es" ? "Creando..." : "Creating...",
-
-    placeholderName:
-      locale === "es" ? "Ej: Pokémon Azul" : "e.g. Pokémon Blue",
-    placeholderPlatform:
-      locale === "es" ? "Ej: PS2, Switch, PC..." : "e.g. PS2, Switch, PC...",
-    placeholderRegion:
-      locale === "es" ? "Ej: PAL, NTSC-J..." : "e.g. PAL, NTSC-J...",
-    placeholderCondition:
-      locale === "es" ? "Ej: very_good" : "e.g. very_good",
-    placeholderCompleteness:
-      locale === "es" ? "Ej: cib, loose..." : "e.g. cib, loose...",
-    placeholderNotes:
+    success:
       locale === "es"
-        ? "Detalles extra, edición, accesorios, observaciones..."
-        : "Extra details, edition, accessories, observations...",
-
-    selectCategory:
-      locale === "es" ? "Seleccionar categoría" : "Select category",
-
-    videogame: locale === "es" ? "Videojuegos" : "Videogame",
-    book: locale === "es" ? "Libros" : "Book",
-    comic: locale === "es" ? "Cómics" : "Comic",
-    tcg: "TCG",
-    figure: locale === "es" ? "Figuras" : "Figure",
-    boardgame: locale === "es" ? "Juegos de mesa" : "Board Game",
-    lego: "LEGO",
-    movie: locale === "es" ? "Películas / VHS / DVD" : "Movie / DVD / VHS",
-    other: locale === "es" ? "Otros" : "Other",
-
-    error:
+        ? "Objeto creado correctamente."
+        : "Item created successfully.",
+    genericError:
       locale === "es"
-        ? "No se pudo crear el objeto"
-        : "Could not create item",
-    noSession:
-      locale === "es" ? "Sesión no encontrada" : "Session not found",
-    required:
+        ? "No se pudo crear el objeto."
+        : "Could not create the item.",
+    freeLimitError:
       locale === "es"
-        ? "Nombre, categoría y precio son obligatorios"
-        : "Name, category and price are required"
+        ? "Has alcanzado el límite del plan Free. Sube a Premium para seguir añadiendo objetos."
+        : "You reached the Free plan limit. Upgrade to Premium to keep adding items.",
+    upgrade:
+      locale === "es" ? "Ver Premium" : "See Premium"
   };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const token = getSessionTokenFromCookie();
-    if (!token) {
-      alert(text.noSession);
-      return;
-    }
-
-    if (!name.trim() || !category || !estimatedPrice.trim()) {
-      alert(text.required);
+    if (freeLimitReached) {
+      setMessage(text.freeLimitError);
       return;
     }
 
     try {
       setLoading(true);
+      setMessage(null);
 
       const res = await fetch(`${API}/items`, {
         method: "POST",
+        credentials: "include",
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          name: name.trim(),
+          name,
           category,
           estimatedPrice: Number(estimatedPrice),
-          quantity: Number(quantity || "1"),
-          platform: platform.trim() || null,
-          region: region.trim() || null,
-          condition: condition.trim() || null,
-          completeness: completeness.trim() || null,
-          notes: notes.trim() || null
+          quantity: Number(quantity),
+          condition: condition || undefined,
+          platform: platform || undefined,
+          completeness: completeness || undefined,
+          region: region || undefined,
+          notes: notes || undefined
         })
       });
 
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        throw new Error(data?.message || text.error);
+        if (res.status === 403 && data?.code === "FREE_ITEM_LIMIT_REACHED") {
+          setMessage(text.freeLimitError);
+          return;
+        }
+
+        setMessage(data?.message || text.genericError);
+        return;
       }
 
       setName("");
-      setCategory("");
+      setCategory("videogame");
       setEstimatedPrice("");
       setQuantity("1");
-      setPlatform("");
-      setRegion("");
       setCondition("");
+      setPlatform("");
       setCompleteness("");
+      setRegion("");
       setNotes("");
+      setMessage(text.success);
 
-      router.refresh();
-    } catch (err) {
-      console.error(err);
-      alert(err instanceof Error ? err.message : text.error);
+      window.location.reload();
+    } catch {
+      setMessage(text.genericError);
     } finally {
       setLoading(false);
     }
@@ -150,170 +136,192 @@ export default function AddItemForm() {
   return (
     <section
       style={{
-        marginTop: 14,
+        background: "#FFFFFF",
+        border: "1px solid #E5E7EB",
+        borderRadius: 24,
         padding: 18,
-        borderRadius: theme.radius.xl,
-        border: `1px solid ${theme.colors.border}`,
-        background: theme.colors.surface,
-        boxShadow: theme.shadow.card
+        boxShadow: "0 20px 40px rgba(15,23,42,0.10)"
       }}
     >
-      <div style={{ marginBottom: 14 }}>
-        <div
-          style={{
-            fontWeight: 800,
-            fontSize: 16,
-            color: theme.colors.text
-          }}
-        >
-          {text.title}
-        </div>
-
-        <div
-          style={{
-            marginTop: 4,
-            fontSize: 13,
-            color: theme.colors.textMuted
-          }}
-        >
-          {text.subtitle}
-        </div>
+      <div
+        style={{
+          fontWeight: 800,
+          fontSize: 16,
+          marginBottom: 14,
+          color: "#171717"
+        }}
+      >
+        {text.title}
       </div>
 
-      <form onSubmit={handleSubmit}>
+      {freeLimitReached && (
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 12
+            marginBottom: 14,
+            padding: "12px 14px",
+            borderRadius: 16,
+            background: "#FEF3F2",
+            border: "1px solid #FECACA",
+            color: "#B42318",
+            fontSize: 14,
+            lineHeight: 1.6
           }}
         >
-          <Field label={text.name}>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={text.placeholderName}
-              style={inputStyle}
-            />
-          </Field>
-
-          <Field label={text.category}>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              style={inputStyle}
-            >
-              <option value="">{text.selectCategory}</option>
-              <option value="videogame">{text.videogame}</option>
-              <option value="book">{text.book}</option>
-              <option value="comic">{text.comic}</option>
-              <option value="tcg">{text.tcg}</option>
-              <option value="figure">{text.figure}</option>
-              <option value="boardgame">{text.boardgame}</option>
-              <option value="lego">{text.lego}</option>
-              <option value="movie">{text.movie}</option>
-              <option value="other">{text.other}</option>
-            </select>
-          </Field>
-
-          <Field label={text.estimatedPrice}>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={estimatedPrice}
-              onChange={(e) => setEstimatedPrice(e.target.value)}
-              style={inputStyle}
-            />
-          </Field>
-
-          <Field label={text.quantity}>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              style={inputStyle}
-            />
-          </Field>
-
-          <Field label={text.platform}>
-            <input
-              value={platform}
-              onChange={(e) => setPlatform(e.target.value)}
-              placeholder={text.placeholderPlatform}
-              style={inputStyle}
-            />
-          </Field>
-
-          <Field label={text.region}>
-            <input
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              placeholder={text.placeholderRegion}
-              style={inputStyle}
-            />
-          </Field>
-
-          <Field label={text.condition}>
-            <input
-              value={condition}
-              onChange={(e) => setCondition(e.target.value)}
-              placeholder={text.placeholderCondition}
-              style={inputStyle}
-            />
-          </Field>
-
-          <Field label={text.completeness}>
-            <input
-              value={completeness}
-              onChange={(e) => setCompleteness(e.target.value)}
-              placeholder={text.placeholderCompleteness}
-              style={inputStyle}
-            />
-          </Field>
-
-          <div style={{ gridColumn: "1 / -1" }}>
-            <Field label={text.notes}>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder={text.placeholderNotes}
-                style={{
-                  ...inputStyle,
-                  minHeight: 110,
-                  resize: "vertical"
-                }}
-              />
-            </Field>
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginTop: 14,
-            display: "flex",
-            justifyContent: "flex-end"
-          }}
-        >
-          <button
-            type="submit"
-            disabled={loading}
+          {text.freeLimitError}{" "}
+          <a
+            href={`/pricing?lang=${locale}`}
             style={{
-              padding: "11px 16px",
-              borderRadius: 999,
-              border: "none",
-              background: theme.colors.black,
-              color: "white",
-              fontWeight: 800,
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.8 : 1
+              color: "#B42318",
+              fontWeight: 900,
+              textDecoration: "none"
             }}
           >
-            {loading ? text.creating : text.create}
+            {text.upgrade}
+          </a>
+        </div>
+      )}
+
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 12
+        }}
+      >
+        <Field label={text.name}>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            disabled={loading || freeLimitReached}
+            style={inputStyle}
+          />
+        </Field>
+
+        <Field label={text.category}>
+          <select
+            value={category}
+            onChange={(e) =>
+              setCategory(e.target.value as (typeof categories)[number])
+            }
+            disabled={loading || freeLimitReached}
+            style={inputStyle}
+          >
+            {categories.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label={text.estimatedPrice}>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={estimatedPrice}
+            onChange={(e) => setEstimatedPrice(e.target.value)}
+            required
+            disabled={loading || freeLimitReached}
+            style={inputStyle}
+          />
+        </Field>
+
+        <Field label={text.quantity}>
+          <input
+            type="number"
+            min="1"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            required
+            disabled={loading || freeLimitReached}
+            style={inputStyle}
+          />
+        </Field>
+
+        <Field label={text.condition}>
+          <input
+            value={condition}
+            onChange={(e) => setCondition(e.target.value)}
+            disabled={loading || freeLimitReached}
+            style={inputStyle}
+          />
+        </Field>
+
+        <Field label={text.platform}>
+          <input
+            value={platform}
+            onChange={(e) => setPlatform(e.target.value)}
+            disabled={loading || freeLimitReached}
+            style={inputStyle}
+          />
+        </Field>
+
+        <Field label={text.completeness}>
+          <input
+            value={completeness}
+            onChange={(e) => setCompleteness(e.target.value)}
+            disabled={loading || freeLimitReached}
+            style={inputStyle}
+          />
+        </Field>
+
+        <Field label={text.region}>
+          <input
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+            disabled={loading || freeLimitReached}
+            style={inputStyle}
+          />
+        </Field>
+
+        <div style={{ gridColumn: "1 / -1" }}>
+          <Field label={text.notes}>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={loading || freeLimitReached}
+              style={{
+                ...inputStyle,
+                minHeight: 90,
+                resize: "vertical"
+              }}
+            />
+          </Field>
+        </div>
+
+        <div style={{ gridColumn: "1 / -1" }}>
+          <button
+            type="submit"
+            disabled={loading || freeLimitReached}
+            style={{
+              border: "none",
+              borderRadius: 999,
+              padding: "12px 16px",
+              background: freeLimitReached ? "#9CA3AF" : "#171717",
+              color: "white",
+              fontWeight: 900,
+              cursor: freeLimitReached ? "not-allowed" : "pointer"
+            }}
+          >
+            {loading ? text.creating : text.submit}
           </button>
         </div>
+
+        {message && (
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              fontSize: 13,
+              color: message === text.success ? "#027A48" : "#6B7280",
+              lineHeight: 1.6
+            }}
+          >
+            {message}
+          </div>
+        )}
       </form>
     </section>
   );
@@ -329,16 +337,15 @@ function Field({
   return (
     <label
       style={{
-        display: "flex",
-        flexDirection: "column",
+        display: "grid",
         gap: 6
       }}
     >
       <span
         style={{
           fontSize: 12,
-          color: theme.colors.textMuted,
-          fontWeight: 700
+          fontWeight: 800,
+          color: "#6B7280"
         }}
       >
         {label}
@@ -352,10 +359,10 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   padding: "10px 12px",
-  borderRadius: 10,
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.surfaceAlt,
-  color: theme.colors.text,
+  borderRadius: 12,
+  border: "1px solid #E5E7EB",
+  background: "#F9FAFB",
+  color: "#171717",
   fontSize: 14,
   outline: "none"
 };
