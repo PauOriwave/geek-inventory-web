@@ -81,7 +81,7 @@ export const availableThemes: AppTheme[] = [
     label: "Cyberpunk",
     description: "Neón oscuro, alto contraste y energía arcade.",
     premium: true,
-    loyaltyMonthsRequired: 3,
+    loyaltyMonthsRequired: 1,
     colors: {
       bg: "#0D0B1A",
       surface: "#161228",
@@ -106,7 +106,7 @@ export const availableThemes: AppTheme[] = [
     label: "Fantasy",
     description: "Tonos cálidos, dorados y una estética más épica.",
     premium: true,
-    loyaltyMonthsRequired: 6,
+    loyaltyMonthsRequired: 3,
     colors: {
       bg: "#F4EFE6",
       surface: "#FFF8EE",
@@ -131,7 +131,7 @@ export const availableThemes: AppTheme[] = [
     label: "Retro CRT",
     description: "Inspirado en interfaces retro y vitrinas clásicas.",
     premium: true,
-    loyaltyMonthsRequired: 9,
+    loyaltyMonthsRequired: 6,
     colors: {
       bg: "#ECE8D9",
       surface: "#F8F3E3",
@@ -155,6 +155,38 @@ export const availableThemes: AppTheme[] = [
 
 export function getThemeById(id?: string | null): AppTheme {
   return availableThemes.find((item) => item.id === id) ?? availableThemes[0];
+}
+
+export function getPremiumMonths(premiumStartedAt?: string | null) {
+  if (!premiumStartedAt) return 0;
+
+  const start = new Date(premiumStartedAt);
+  const now = new Date();
+
+  const months =
+    (now.getFullYear() - start.getFullYear()) * 12 +
+    (now.getMonth() - start.getMonth());
+
+  return Math.max(0, months);
+}
+
+export function canUseTheme(input: {
+  themeId: AppThemeId;
+  plan?: string | null;
+  premiumStartedAt?: string | null;
+}) {
+  const theme = getThemeById(input.themeId);
+
+  if (!theme.premium) {
+    return true;
+  }
+
+  if (input.plan !== "premium") {
+    return false;
+  }
+
+  const months = getPremiumMonths(input.premiumStartedAt);
+  return months >= theme.loyaltyMonthsRequired;
 }
 
 export const theme = getThemeById("classic");

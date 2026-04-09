@@ -11,6 +11,7 @@ type Me = {
   email?: string;
   createdAt?: string;
   plan?: string;
+  premiumStartedAt?: string | null;
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -88,8 +89,8 @@ export default async function ProfilePage({
       locale === "es" ? "Tema actual" : "Current theme",
     themeText:
       locale === "es"
-        ? "Este selector ya funciona como MVP y prepara la futura versión premium con desbloqueos y fidelización."
-        : "This selector already works as an MVP and prepares the future premium version with unlocks and loyalty.",
+        ? "Los themes premium ahora se desbloquean por fidelización. Cuanto más tiempo permanezcas en Premium, más estéticas podrás usar."
+        : "Premium themes now unlock through loyalty. The longer you stay on Premium, the more aesthetics you can use.",
     socialText:
       locale === "es"
         ? "Más adelante podrás tener un perfil público y compartir tus vitrinas, hitos y colección en redes."
@@ -102,8 +103,8 @@ export default async function ProfilePage({
         : "You already have the core of your vault. Upgrade to Premium to unlock automation, deeper insights and a much fuller experience.",
     premiumText:
       locale === "es"
-        ? "Tienes acceso ampliado a las funciones avanzadas de DrakoryVault."
-        : "You have expanded access to DrakoryVault advanced features.",
+        ? "Tienes acceso ampliado y una ruta de fidelización para desbloquear nuevos themes con el tiempo."
+        : "You have expanded access and a loyalty path to unlock new themes over time.",
     upgrade:
       locale === "es" ? "Ver Premium" : "See Premium",
     premiumActive:
@@ -128,12 +129,12 @@ export default async function ProfilePage({
       locale === "es"
         ? [
             "Valorar toda la colección de una vez",
-            "Ruta premium para themes y desbloqueos",
+            "Themes premium por fidelización",
             "Más profundidad y automatización futura"
           ]
         : [
             "Valuate the whole collection at once",
-            "Premium path for themes and unlocks",
+            "Loyalty-based premium themes",
             "More depth and future automation"
           ]
   };
@@ -291,7 +292,12 @@ export default async function ProfilePage({
               </MutedParagraph>
 
               <div style={{ marginTop: 14 }}>
-                <ThemeSelector currentThemeId={currentTheme.id} locale={locale} />
+                <ThemeSelector
+                  currentThemeId={currentTheme.id}
+                  plan={plan}
+                  premiumStartedAt={me.premiumStartedAt ?? null}
+                  locale={locale}
+                />
               </div>
             </Card>
           </div>
