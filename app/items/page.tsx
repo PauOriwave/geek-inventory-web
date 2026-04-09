@@ -17,6 +17,7 @@ import { getLocale } from "../i18n";
 import { getCategoryLabel } from "./categoryLabels";
 import { AppThemeId, getThemeById } from "../theme";
 import { getCollectorLevelData } from "../lib/collector-level";
+import UserBadge from "../components/UserBadge";
 
 type Item = {
   id: string;
@@ -63,6 +64,7 @@ type Me = {
   email?: string;
   createdAt?: string;
   plan?: string;
+  premiumStartedAt?: string | null;
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -361,6 +363,8 @@ export default async function ItemsPage({
               justifyContent: "flex-end"
             }}
           >
+            <UserBadge />
+
             <div
               style={{
                 fontSize: 12,
