@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale } from "../i18n";
-import { AppThemeId, getThemeById } from "../theme";
+import { AppThemeId, getThemeById, getPremiumMonths } from "../theme";
 import ThemeSelector from "./ThemeSelector";
 import AchievementsPanel from "./AchievementsPanel";
 import CollectorLevelPanel from "./CollectorLevelPanel";
@@ -60,6 +60,7 @@ export default async function ProfilePage({
   const createdAt = me.createdAt || new Date().toISOString();
   const plan = me.plan ?? "free";
   const isPremium = plan === "premium";
+  const premiumMonths = getPremiumMonths(me.premiumStartedAt ?? null);
 
   const text = {
     title: locale === "es" ? "Perfil del coleccionista" : "Collector profile",
@@ -136,7 +137,21 @@ export default async function ProfilePage({
             "Valuate the whole collection at once",
             "Loyalty-based premium themes",
             "More depth and future automation"
-          ]
+          ],
+    loyaltyTitle:
+      locale === "es" ? "Progreso de fidelización" : "Loyalty progress",
+    premiumTime:
+      locale === "es" ? "Tiempo en Premium" : "Time on Premium",
+    premiumMonthsLabel:
+      locale === "es" ? "meses premium" : "premium months",
+    loyaltyText:
+      locale === "es"
+        ? "Tu antigüedad premium desbloquea nuevos themes y futuras recompensas visuales."
+        : "Your premium age unlocks new themes and future visual rewards.",
+    loyaltyHint:
+      locale === "es"
+        ? "Mantener Premium te dará acceso a estéticas nuevas a medida que aparezcan."
+        : "Staying on Premium will give you access to new aesthetics as they appear."
   };
 
   return (
@@ -277,6 +292,7 @@ export default async function ProfilePage({
               currentTheme={currentTheme}
               locale={locale}
               isPremium={isPremium}
+              premiumMonths={premiumMonths}
               text={text}
             />
           </div>
@@ -323,11 +339,13 @@ function PlanCard({
   currentTheme,
   locale,
   isPremium,
+  premiumMonths,
   text
 }: {
   currentTheme: ReturnType<typeof getThemeById>;
   locale: "en" | "es";
   isPremium: boolean;
+  premiumMonths: number;
   text: Record<string, string | string[]>;
 }) {
   const freeFeatures = text.freeFeatures as string[];
@@ -398,6 +416,76 @@ function PlanCard({
           {isPremium ? (text.premiumLabel as string) : (text.freeLabel as string)}
         </div>
       </div>
+
+      {isPremium && (
+        <div
+          style={{
+            marginBottom: 14,
+            border: `1px solid ${currentTheme.colors.border}`,
+            borderRadius: currentTheme.radius.lg,
+            padding: 16,
+            background: currentTheme.colors.surfaceAlt
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              alignItems: "center",
+              flexWrap: "wrap"
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontWeight: 900,
+                  fontSize: 15,
+                  color: currentTheme.colors.text
+                }}
+              >
+                {text.loyaltyTitle as string}
+              </div>
+
+              <div
+                style={{
+                  marginTop: 6,
+                  color: currentTheme.colors.textMuted,
+                  fontSize: 14,
+                  lineHeight: 1.7,
+                  maxWidth: 720
+                }}
+              >
+                {text.loyaltyText as string}
+              </div>
+            </div>
+
+            <div
+              style={{
+                padding: "10px 14px",
+                borderRadius: 999,
+                background: currentTheme.colors.gold,
+                color: currentTheme.colors.black,
+                fontWeight: 900,
+                fontSize: 12
+              }}
+            >
+              {text.premiumTime as string}: {premiumMonths} {text.premiumMonthsLabel as string}
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: 10,
+              fontSize: 13,
+              color: currentTheme.colors.textMuted,
+              lineHeight: 1.6
+            }}
+          >
+            {text.loyaltyHint as string}
+          </div>
+        </div>
+      )}
 
       <div
         style={{
