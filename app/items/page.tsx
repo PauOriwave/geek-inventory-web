@@ -68,7 +68,6 @@ type Me = {
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
-const FREE_ITEM_LIMIT = 50;
 
 async function getItems(
   queryString: string,
@@ -120,7 +119,8 @@ async function getAchievements(cookieHeader: string): Promise<Achievement[]> {
     return [];
   }
 
-  return res.json();
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
 }
 
 async function getMe(cookieHeader: string): Promise<Me | null> {
@@ -195,7 +195,9 @@ export default async function ItemsPage({
     getMe(cookieHeader)
   ]);
 
-  const unlockedAchievements = achievements.filter((a) => a.unlocked).length;
+  const safeAchievements = Array.isArray(achievements) ? achievements : [];
+  const unlockedAchievements = safeAchievements.filter((a) => a.unlocked).length;
+
   const collectorLevel = getCollectorLevelData({
     totalItems: summary.totalItems,
     unlockedAchievements,
@@ -227,19 +229,6 @@ export default async function ItemsPage({
     ...baseParams,
     lang: "en"
   }).toString()}`;
-
-  const plan = me?.plan ?? "free";
-  const isPremium = plan === "premium";
-  const freeUsageRatio = Math.min(
-    100,
-    (summary.totalItems / FREE_ITEM_LIMIT) * 100
-  );
-  const freeItemsLeft = Math.max(0, FREE_ITEM_LIMIT - summary.totalItems);
-  const freeLimitReached = !isPremium && summary.totalItems >= FREE_ITEM_LIMIT;
-  const freeLimitNear =
-    !isPremium &&
-    summary.totalItems >= Math.floor(FREE_ITEM_LIMIT * 0.8) &&
-    summary.totalItems < FREE_ITEM_LIMIT;
 
   const text = {
     dashboard:
@@ -279,25 +268,7 @@ export default async function ItemsPage({
     actions: locale === "es" ? "Acciones" : "Actions",
     level: locale === "es" ? "Nivel" : "Level",
     pointsToNext:
-      locale === "es" ? "pts para subir" : "pts to level up",
-    freePlanTitle:
-      locale === "es" ? "Límite del plan Free" : "Free plan limit",
-    freePlanBody:
-      locale === "es"
-        ? "Tu plan Free incluye hasta 50 objetos. Sube a Premium para mantener una colección más grande y desbloquear funciones avanzadas."
-        : "Your Free plan includes up to 50 items. Upgrade to Premium to keep a larger collection and unlock advanced features.",
-    freePlanNear:
-      locale === "es"
-        ? `Te quedan ${freeItemsLeft} huecos antes de llegar al límite gratuito.`
-        : `You have ${freeItemsLeft} slots left before reaching the free limit.`,
-    freePlanReached:
-      locale === "es"
-        ? "Has llegado al límite visual del plan Free. Premium es el siguiente paso natural para seguir creciendo."
-        : "You have reached the visual limit of the Free plan. Premium is the natural next step to keep growing.",
-    used: locale === "es" ? "Usado" : "Used",
-    of: locale === "es" ? "de" : "of",
-    upgrade:
-      locale === "es" ? "Ver Premium" : "See Premium"
+      locale === "es" ? "pts para subir" : "pts to level up"
   };
 
   return (
@@ -454,6 +425,21 @@ export default async function ItemsPage({
             </div>
 
             <a
+              href={`/wishlist?lang=${locale}`}
+              style={{
+                textDecoration: "none",
+                borderRadius: 999,
+                padding: "10px 14px",
+                background: "rgba(255,255,255,0.10)",
+                color: "white",
+                fontWeight: 800,
+                border: "1px solid rgba(255,255,255,0.12)"
+              }}
+            >
+              Wishlist
+            </a>
+
+            <a
               href={`/profile?lang=${locale}`}
               style={{
                 textDecoration: "none",
@@ -471,122 +457,6 @@ export default async function ItemsPage({
             <LogoutButton />
           </div>
         </div>
-
-        {!isPremium && (
-          <section
-            style={{
-              marginBottom: 18,
-              background: currentTheme.colors.surface,
-              border: `1px solid ${freeLimitReached ? currentTheme.colors.gold : currentTheme.colors.border}`,
-              borderRadius: currentTheme.radius.xl,
-              padding: 18,
-              boxShadow: currentTheme.shadow.card
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 16,
-                alignItems: "flex-start",
-                flexWrap: "wrap"
-              }}
-            >
-              <div style={{ maxWidth: 820 }}>
-                <div
-                  style={{
-                    fontWeight: 900,
-                    fontSize: 16,
-                    color: currentTheme.colors.text
-                  }}
-                >
-                  {text.freePlanTitle}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 6,
-                    color: currentTheme.colors.textMuted,
-                    fontSize: 14,
-                    lineHeight: 1.7
-                  }}
-                >
-                  {text.freePlanBody}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 10,
-                    color: freeLimitReached
-                      ? currentTheme.colors.danger
-                      : freeLimitNear
-                        ? "#B45309"
-                        : currentTheme.colors.textMuted,
-                    fontSize: 13,
-                    fontWeight: 800
-                  }}
-                >
-                  {freeLimitReached ? text.freePlanReached : text.freePlanNear}
-                </div>
-
-                <div style={{ marginTop: 12 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 10,
-                      fontSize: 12,
-                      color: currentTheme.colors.textMuted,
-                      marginBottom: 6
-                    }}
-                  >
-                    <span>{text.used}</span>
-                    <span>
-                      {summary.totalItems} {text.of} {FREE_ITEM_LIMIT}
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      height: 10,
-                      borderRadius: 999,
-                      background: currentTheme.colors.surfaceAlt,
-                      overflow: "hidden",
-                      border: `1px solid ${currentTheme.colors.border}`
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${freeUsageRatio}%`,
-                        height: "100%",
-                        background: freeLimitReached
-                          ? currentTheme.colors.danger
-                          : freeLimitNear
-                            ? currentTheme.colors.gold
-                            : currentTheme.colors.black
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <a
-                href={`/pricing?lang=${locale}`}
-                style={{
-                  textDecoration: "none",
-                  background: currentTheme.colors.black,
-                  color: "white",
-                  padding: "11px 16px",
-                  borderRadius: 999,
-                  fontWeight: 900,
-                  whiteSpace: "nowrap"
-                }}
-              >
-                {text.upgrade}
-              </a>
-            </div>
-          </section>
-        )}
 
         <div
           style={{
@@ -689,9 +559,9 @@ export default async function ItemsPage({
         </div>
 
         <div style={{ marginTop: 12 }}>
-          <AddItemForm 
+          <AddItemForm
             locale={locale}
-            plan={plan}
+            plan={me?.plan ?? "free"}
             currentCount={summary.totalItems}
           />
         </div>
