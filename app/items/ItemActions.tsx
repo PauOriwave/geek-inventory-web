@@ -4,10 +4,6 @@ import { useMemo, useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-function isPaidPlan(plan?: string) {
-  return plan === "premium" || plan === "market_pro";
-}
-
 function getPlatformOptions(locale: "en" | "es") {
   return [
     { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
@@ -146,8 +142,6 @@ export default function ItemActions({
   const [valuating, setValuating] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const hasValuationAccess = isPaidPlan(plan);
-
   const platformOptions = useMemo(() => getPlatformOptions(locale), [locale]);
   const regionOptions = useMemo(() => getRegionOptions(locale), [locale]);
   const conditionOptions = useMemo(() => getConditionOptions(locale), [locale]);
@@ -175,11 +169,7 @@ export default function ItemActions({
     confirmDelete:
       locale === "es"
         ? "¿Seguro que quieres eliminar este objeto?"
-        : "Are you sure you want to delete this item?",
-    premiumOnly:
-      locale === "es"
-        ? "La valoración individual está disponible solo en planes de pago."
-        : "Single-item valuation is available only on paid plans."
+        : "Are you sure you want to delete this item?"
   };
 
   async function handleSave() {
@@ -241,11 +231,6 @@ export default function ItemActions({
   }
 
   async function handleValuate() {
-    if (!hasValuationAccess) {
-      alert(text.premiumOnly);
-      return;
-    }
-
     try {
       setValuating(true);
 
@@ -255,20 +240,12 @@ export default function ItemActions({
       });
 
       if (!res.ok) {
-        if (res.status === 403) {
-          throw new Error(text.premiumOnly);
-        }
-
         throw new Error("Failed to valuate item");
       }
 
       window.location.reload();
-    } catch (error) {
-      if (error instanceof Error && error.message === text.premiumOnly) {
-        alert(text.premiumOnly);
-      } else {
-        alert(locale === "es" ? "No se pudo valorar." : "Could not valuate.");
-      }
+    } catch {
+      alert(locale === "es" ? "No se pudo valorar." : "Could not valuate.");
     } finally {
       setValuating(false);
     }
@@ -296,7 +273,6 @@ export default function ItemActions({
           type="button"
           onClick={handleValuate}
           disabled={valuating}
-          title={!hasValuationAccess ? text.premiumOnly : undefined}
           style={{
             ...darkBtn,
             opacity: valuating ? 0.8 : 1
