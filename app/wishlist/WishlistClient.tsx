@@ -41,9 +41,27 @@ function getWishlistStatus(
     return locale === "es" ? "Vigilar de cerca" : "Watch closely";
   }
 
-  return locale === "es"
-    ? "Por encima del objetivo"
-    : "Above target";
+  return locale === "es" ? "Por encima del objetivo" : "Above target";
+}
+
+function getSessionToken() {
+  if (typeof document === "undefined") return null;
+
+  const entry = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("session="));
+
+  return entry ? decodeURIComponent(entry.split("=")[1]) : null;
+}
+
+function getAuthHeaders(): Record<string, string> {
+  const token = getSessionToken();
+
+  if (!token) return {};
+
+  return {
+    Authorization: `Bearer ${token}`
+  };
 }
 
 export default function WishlistClient({
@@ -68,6 +86,7 @@ export default function WishlistClient({
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [movingId, setMovingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const text = {
@@ -79,8 +98,7 @@ export default function WishlistClient({
     collection: locale === "es" ? "Colección" : "Collection",
     profile: locale === "es" ? "Perfil" : "Profile",
     activeSection: "Wishlist",
-    addTitle:
-      locale === "es" ? "Añadir a wishlist" : "Add to wishlist",
+    addTitle: locale === "es" ? "Añadir a wishlist" : "Add to wishlist",
     name: locale === "es" ? "Nombre" : "Name",
     category: locale === "es" ? "Categoría" : "Category",
     targetPrice: locale === "es" ? "Precio objetivo" : "Target price",
@@ -90,6 +108,9 @@ export default function WishlistClient({
     currentValue: locale === "es" ? "Valor actual" : "Current value",
     status: locale === "es" ? "Estado" : "Status",
     remove: locale === "es" ? "Eliminar" : "Remove",
+    moveToCollection:
+      locale === "es" ? "Añadir a colección" : "Add to collection",
+    moving: locale === "es" ? "Moviendo..." : "Moving...",
     created: locale === "es" ? "Añadido" : "Added",
     save: locale === "es" ? "Guardar" : "Save",
     saving: locale === "es" ? "Guardando..." : "Saving...",
@@ -110,6 +131,10 @@ export default function WishlistClient({
       locale === "es"
         ? "Elemento eliminado."
         : "Item removed.",
+    moved:
+      locale === "es"
+        ? "Añadido a tu colección 🚀"
+        : "Added to your collection 🚀",
     saveError:
       locale === "es"
         ? "No se pudo guardar el elemento."
@@ -117,7 +142,11 @@ export default function WishlistClient({
     removeError:
       locale === "es"
         ? "No se pudo eliminar el elemento."
-        : "Could not remove the item."
+        : "Could not remove the item.",
+    moveError:
+      locale === "es"
+        ? "No se pudo mover a la colección."
+        : "Could not move to collection."
   };
 
   async function handleCreate(e: React.FormEvent) {
@@ -133,7 +162,8 @@ export default function WishlistClient({
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          ...getAuthHeaders()
         },
         body: JSON.stringify({
           name: name.trim(),
@@ -175,7 +205,10 @@ export default function WishlistClient({
 
       const res = await fetch(`${API}/wishlist/${id}`, {
         method: "DELETE",
-        credentials: "include"
+        credentials: "include",
+        headers: {
+          ...getAuthHeaders()
+        }
       });
 
       if (!res.ok) {
@@ -192,6 +225,38 @@ export default function WishlistClient({
       );
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleMoveToCollection(id: string) {
+    try {
+      setMovingId(id);
+      setMessage(null);
+
+      const res = await fetch(`${API}/wishlist/${id}/move-to-collection`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          ...getAuthHeaders()
+        }
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.message || text.moveError);
+      }
+
+      setItems((prev) => prev.filter((item) => item.id !== id));
+      setMessage(text.moved);
+    } catch (error) {
+      setMessage(
+        error instanceof Error && error.message
+          ? error.message
+          : text.moveError
+      );
+    } finally {
+      setMovingId(null);
     }
   }
 
@@ -467,7 +532,7 @@ export default function WishlistClient({
               </section>
             ) : (
               items.map((item) => {
-                const name = getDisplayName(item);
+                const displayName = getDisplayName(item);
                 const status = getWishlistStatus(
                   item.targetPrice,
                   item.currentMarketValue,
@@ -502,7 +567,7 @@ export default function WishlistClient({
                             color: theme.colors.text
                           }}
                         >
-                          {name}
+                          {displayName}
                         </div>
 
                         <div
@@ -521,22 +586,49 @@ export default function WishlistClient({
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item.id)}
-                        disabled={deletingId === item.id}
+                      <div
                         style={{
-                          border: "none",
-                          borderRadius: 999,
-                          padding: "8px 12px",
-                          background: "transparent",
-                          color: theme.colors.danger,
-                          fontWeight: 800,
-                          cursor: "pointer"
+                          display: "flex",
+                          gap: 8,
+                          flexWrap: "wrap"
                         }}
                       >
-                        {deletingId === item.id ? text.removing : text.remove}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMoveToCollection(item.id)}
+                          disabled={movingId === item.id || deletingId === item.id}
+                          style={{
+                            border: "none",
+                            borderRadius: 999,
+                            padding: "8px 12px",
+                            background: theme.colors.black,
+                            color: "white",
+                            fontWeight: 800,
+                            cursor: "pointer"
+                          }}
+                        >
+                          {movingId === item.id
+                            ? text.moving
+                            : text.moveToCollection}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item.id)}
+                          disabled={deletingId === item.id || movingId === item.id}
+                          style={{
+                            border: "none",
+                            borderRadius: 999,
+                            padding: "8px 12px",
+                            background: "transparent",
+                            color: theme.colors.danger,
+                            fontWeight: 800,
+                            cursor: "pointer"
+                          }}
+                        >
+                          {deletingId === item.id ? text.removing : text.remove}
+                        </button>
+                      </div>
                     </div>
 
                     <div
