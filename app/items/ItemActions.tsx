@@ -1,21 +1,142 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
-import { getSessionTokenFromCookie } from "../lib/auth";
-import { theme } from "../theme";
+import { useMemo, useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
+
+function getSessionToken() {
+  if (typeof document === "undefined") return null;
+
+  const entry = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("session="));
+
+  return entry ? decodeURIComponent(entry.split("=")[1]) : null;
+}
+
+function getAuthHeaders(): Record<string, string> {
+  const token = getSessionToken();
+
+  if (!token) return {};
+
+  return {
+    Authorization: `Bearer ${token}`
+  };
+}
+
+function getPlatformOptions(locale: "en" | "es") {
+  return [
+    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    { value: "PS1", label: "PS1" },
+    { value: "PS2", label: "PS2" },
+    { value: "PS3", label: "PS3" },
+    { value: "PS4", label: "PS4" },
+    { value: "PS5", label: "PS5" },
+    { value: "PSP", label: "PSP" },
+    { value: "PS Vita", label: "PS Vita" },
+    { value: "Xbox", label: "Xbox" },
+    { value: "Xbox 360", label: "Xbox 360" },
+    { value: "Xbox One", label: "Xbox One" },
+    { value: "Xbox Series", label: "Xbox Series" },
+    { value: "NES", label: "NES" },
+    { value: "SNES", label: "SNES" },
+    { value: "Nintendo 64", label: "Nintendo 64" },
+    { value: "GameCube", label: "GameCube" },
+    { value: "Wii", label: "Wii" },
+    { value: "Wii U", label: "Wii U" },
+    { value: "Switch", label: "Switch" },
+    { value: "Game Boy", label: "Game Boy" },
+    { value: "Game Boy Color", label: "Game Boy Color" },
+    { value: "Game Boy Advance", label: "Game Boy Advance" },
+    { value: "Nintendo DS", label: "Nintendo DS" },
+    { value: "Nintendo 3DS", label: "Nintendo 3DS" },
+    { value: "Mega Drive", label: "Mega Drive" },
+    { value: "Master System", label: "Master System" },
+    { value: "Dreamcast", label: "Dreamcast" },
+    { value: "PC", label: "PC" },
+    { value: "DVD", label: "DVD" },
+    { value: "Blu-ray", label: "Blu-ray" },
+    { value: "4K UHD", label: "4K UHD" },
+    { value: "VHS", label: "VHS" },
+    { value: "Hardcover", label: "Hardcover" },
+    { value: "Paperback", label: "Paperback" },
+    { value: "Pocket", label: "Pocket" },
+    { value: "Single Issue", label: "Single Issue" },
+    { value: "TPB", label: "TPB" },
+    { value: "Omnibus", label: "Omnibus" },
+    { value: "Manga", label: "Manga" },
+    { value: "Standard", label: "Standard" },
+    { value: "Expansion", label: "Expansion" },
+    { value: "Collector Edition", label: "Collector Edition" },
+    { value: "Pokemon", label: "Pokemon" },
+    { value: "Yu-Gi-Oh!", label: "Yu-Gi-Oh!" },
+    { value: "Magic", label: "Magic" },
+    { value: "One Piece", label: "One Piece" },
+    { value: "Lorcana", label: "Lorcana" },
+    { value: "PVC", label: "PVC" },
+    { value: "Statue", label: "Statue" },
+    { value: "Nendoroid", label: "Nendoroid" },
+    { value: "Figma", label: "Figma" },
+    { value: "Funko Pop", label: "Funko Pop" },
+    { value: "Set", label: "Set" },
+    { value: "Minifigure", label: "Minifigure" },
+    { value: "Promotional", label: "Promotional" }
+  ];
+}
+
+function getRegionOptions(locale: "en" | "es") {
+  return [
+    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    { value: "PAL", label: "PAL" },
+    { value: "NTSC-U", label: "NTSC-U" },
+    { value: "NTSC-J", label: "NTSC-J" },
+    { value: "Region Free", label: "Region Free" },
+    { value: "ES", label: "ES" },
+    { value: "UK", label: "UK" },
+    { value: "US", label: "US" },
+    { value: "JP", label: "JP" },
+    { value: "EU", label: "EU" },
+    { value: "International", label: "International" }
+  ];
+}
+
+function getConditionOptions(locale: "en" | "es") {
+  return [
+    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" },
+    { value: "mint", label: "Mint" },
+    { value: "near_mint", label: locale === "es" ? "Casi nuevo" : "Near Mint" },
+    { value: "very_good", label: locale === "es" ? "Muy bueno" : "Very Good" },
+    { value: "good", label: locale === "es" ? "Bueno" : "Good" },
+    { value: "acceptable", label: locale === "es" ? "Aceptable" : "Acceptable" },
+    { value: "poor", label: locale === "es" ? "Malo" : "Poor" }
+  ];
+}
+
+function getCompletenessOptions(locale: "en" | "es") {
+  return [
+    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    { value: "loose", label: "Loose" },
+    { value: "boxed", label: locale === "es" ? "Con caja" : "Boxed" },
+    { value: "cib", label: "CIB" },
+    { value: "complete", label: locale === "es" ? "Completo" : "Complete" },
+    { value: "incomplete", label: locale === "es" ? "Incompleto" : "Incomplete" },
+    { value: "standard", label: locale === "es" ? "Estándar" : "Standard" },
+    { value: "special_edition", label: locale === "es" ? "Edición especial" : "Special Edition" },
+    { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" }
+  ];
+}
 
 export default function ItemActions({
   id,
   initialQty,
   initialPrice,
-  initialCondition,
-  initialPlatform,
-  initialCompleteness,
-  initialRegion,
-  initialNotes
+  initialCondition = "",
+  initialPlatform = "",
+  initialCompleteness = "",
+  initialRegion = "",
+  initialNotes = "",
+  locale = "en"
 }: {
   id: string;
   initialQty: number;
@@ -25,180 +146,150 @@ export default function ItemActions({
   initialCompleteness?: string | null;
   initialRegion?: string | null;
   initialNotes?: string | null;
+  locale?: "en" | "es";
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const locale = searchParams.get("lang") === "es" ? "es" : "en";
-
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const [quantity, setQuantity] = useState(String(initialQty));
-  const [estimatedPrice, setEstimatedPrice] = useState(String(initialPrice));
+  const [qty, setQty] = useState(String(initialQty));
+  const [price, setPrice] = useState(String(initialPrice));
   const [condition, setCondition] = useState(initialCondition ?? "");
   const [platform, setPlatform] = useState(initialPlatform ?? "");
-  const [completeness, setCompleteness] = useState(
-    initialCompleteness ?? ""
-  );
+  const [completeness, setCompleteness] = useState(initialCompleteness ?? "");
   const [region, setRegion] = useState(initialRegion ?? "");
   const [notes, setNotes] = useState(initialNotes ?? "");
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [valuating, setValuating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const platformOptions = useMemo(() => getPlatformOptions(locale), [locale]);
+  const regionOptions = useMemo(() => getRegionOptions(locale), [locale]);
+  const conditionOptions = useMemo(() => getConditionOptions(locale), [locale]);
+  const completenessOptions = useMemo(
+    () => getCompletenessOptions(locale),
+    [locale]
+  );
 
   const text = {
     edit: locale === "es" ? "Editar" : "Edit",
-    delete: locale === "es" ? "Eliminar" : "Delete",
-    valuate: "Valuate",
-    save: locale === "es" ? "Guardar cambios" : "Save changes",
+    save: locale === "es" ? "Guardar" : "Save",
+    saving: locale === "es" ? "Guardando..." : "Saving...",
     cancel: locale === "es" ? "Cancelar" : "Cancel",
-
-    quantity: locale === "es" ? "Cantidad" : "Quantity",
+    delete: locale === "es" ? "Eliminar" : "Delete",
+    deleting: locale === "es" ? "Eliminando..." : "Deleting...",
+    valuate: locale === "es" ? "Valorar" : "Valuate",
+    valuating: locale === "es" ? "Valorando..." : "Valuating...",
+    qty: locale === "es" ? "Cantidad" : "Quantity",
     price: locale === "es" ? "Precio estimado" : "Estimated price",
     condition: locale === "es" ? "Estado" : "Condition",
     platform: locale === "es" ? "Plataforma" : "Platform",
     completeness: locale === "es" ? "Completitud" : "Completeness",
     region: locale === "es" ? "Región" : "Region",
     notes: locale === "es" ? "Notas" : "Notes",
-
-    placeholderCondition:
-      locale === "es" ? "Ej: very_good" : "e.g. very_good",
-    placeholderPlatform:
-      locale === "es" ? "Ej: PS2, Switch, PC..." : "e.g. PS2, Switch, PC...",
-    placeholderCompleteness:
-      locale === "es" ? "Ej: cib, loose..." : "e.g. cib, loose...",
-    placeholderRegion:
-      locale === "es" ? "Ej: PAL, NTSC-J..." : "e.g. PAL, NTSC-J...",
-    placeholderNotes:
-      locale === "es"
-        ? "Detalles, edición, accesorios, observaciones..."
-        : "Details, edition, accessories, observations...",
-
-    saving: locale === "es" ? "Guardando..." : "Saving...",
-    valuating: locale === "es" ? "Valorando..." : "Valuating...",
-    deleting: locale === "es" ? "Eliminando..." : "Deleting...",
-
     confirmDelete:
       locale === "es"
         ? "¿Seguro que quieres eliminar este objeto?"
-        : "Are you sure you want to delete this item?",
-
-    updateError:
-      locale === "es"
-        ? "No se pudo actualizar el objeto"
-        : "Could not update item",
-    deleteError:
-      locale === "es"
-        ? "No se pudo eliminar el objeto"
-        : "Could not delete item",
-    valuateError:
-      locale === "es"
-        ? "No se pudo valorar el objeto"
-        : "Could not valuate item"
+        : "Are you sure you want to delete this item?"
   };
 
   async function handleSave() {
-    const token = getSessionTokenFromCookie();
-    if (!token) return;
-
     try {
-      setLoading(true);
+      setSaving(true);
 
       const res = await fetch(`${API}/items/${id}`, {
         method: "PATCH",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          ...getAuthHeaders()
         },
         body: JSON.stringify({
-          quantity: Number(quantity),
-          estimatedPrice: Number(estimatedPrice),
-          condition: condition.trim() || null,
-          platform: platform.trim() || null,
-          completeness: completeness.trim() || null,
-          region: region.trim() || null,
-          notes: notes.trim() || null
+          quantity: Number(qty),
+          estimatedPrice: Number(price),
+          condition: condition || undefined,
+          platform: platform || undefined,
+          completeness: completeness || undefined,
+          region: region || undefined,
+          notes: notes || undefined
         })
       });
 
-      const data = await res.json().catch(() => null);
-
       if (!res.ok) {
-        throw new Error(data?.message || text.updateError);
+        throw new Error("Failed to update item");
       }
 
-      setOpen(false);
-      router.refresh();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : text.updateError);
+      setEditing(false);
+      window.location.reload();
+    } catch {
+      alert(locale === "es" ? "No se pudo guardar." : "Could not save.");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   }
 
   async function handleDelete() {
-    const ok = confirm(text.confirmDelete);
+    const ok = window.confirm(text.confirmDelete);
     if (!ok) return;
 
-    const token = getSessionTokenFromCookie();
-    if (!token) return;
-
     try {
-      setLoading(true);
+      setDeleting(true);
 
       const res = await fetch(`${API}/items/${id}`, {
         method: "DELETE",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`
+          ...getAuthHeaders()
         }
       });
 
-      const data = await res.json().catch(() => null);
-
       if (!res.ok) {
-        throw new Error(data?.message || text.deleteError);
+        throw new Error("Failed to delete item");
       }
 
-      router.refresh();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : text.deleteError);
+      window.location.reload();
+    } catch {
+      alert(locale === "es" ? "No se pudo eliminar." : "Could not delete.");
     } finally {
-      setLoading(false);
+      setDeleting(false);
     }
   }
 
   async function handleValuate() {
-    const token = getSessionTokenFromCookie();
-    if (!token) return;
-
     try {
-      setLoading(true);
+      setValuating(true);
 
       const res = await fetch(`${API}/items/${id}/valuate`, {
         method: "POST",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`
+          ...getAuthHeaders()
         }
       });
 
-      const data = await res.json().catch(() => null);
-
       if (!res.ok) {
-        throw new Error(data?.message || text.valuateError);
+        throw new Error("Failed to valuate item");
       }
 
-      router.refresh();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : text.valuateError);
+      window.location.reload();
+    } catch {
+      alert(locale === "es" ? "No se pudo valorar." : "Could not valuate.");
     } finally {
-      setLoading(false);
+      setValuating(false);
     }
   }
 
-  return (
-    <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+  if (!editing) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          flexWrap: "wrap"
+        }}
+      >
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          style={chipButton}
+          onClick={() => setEditing(true)}
+          style={secondaryBtn}
         >
           {text.edit}
         </button>
@@ -206,138 +297,159 @@ export default function ItemActions({
         <button
           type="button"
           onClick={handleValuate}
-          disabled={loading}
-          style={goldButton}
+          disabled={valuating}
+          style={darkBtn}
         >
-          {loading ? text.valuating : text.valuate}
+          {valuating ? text.valuating : text.valuate}
         </button>
 
         <button
           type="button"
           onClick={handleDelete}
-          disabled={loading}
-          style={dangerButton}
+          disabled={deleting}
+          style={dangerBtn}
         >
-          {loading ? text.deleting : text.delete}
+          {deleting ? text.deleting : text.delete}
         </button>
       </div>
+    );
+  }
 
-      {open && (
-        <div
-          style={{
-            width: 380,
-            maxWidth: "100%",
-            background: theme.colors.surfaceAlt,
-            border: `1px solid ${theme.colors.border}`,
-            borderRadius: theme.radius.lg,
-            padding: 12,
-            boxShadow: theme.shadow.soft,
-            display: "grid",
-            gap: 10
-          }}
+  return (
+    <div
+      style={{
+        minWidth: 320,
+        padding: 12,
+        border: "1px solid #E5E7EB",
+        borderRadius: 16,
+        background: "#FFFFFF",
+        boxShadow: "0 12px 32px rgba(15,23,42,0.10)",
+        display: "grid",
+        gap: 10
+      }}
+    >
+      <Field label={text.qty}>
+        <input
+          type="number"
+          min="1"
+          value={qty}
+          onChange={(e) => setQty(e.target.value)}
+          style={inputStyle}
+        />
+      </Field>
+
+      <Field label={text.price}>
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          style={inputStyle}
+        />
+      </Field>
+
+      <Field label={text.condition}>
+        <select
+          value={condition}
+          onChange={(e) => setCondition(e.target.value)}
+          style={inputStyle}
         >
-          <ActionField label={text.quantity}>
-            <input
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              type="number"
-              min="1"
-              style={inputStyle}
-            />
-          </ActionField>
+          {conditionOptions.map((option) => (
+            <option key={`condition-${option.value}`} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </Field>
 
-          <ActionField label={text.price}>
-            <input
-              value={estimatedPrice}
-              onChange={(e) => setEstimatedPrice(e.target.value)}
-              type="number"
-              min="0"
-              step="0.01"
-              style={inputStyle}
-            />
-          </ActionField>
+      <Field label={text.platform}>
+        <select
+          value={platform}
+          onChange={(e) => setPlatform(e.target.value)}
+          style={inputStyle}
+        >
+          {platformOptions.map((option) => (
+            <option key={`platform-${option.value}`} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </Field>
 
-          <ActionField label={text.condition}>
-            <input
-              value={condition}
-              onChange={(e) => setCondition(e.target.value)}
-              placeholder={text.placeholderCondition}
-              style={inputStyle}
-            />
-          </ActionField>
-
-          <ActionField label={text.platform}>
-            <input
-              value={platform}
-              onChange={(e) => setPlatform(e.target.value)}
-              placeholder={text.placeholderPlatform}
-              style={inputStyle}
-            />
-          </ActionField>
-
-          <ActionField label={text.completeness}>
-            <input
-              value={completeness}
-              onChange={(e) => setCompleteness(e.target.value)}
-              placeholder={text.placeholderCompleteness}
-              style={inputStyle}
-            />
-          </ActionField>
-
-          <ActionField label={text.region}>
-            <input
-              value={region}
-              onChange={(e) => setRegion(e.target.value)}
-              placeholder={text.placeholderRegion}
-              style={inputStyle}
-            />
-          </ActionField>
-
-          <ActionField label={text.notes}>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={text.placeholderNotes}
-              style={{
-                ...inputStyle,
-                minHeight: 88,
-                resize: "vertical"
-              }}
-            />
-          </ActionField>
-
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              justifyContent: "flex-end",
-              marginTop: 4
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              style={secondaryButton}
+      <Field label={text.completeness}>
+        <select
+          value={completeness}
+          onChange={(e) => setCompleteness(e.target.value)}
+          style={inputStyle}
+        >
+          {completenessOptions.map((option) => (
+            <option
+              key={`completeness-${option.value}`}
+              value={option.value}
             >
-              {text.cancel}
-            </button>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </Field>
 
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={loading}
-              style={primaryButton}
-            >
-              {loading ? text.saving : text.save}
-            </button>
-          </div>
-        </div>
-      )}
+      <Field label={text.region}>
+        <select
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          style={inputStyle}
+        >
+          {regionOptions.map((option) => (
+            <option key={`region-${option.value}`} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </Field>
+
+      <Field label={text.notes}>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          style={{
+            ...inputStyle,
+            minHeight: 90,
+            resize: "vertical"
+          }}
+        />
+      </Field>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: 8,
+          flexWrap: "wrap"
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          style={secondaryBtn}
+        >
+          {text.cancel}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          style={darkBtn}
+        >
+          {saving ? text.saving : text.save}
+        </button>
+      </div>
     </div>
   );
 }
 
-function ActionField({
+function Field({
   label,
   children
 }: {
@@ -348,14 +460,15 @@ function ActionField({
     <label
       style={{
         display: "grid",
-        gap: 6
+        gap: 6,
+        textAlign: "left"
       }}
     >
       <span
         style={{
           fontSize: 12,
           fontWeight: 800,
-          color: theme.colors.textMuted
+          color: "#6B7280"
         }}
       >
         {label}
@@ -369,60 +482,40 @@ const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   padding: "10px 12px",
-  borderRadius: 10,
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.surface,
-  color: theme.colors.text,
+  borderRadius: 12,
+  border: "1px solid #E5E7EB",
+  background: "#F9FAFB",
+  color: "#171717",
   fontSize: 14,
   outline: "none"
 };
 
-const chipButton: React.CSSProperties = {
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.surface,
-  color: theme.colors.text,
+const secondaryBtn: React.CSSProperties = {
+  border: "1px solid #E5E7EB",
   borderRadius: 999,
-  padding: "6px 10px",
+  padding: "8px 12px",
+  background: "#FFFFFF",
+  color: "#171717",
   fontWeight: 800,
   cursor: "pointer"
 };
 
-const goldButton: React.CSSProperties = {
+const darkBtn: React.CSSProperties = {
   border: "none",
-  background: theme.colors.gold,
-  color: theme.colors.black,
-  borderRadius: 999,
-  padding: "6px 10px",
-  fontWeight: 900,
-  cursor: "pointer"
-};
-
-const dangerButton: React.CSSProperties = {
-  border: "none",
-  background: "#FEF3F2",
-  color: theme.colors.danger,
-  borderRadius: 999,
-  padding: "6px 10px",
-  fontWeight: 900,
-  cursor: "pointer"
-};
-
-const secondaryButton: React.CSSProperties = {
-  border: `1px solid ${theme.colors.border}`,
-  background: theme.colors.surface,
-  color: theme.colors.text,
   borderRadius: 999,
   padding: "8px 12px",
+  background: "#171717",
+  color: "#FFFFFF",
   fontWeight: 800,
   cursor: "pointer"
 };
 
-const primaryButton: React.CSSProperties = {
+const dangerBtn: React.CSSProperties = {
   border: "none",
-  background: theme.colors.black,
-  color: "white",
   borderRadius: 999,
   padding: "8px 12px",
+  background: "#DC2626",
+  color: "#FFFFFF",
   fontWeight: 800,
   cursor: "pointer"
 };

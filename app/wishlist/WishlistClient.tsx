@@ -44,6 +44,66 @@ function getWishlistStatus(
   return locale === "es" ? "Por encima del objetivo" : "Above target";
 }
 
+function getDeltaData(
+  targetPrice?: string | number | null,
+  currentMarketValue?: string | number | null,
+  locale: "en" | "es" = "en"
+) {
+  if (targetPrice == null || currentMarketValue == null) {
+    return {
+      label: "—",
+      tone: "neutral" as const,
+      message: locale === "es" ? "Falta precio o objetivo" : "Missing price or target"
+    };
+  }
+
+  const target = Number(targetPrice);
+  const current = Number(currentMarketValue);
+
+  if (Number.isNaN(target) || Number.isNaN(current)) {
+    return {
+      label: "—",
+      tone: "neutral" as const,
+      message: locale === "es" ? "Datos no válidos" : "Invalid data"
+    };
+  }
+
+  const delta = current - target;
+  const abs = Math.abs(delta).toFixed(2);
+  const prefix = delta > 0 ? "+" : delta < 0 ? "-" : "±";
+
+  if (current <= target) {
+    return {
+      label: `${prefix}${abs} €`,
+      tone: "positive" as const,
+      message:
+        locale === "es"
+          ? "Está en tu objetivo o por debajo"
+          : "At or below your target"
+    };
+  }
+
+  if (current <= target * 1.1) {
+    return {
+      label: `+${abs} €`,
+      tone: "warning" as const,
+      message:
+        locale === "es"
+          ? "Está cerca de tu objetivo"
+          : "Close to your target"
+    };
+  }
+
+  return {
+    label: `+${abs} €`,
+    tone: "danger" as const,
+    message:
+      locale === "es"
+        ? "Bastante por encima del objetivo"
+        : "Well above your target"
+  };
+}
+
 function getSessionToken() {
   if (typeof document === "undefined") return null;
 
@@ -233,6 +293,7 @@ export default function WishlistClient({
     notes: locale === "es" ? "Notas" : "Notes",
     currentValue: locale === "es" ? "Valor actual" : "Current value",
     status: locale === "es" ? "Estado" : "Status",
+    delta: locale === "es" ? "Diferencia" : "Delta",
     remove: locale === "es" ? "Eliminar" : "Remove",
     moveToCollection:
       locale === "es" ? "Añadir a colección" : "Add to collection",
@@ -681,6 +742,11 @@ export default function WishlistClient({
                   item.currentMarketValue,
                   locale
                 );
+                const delta = getDeltaData(
+                  item.targetPrice,
+                  item.currentMarketValue,
+                  locale
+                );
 
                 return (
                   <article
@@ -778,7 +844,7 @@ export default function WishlistClient({
                       style={{
                         marginTop: 14,
                         display: "grid",
-                        gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
                         gap: 10
                       }}
                     >
@@ -795,6 +861,13 @@ export default function WishlistClient({
                       <MiniInfo
                         label={text.status}
                         value={status}
+                        theme={theme}
+                      />
+                      <DeltaInfo
+                        label={text.delta}
+                        value={delta.label}
+                        hint={delta.message}
+                        tone={delta.tone}
                         theme={theme}
                       />
                     </div>
@@ -954,6 +1027,86 @@ function MiniInfo({
         }}
       >
         {value}
+      </div>
+    </div>
+  );
+}
+
+function DeltaInfo({
+  label,
+  value,
+  hint,
+  tone,
+  theme
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  tone: "positive" | "warning" | "danger" | "neutral";
+  theme: ReturnType<typeof getThemeById>;
+}) {
+  const styles =
+    tone === "positive"
+      ? {
+          background: "rgba(34,197,94,0.10)",
+          border: "1px solid rgba(34,197,94,0.22)",
+          color: "#15803D"
+        }
+      : tone === "warning"
+        ? {
+            background: "rgba(245,158,11,0.12)",
+            border: "1px solid rgba(245,158,11,0.22)",
+            color: "#B45309"
+          }
+        : tone === "danger"
+          ? {
+              background: "rgba(239,68,68,0.10)",
+              border: "1px solid rgba(239,68,68,0.22)",
+              color: "#B91C1C"
+            }
+          : {
+              background: theme.colors.surfaceAlt,
+              border: `1px solid ${theme.colors.border}`,
+              color: theme.colors.textMuted
+            };
+
+  return (
+    <div
+      style={{
+        borderRadius: theme.radius.md,
+        padding: "12px 14px",
+        ...styles
+      }}
+    >
+      <div
+        style={{
+          fontSize: 12,
+          marginBottom: 6,
+          fontWeight: 800,
+          opacity: 0.9
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize: 14,
+          fontWeight: 800
+        }}
+      >
+        {value}
+      </div>
+
+      <div
+        style={{
+          marginTop: 6,
+          fontSize: 12,
+          lineHeight: 1.45,
+          opacity: 0.9
+        }}
+      >
+        {hint}
       </div>
     </div>
   );
