@@ -17,6 +17,12 @@ export type WishlistItem = {
   notes?: string | null;
 };
 
+type Me = {
+  id: string;
+  email?: string;
+  plan?: string;
+};
+
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function getWishlist(cookie: string): Promise<WishlistItem[]> {
@@ -32,6 +38,21 @@ async function getWishlist(cookie: string): Promise<WishlistItem[]> {
     return Array.isArray(data) ? data : [];
   } catch {
     return [];
+  }
+}
+
+async function getMe(cookie: string): Promise<Me | null> {
+  try {
+    const res = await fetch(`${API}/auth/me`, {
+      cache: "no-store",
+      headers: { cookie }
+    });
+
+    if (!res.ok) return null;
+
+    return res.json();
+  } catch {
+    return null;
   }
 }
 
@@ -59,7 +80,10 @@ export default async function WishlistPage({
     (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
   const theme = getThemeById(themeId);
 
-  const items = await getWishlist(cookieHeader);
+  const [items, me] = await Promise.all([
+    getWishlist(cookieHeader),
+    getMe(cookieHeader)
+  ]);
 
   return (
     <WishlistClient
@@ -67,6 +91,7 @@ export default async function WishlistPage({
       locale={locale}
       themeId={theme.id}
       navTheme={theme}
+      plan={me?.plan ?? "free"}
     />
   );
 }

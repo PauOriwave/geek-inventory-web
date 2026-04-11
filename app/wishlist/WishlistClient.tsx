@@ -241,41 +241,71 @@ function getRegionOptions(category: string, locale: "en" | "es") {
   ];
 }
 
-function buildMarketplaceUrl(item: WishlistItem) {
-  const name = encodeURIComponent(getDisplayName(item));
+function buildMarketplaceLinks(item: WishlistItem) {
+  const query = encodeURIComponent(getDisplayName(item));
   const category = item.category || "";
+
+  if (category === "videogame") {
+    return {
+      primary: {
+        label: "eBay",
+        url: `https://www.ebay.es/sch/i.html?_nkw=${query}`
+      },
+      premium: {
+        label: "Google Shopping",
+        url: `https://www.google.com/search?tbm=shop&q=${query}`
+      }
+    };
+  }
 
   if (category === "book" || category === "comic") {
     return {
-      label: "Amazon",
-      url: `https://www.amazon.es/s?k=${name}`
+      primary: {
+        label: "Amazon",
+        url: `https://www.amazon.es/s?k=${query}`
+      },
+      premium: {
+        label: "Google Shopping",
+        url: `https://www.google.com/search?tbm=shop&q=${query}`
+      }
     };
   }
 
   if (category === "boardgame") {
     return {
-      label: "Google Shopping",
-      url: `https://www.google.com/search?tbm=shop&q=${name}`
-    };
-  }
-
-  if (category === "videogame") {
-    return {
-      label: "eBay",
-      url: `https://www.ebay.es/sch/i.html?_nkw=${name}`
+      primary: {
+        label: "Google Shopping",
+        url: `https://www.google.com/search?tbm=shop&q=${query}`
+      },
+      premium: {
+        label: "eBay",
+        url: `https://www.ebay.es/sch/i.html?_nkw=${query}`
+      }
     };
   }
 
   if (category === "movie") {
     return {
-      label: "Amazon",
-      url: `https://www.amazon.es/s?k=${name}`
+      primary: {
+        label: "Amazon",
+        url: `https://www.amazon.es/s?k=${query}`
+      },
+      premium: {
+        label: "eBay",
+        url: `https://www.ebay.es/sch/i.html?_nkw=${query}`
+      }
     };
   }
 
   return {
-    label: "Google",
-    url: `https://www.google.com/search?q=${name}`
+    primary: {
+      label: "Google",
+      url: `https://www.google.com/search?q=${query}`
+    },
+    premium: {
+      label: "Google Shopping",
+      url: `https://www.google.com/search?tbm=shop&q=${query}`
+    }
   };
 }
 
@@ -283,14 +313,17 @@ export default function WishlistClient({
   initialItems,
   locale,
   themeId,
-  navTheme
+  navTheme,
+  plan = "free"
 }: {
   initialItems: WishlistItem[];
   locale: "en" | "es";
   themeId: AppThemeId;
   navTheme: ReturnType<typeof getThemeById>;
+  plan?: string;
 }) {
   const theme = useMemo(() => getThemeById(themeId), [themeId]);
+  const isPremium = plan === "premium";
 
   const [items, setItems] = useState<WishlistItem[]>(initialItems);
   const [name, setName] = useState("");
@@ -334,6 +367,12 @@ export default function WishlistClient({
     status: locale === "es" ? "Estado" : "Status",
     delta: locale === "es" ? "Diferencia" : "Delta",
     buyLink: locale === "es" ? "Ver oferta" : "View offer",
+    premiumBuyLink:
+      locale === "es" ? "Ver mejor oferta" : "See best offer",
+    premiumHint:
+      locale === "es"
+        ? "Premium te abrirá mejores comparativas y futuras ofertas optimizadas."
+        : "Premium unlocks better comparisons and future optimized offers.",
     remove: locale === "es" ? "Eliminar" : "Remove",
     moveToCollection:
       locale === "es" ? "Añadir a colección" : "Add to collection",
@@ -373,7 +412,9 @@ export default function WishlistClient({
     moveError:
       locale === "es"
         ? "No se pudo mover a la colección."
-        : "Could not move to collection."
+        : "Could not move to collection.",
+    premiumCta:
+      locale === "es" ? "Explorar Premium" : "Explore Premium"
   };
 
   async function handleCreate(e: React.FormEvent) {
@@ -582,6 +623,67 @@ export default function WishlistClient({
             {text.subtitle}
           </p>
         </section>
+
+        {!isPremium && (
+          <section
+            style={{
+              marginBottom: 18,
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.radius.xl,
+              padding: 16,
+              background: theme.colors.surface,
+              boxShadow: theme.shadow.soft
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "center",
+                flexWrap: "wrap"
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontWeight: 900,
+                    fontSize: 15,
+                    color: theme.colors.text
+                  }}
+                >
+                  Premium wishlist
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 6,
+                    fontSize: 13,
+                    color: theme.colors.textMuted,
+                    lineHeight: 1.6,
+                    maxWidth: 760
+                  }}
+                >
+                  {text.premiumHint}
+                </div>
+              </div>
+
+              <a
+                href={`/pricing?lang=${locale}`}
+                style={{
+                  textDecoration: "none",
+                  borderRadius: 999,
+                  padding: "10px 14px",
+                  background: theme.colors.black,
+                  color: "white",
+                  fontWeight: 900
+                }}
+              >
+                {text.premiumCta}
+              </a>
+            </div>
+          </section>
+        )}
 
         <div
           style={{
@@ -793,7 +895,8 @@ export default function WishlistClient({
                   item.currentMarketValue,
                   locale
                 );
-                const deal = buildMarketplaceUrl(item);
+                const links = buildMarketplaceLinks(item);
+                const currentDeal = isPremium ? links.premium : links.primary;
 
                 return (
                   <article
@@ -850,7 +953,7 @@ export default function WishlistClient({
                         }}
                       >
                         <a
-                          href={deal.url}
+                          href={currentDeal.url}
                           target="_blank"
                           rel="noreferrer"
                           style={{
@@ -862,7 +965,7 @@ export default function WishlistClient({
                             fontWeight: 800
                           }}
                         >
-                          {text.buyLink} · {deal.label}
+                          {isPremium ? text.premiumBuyLink : text.buyLink} · {currentDeal.label}
                         </a>
 
                         <button
