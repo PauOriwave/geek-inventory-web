@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 const FREE_ITEM_LIMIT = 50;
@@ -16,6 +16,122 @@ const categories = [
   "movie",
   "other"
 ] as const;
+
+function getPlatformOptions(category: string, locale: "en" | "es") {
+  const commonOther = [
+    {
+      value: "",
+      label: locale === "es" ? "Sin especificar" : "Not specified"
+    }
+  ];
+
+  const byCategory: Record<string, { value: string; label: string }[]> = {
+    videogame: [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "PS1", label: "PS1" },
+      { value: "PS2", label: "PS2" },
+      { value: "PS3", label: "PS3" },
+      { value: "PS4", label: "PS4" },
+      { value: "PS5", label: "PS5" },
+      { value: "PSP", label: "PSP" },
+      { value: "PS Vita", label: "PS Vita" },
+      { value: "Xbox", label: "Xbox" },
+      { value: "Xbox 360", label: "Xbox 360" },
+      { value: "Xbox One", label: "Xbox One" },
+      { value: "Xbox Series", label: "Xbox Series" },
+      { value: "NES", label: "NES" },
+      { value: "SNES", label: "SNES" },
+      { value: "Nintendo 64", label: "Nintendo 64" },
+      { value: "GameCube", label: "GameCube" },
+      { value: "Wii", label: "Wii" },
+      { value: "Wii U", label: "Wii U" },
+      { value: "Switch", label: "Switch" },
+      { value: "Game Boy", label: "Game Boy" },
+      { value: "Game Boy Color", label: "Game Boy Color" },
+      { value: "Game Boy Advance", label: "Game Boy Advance" },
+      { value: "Nintendo DS", label: "Nintendo DS" },
+      { value: "Nintendo 3DS", label: "Nintendo 3DS" },
+      { value: "Mega Drive", label: "Mega Drive" },
+      { value: "Master System", label: "Master System" },
+      { value: "Dreamcast", label: "Dreamcast" },
+      { value: "PC", label: "PC" }
+    ],
+    movie: [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "DVD", label: "DVD" },
+      { value: "Blu-ray", label: "Blu-ray" },
+      { value: "4K UHD", label: "4K UHD" },
+      { value: "VHS", label: "VHS" }
+    ],
+    book: [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "Hardcover", label: "Hardcover" },
+      { value: "Paperback", label: "Paperback" },
+      { value: "Pocket", label: "Pocket" }
+    ],
+    comic: [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "Single Issue", label: "Single Issue" },
+      { value: "TPB", label: "TPB" },
+      { value: "Hardcover", label: "Hardcover" },
+      { value: "Omnibus", label: "Omnibus" },
+      { value: "Manga", label: "Manga" }
+    ],
+    boardgame: [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "Standard", label: "Standard" },
+      { value: "Expansion", label: "Expansion" },
+      { value: "Collector Edition", label: "Collector Edition" }
+    ],
+    tcg: [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "Pokemon", label: "Pokemon" },
+      { value: "Yu-Gi-Oh!", label: "Yu-Gi-Oh!" },
+      { value: "Magic", label: "Magic" },
+      { value: "One Piece", label: "One Piece" },
+      { value: "Lorcana", label: "Lorcana" }
+    ],
+    figure: [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "PVC", label: "PVC" },
+      { value: "Statue", label: "Statue" },
+      { value: "Nendoroid", label: "Nendoroid" },
+      { value: "Figma", label: "Figma" },
+      { value: "Funko Pop", label: "Funko Pop" }
+    ],
+    lego: [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "Set", label: "Set" },
+      { value: "Minifigure", label: "Minifigure" },
+      { value: "Promotional", label: "Promotional" }
+    ],
+    other: commonOther
+  };
+
+  return byCategory[category] || commonOther;
+}
+
+function getRegionOptions(category: string, locale: "en" | "es") {
+  if (category === "videogame" || category === "movie") {
+    return [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "PAL", label: "PAL" },
+      { value: "NTSC-U", label: "NTSC-U" },
+      { value: "NTSC-J", label: "NTSC-J" },
+      { value: "Region Free", label: "Region Free" }
+    ];
+  }
+
+  return [
+    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    { value: "ES", label: "ES" },
+    { value: "UK", label: "UK" },
+    { value: "US", label: "US" },
+    { value: "JP", label: "JP" },
+    { value: "EU", label: "EU" },
+    { value: "International", label: "International" }
+  ];
+}
 
 export default function AddItemForm({
   locale = "en",
@@ -38,6 +154,16 @@ export default function AddItemForm({
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  const platformOptions = useMemo(
+    () => getPlatformOptions(category, locale),
+    [category, locale]
+  );
+
+  const regionOptions = useMemo(
+    () => getRegionOptions(category, locale),
+    [category, locale]
+  );
 
   const isPremium = plan === "premium";
   const freeLimitReached = !isPremium && currentCount >= FREE_ITEM_LIMIT;
@@ -202,9 +328,12 @@ export default function AddItemForm({
         <Field label={text.category}>
           <select
             value={category}
-            onChange={(e) =>
-              setCategory(e.target.value as (typeof categories)[number])
-            }
+            onChange={(e) => {
+              const nextCategory = e.target.value as (typeof categories)[number];
+              setCategory(nextCategory);
+              setPlatform("");
+              setRegion("");
+            }}
             disabled={loading || freeLimitReached}
             style={inputStyle}
           >
@@ -251,12 +380,18 @@ export default function AddItemForm({
         </Field>
 
         <Field label={text.platform}>
-          <input
+          <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value)}
             disabled={loading || freeLimitReached}
             style={inputStyle}
-          />
+          >
+            {platformOptions.map((option) => (
+              <option key={`${category}-platform-${option.value}`} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </Field>
 
         <Field label={text.completeness}>
@@ -269,12 +404,18 @@ export default function AddItemForm({
         </Field>
 
         <Field label={text.region}>
-          <input
+          <select
             value={region}
             onChange={(e) => setRegion(e.target.value)}
             disabled={loading || freeLimitReached}
             style={inputStyle}
-          />
+          >
+            {regionOptions.map((option) => (
+              <option key={`${category}-region-${option.value}`} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </Field>
 
         <div style={{ gridColumn: "1 / -1" }}>
