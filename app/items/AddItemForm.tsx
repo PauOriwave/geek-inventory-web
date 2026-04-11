@@ -133,6 +133,55 @@ function getRegionOptions(category: string, locale: "en" | "es") {
   ];
 }
 
+function getConditionOptions(locale: "en" | "es") {
+  return [
+    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" },
+    { value: "mint", label: "Mint" },
+    { value: "near_mint", label: locale === "es" ? "Casi nuevo" : "Near Mint" },
+    { value: "very_good", label: locale === "es" ? "Muy bueno" : "Very Good" },
+    { value: "good", label: locale === "es" ? "Bueno" : "Good" },
+    { value: "acceptable", label: locale === "es" ? "Aceptable" : "Acceptable" },
+    { value: "poor", label: locale === "es" ? "Malo" : "Poor" }
+  ];
+}
+
+function getCompletenessOptions(category: string, locale: "en" | "es") {
+  if (category === "videogame") {
+    return [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "loose", label: "Loose" },
+      { value: "boxed", label: locale === "es" ? "Con caja" : "Boxed" },
+      { value: "cib", label: "CIB" },
+      { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" }
+    ];
+  }
+
+  if (category === "boardgame" || category === "lego") {
+    return [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "complete", label: locale === "es" ? "Completo" : "Complete" },
+      { value: "incomplete", label: locale === "es" ? "Incompleto" : "Incomplete" },
+      { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" }
+    ];
+  }
+
+  if (category === "book" || category === "comic" || category === "movie") {
+    return [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "standard", label: locale === "es" ? "Estándar" : "Standard" },
+      { value: "special_edition", label: locale === "es" ? "Edición especial" : "Special Edition" },
+      { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" }
+    ];
+  }
+
+  return [
+    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    { value: "complete", label: locale === "es" ? "Completo" : "Complete" },
+    { value: "incomplete", label: locale === "es" ? "Incompleto" : "Incomplete" }
+  ];
+}
+
 export default function AddItemForm({
   locale = "en",
   plan = "free",
@@ -162,6 +211,16 @@ export default function AddItemForm({
 
   const regionOptions = useMemo(
     () => getRegionOptions(category, locale),
+    [category, locale]
+  );
+
+  const conditionOptions = useMemo(
+    () => getConditionOptions(locale),
+    [locale]
+  );
+
+  const completenessOptions = useMemo(
+    () => getCompletenessOptions(category, locale),
     [category, locale]
   );
 
@@ -333,6 +392,7 @@ export default function AddItemForm({
               setCategory(nextCategory);
               setPlatform("");
               setRegion("");
+              setCompleteness("");
             }}
             disabled={loading || freeLimitReached}
             style={inputStyle}
@@ -371,12 +431,18 @@ export default function AddItemForm({
         </Field>
 
         <Field label={text.condition}>
-          <input
+          <select
             value={condition}
             onChange={(e) => setCondition(e.target.value)}
             disabled={loading || freeLimitReached}
             style={inputStyle}
-          />
+          >
+            {conditionOptions.map((option) => (
+              <option key={`condition-${option.value}`} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </Field>
 
         <Field label={text.platform}>
@@ -395,12 +461,18 @@ export default function AddItemForm({
         </Field>
 
         <Field label={text.completeness}>
-          <input
+          <select
             value={completeness}
             onChange={(e) => setCompleteness(e.target.value)}
             disabled={loading || freeLimitReached}
             style={inputStyle}
-          />
+          >
+            {completenessOptions.map((option) => (
+              <option key={`${category}-completeness-${option.value}`} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </Field>
 
         <Field label={text.region}>
