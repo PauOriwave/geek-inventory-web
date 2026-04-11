@@ -1,10 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { AppThemeId, getThemeById } from "../theme";
 import type { WishlistItem } from "./page";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
+
+function isPaidPlan(plan?: string) {
+  return plan === "premium" || plan === "market_pro";
+}
 
 function formatPrice(value?: string | number | null) {
   if (value == null) return "—";
@@ -323,7 +327,7 @@ export default function WishlistClient({
   plan?: string;
 }) {
   const theme = useMemo(() => getThemeById(themeId), [themeId]);
-  const isPremium = plan === "premium";
+  const isPremium = isPaidPlan(plan);
 
   const [items, setItems] = useState<WishlistItem[]>(initialItems);
   const [name, setName] = useState("");
@@ -417,7 +421,7 @@ export default function WishlistClient({
       locale === "es" ? "Explorar Premium" : "Explore Premium"
   };
 
-  async function handleCreate(e: React.FormEvent) {
+  async function handleCreate(e: FormEvent) {
     e.preventDefault();
 
     if (!name.trim()) return;
@@ -1119,7 +1123,7 @@ function Field({
   children
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <label
@@ -1142,7 +1146,7 @@ function Field({
   );
 }
 
-function inputStyle(theme: ReturnType<typeof getThemeById>): React.CSSProperties {
+function inputStyle(theme: ReturnType<typeof getThemeById>): CSSProperties {
   return {
     width: "100%",
     boxSizing: "border-box",
