@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { theme } from "../theme";
+import { getThemeById, AppThemeId } from "../theme";
 import { getCategoryLabel } from "./categoryLabels";
 
 type Row = {
@@ -14,18 +14,23 @@ type Row = {
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function getByCategory(cookieHeader: string): Promise<Row[]> {
-  const res = await fetch(`${API}/stats/by-category`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieHeader
+  try {
+    const res = await fetch(`${API}/stats/by-category`, {
+      cache: "no-store",
+      headers: {
+        cookie: cookieHeader
+      }
+    });
+
+    if (!res.ok) {
+      return [];
     }
-  });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch by-category stats");
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
   }
-
-  return res.json();
 }
 
 export default async function CategoryStats({
@@ -35,6 +40,10 @@ export default async function CategoryStats({
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
+
+  const themeId =
+    (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
+  const theme = getThemeById(themeId);
 
   const rows = await getByCategory(cookieHeader);
 
@@ -100,7 +109,12 @@ export default async function CategoryStats({
                 {getCategoryLabel(r.category, locale)}
               </div>
 
-              <TrendBadge trend={r.trend} delta={r.trendDelta} locale={locale} />
+              <TrendBadge
+                trend={r.trend}
+                delta={r.trendDelta}
+                locale={locale}
+                theme={theme}
+              />
             </div>
 
             <div
@@ -136,11 +150,13 @@ export default async function CategoryStats({
 function TrendBadge({
   trend,
   delta,
-  locale
+  locale,
+  theme
 }: {
   trend: "rising" | "dropping" | "stable";
   delta: number;
   locale: "en" | "es";
+  theme: ReturnType<typeof getThemeById>;
 }) {
   const positive = trend === "rising";
   const negative = trend === "dropping";

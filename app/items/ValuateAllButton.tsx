@@ -4,6 +4,10 @@ import { useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
+function isPaidPlan(plan?: string) {
+  return plan === "premium" || plan === "market_pro";
+}
+
 export default function ValuateAllButton({
   plan = "free",
   locale = "en"
@@ -14,15 +18,15 @@ export default function ValuateAllButton({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const isPremium = plan === "premium";
+  const hasAccess = isPaidPlan(plan);
 
   const text = {
     label: locale === "es" ? "Valorar todo" : "Valuate all",
     loading: locale === "es" ? "Valorando..." : "Valuating...",
     premiumOnly:
       locale === "es"
-        ? "Esta función está disponible solo en Premium."
-        : "This feature is available only on Premium.",
+        ? "Esta función está disponible solo en planes de pago."
+        : "This feature is available only on paid plans.",
     premiumHint:
       locale === "es"
         ? "Actualiza tu plan para valorar toda la colección de una vez."
@@ -46,7 +50,7 @@ export default function ValuateAllButton({
   };
 
   async function handleClick() {
-    if (!isPremium) {
+    if (!hasAccess) {
       setMessage(`${text.premiumOnly} ${text.premiumHint}`);
       return;
     }
@@ -88,27 +92,27 @@ export default function ValuateAllButton({
         type="button"
         onClick={handleClick}
         disabled={loading}
-        title={!isPremium ? text.premiumOnly : undefined}
+        title={!hasAccess ? text.premiumOnly : undefined}
         style={{
           border: "none",
           borderRadius: 999,
           padding: "10px 14px",
           fontWeight: 800,
           cursor: loading ? "wait" : "pointer",
-          background: isPremium ? "#171717" : "#9CA3AF",
+          background: hasAccess ? "#171717" : "#9CA3AF",
           color: "white",
           display: "inline-flex",
           alignItems: "center",
           gap: 8,
           opacity: loading ? 0.85 : 1,
-          boxShadow: isPremium
+          boxShadow: hasAccess
             ? "0 8px 24px rgba(15,23,42,0.16)"
             : "none"
         }}
       >
         <span>{loading ? text.loading : text.label}</span>
 
-        {!isPremium && (
+        {!hasAccess && (
           <span
             style={{
               fontSize: 11,

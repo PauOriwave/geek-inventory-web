@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { theme } from "../theme";
+import { getThemeById, AppThemeId } from "../theme";
 
 type TrendingItem = {
   id: string;
@@ -17,26 +17,31 @@ async function getTrendingItems(
   direction: "rising" | "dropping",
   category?: string
 ): Promise<TrendingItem[]> {
-  const qs = new URLSearchParams();
-  qs.set("limit", "5");
-  qs.set("direction", direction);
+  try {
+    const qs = new URLSearchParams();
+    qs.set("limit", "5");
+    qs.set("direction", direction);
 
-  if (category) {
-    qs.set("category", category);
-  }
-
-  const res = await fetch(`${API}/stats/trending-items?${qs.toString()}`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieHeader
+    if (category) {
+      qs.set("category", category);
     }
-  });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch trending items");
+    const res = await fetch(`${API}/stats/trending-items?${qs.toString()}`, {
+      cache: "no-store",
+      headers: {
+        cookie: cookieHeader
+      }
+    });
+
+    if (!res.ok) {
+      return [];
+    }
+
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
   }
-
-  return res.json();
 }
 
 export default async function TrendingItems({
@@ -48,6 +53,10 @@ export default async function TrendingItems({
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
+
+  const themeId =
+    (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
+  const theme = getThemeById(themeId);
 
   const [risingItems, droppingItems] = await Promise.all([
     getTrendingItems(cookieHeader, "rising", category),
@@ -130,6 +139,7 @@ export default async function TrendingItems({
           items={risingItems}
           direction="rising"
           locale={locale}
+          theme={theme}
         />
 
         <TrendColumn
@@ -138,6 +148,7 @@ export default async function TrendingItems({
           items={droppingItems}
           direction="dropping"
           locale={locale}
+          theme={theme}
         />
       </div>
     </section>
@@ -149,13 +160,15 @@ function TrendColumn({
   emptyText,
   items,
   direction,
-  locale
+  locale,
+  theme
 }: {
   title: string;
   emptyText: string;
   items: TrendingItem[];
   direction: "rising" | "dropping";
   locale: "en" | "es";
+  theme: ReturnType<typeof getThemeById>;
 }) {
   return (
     <div
@@ -233,7 +246,11 @@ function TrendColumn({
                 </div>
               </div>
 
-              <TrendDeltaBadge delta={item.delta} direction={direction} />
+              <TrendDeltaBadge
+                delta={item.delta}
+                direction={direction}
+                theme={theme}
+              />
             </a>
           ))}
         </div>
@@ -244,10 +261,12 @@ function TrendColumn({
 
 function TrendDeltaBadge({
   delta,
-  direction
+  direction,
+  theme
 }: {
   delta: number;
   direction: "rising" | "dropping";
+  theme: ReturnType<typeof getThemeById>;
 }) {
   const positive = direction === "rising";
   const bg = positive ? "#ECFDF3" : "#FEF3F2";

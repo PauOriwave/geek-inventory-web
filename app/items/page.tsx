@@ -88,23 +88,43 @@ async function getItems(
   return res.json();
 }
 
+function buildSummaryFromItems(items: Item[]): Summary {
+  return {
+    totalItems: items.length,
+    totalUnits: items.reduce(
+      (acc, item) => acc + (Number(item.quantity) || 0),
+      0
+    ),
+    totalValue: items.reduce(
+      (acc, item) =>
+        acc +
+        (Number(item.estimatedPrice) || 0) * (Number(item.quantity) || 0),
+      0
+    )
+  };
+}
+
 async function getSummary(
   queryString: string,
-  cookieHeader: string
+  cookieHeader: string,
+  fallbackItems: Item[]
 ): Promise<Summary> {
-  const res = await fetch(`${API}/stats/summary${queryString}`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieHeader
+  try {
+    const res = await fetch(`${API}/stats/summary${queryString}`, {
+      cache: "no-store",
+      headers: {
+        cookie: cookieHeader
+      }
+    });
+
+    if (!res.ok) {
+      return buildSummaryFromItems(fallbackItems);
     }
-  });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Failed to fetch summary (${res.status}): ${text}`);
+    return res.json();
+  } catch {
+    return buildSummaryFromItems(fallbackItems);
   }
-
-  return res.json();
 }
 
 async function getAchievements(cookieHeader: string): Promise<Achievement[]> {
@@ -188,12 +208,13 @@ export default async function ItemsPage({
 
   const queryString = `?${params.toString()}`;
 
-  const [itemsRes, summary, achievements, me] = await Promise.all([
+  const [itemsRes, achievements, me] = await Promise.all([
     getItems(queryString, cookieHeader),
-    getSummary(queryString, cookieHeader),
     getAchievements(cookieHeader),
     getMe(cookieHeader)
   ]);
+
+  const summary = await getSummary(queryString, cookieHeader, itemsRes.items);
 
   const safeAchievements = Array.isArray(achievements) ? achievements : [];
   const unlockedAchievements = safeAchievements.filter((a) => a.unlocked).length;
@@ -727,6 +748,7 @@ export default async function ItemsPage({
                         initialCompleteness={it.completeness}
                         initialRegion={it.region}
                         initialNotes={it.notes}
+                        locale={locale}
                       />
                     </Td>
                   </tr>

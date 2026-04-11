@@ -4,24 +4,8 @@ import { useMemo, useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-function getSessionToken() {
-  if (typeof document === "undefined") return null;
-
-  const entry = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("session="));
-
-  return entry ? decodeURIComponent(entry.split("=")[1]) : null;
-}
-
-function getAuthHeaders(): Record<string, string> {
-  const token = getSessionToken();
-
-  if (!token) return {};
-
-  return {
-    Authorization: `Bearer ${token}`
-  };
+function isPaidPlan(plan?: string) {
+  return plan === "premium" || plan === "market_pro";
 }
 
 function getPlatformOptions(locale: "en" | "es") {
@@ -136,7 +120,8 @@ export default function ItemActions({
   initialCompleteness = "",
   initialRegion = "",
   initialNotes = "",
-  locale = "en"
+  locale = "en",
+  plan = "free"
 }: {
   id: string;
   initialQty: number;
@@ -147,6 +132,7 @@ export default function ItemActions({
   initialRegion?: string | null;
   initialNotes?: string | null;
   locale?: "en" | "es";
+  plan?: string;
 }) {
   const [qty, setQty] = useState(String(initialQty));
   const [price, setPrice] = useState(String(initialPrice));
@@ -159,6 +145,8 @@ export default function ItemActions({
   const [saving, setSaving] = useState(false);
   const [valuating, setValuating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const hasValuationAccess = isPaidPlan(plan);
 
   const platformOptions = useMemo(() => getPlatformOptions(locale), [locale]);
   const regionOptions = useMemo(() => getRegionOptions(locale), [locale]);
@@ -187,7 +175,11 @@ export default function ItemActions({
     confirmDelete:
       locale === "es"
         ? "¿Seguro que quieres eliminar este objeto?"
-        : "Are you sure you want to delete this item?"
+        : "Are you sure you want to delete this item?",
+    premiumOnly:
+      locale === "es"
+        ? "La valoración individual está disponible solo en planes de pago."
+        : "Single-item valuation is available only on paid plans."
   };
 
   async function handleSave() {
@@ -198,8 +190,7 @@ export default function ItemActions({
         method: "PATCH",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders()
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           quantity: Number(qty),
@@ -234,10 +225,7 @@ export default function ItemActions({
 
       const res = await fetch(`${API}/items/${id}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: {
-          ...getAuthHeaders()
-        }
+        credentials: "include"
       });
 
       if (!res.ok) {
@@ -253,24 +241,34 @@ export default function ItemActions({
   }
 
   async function handleValuate() {
+    if (!hasValuationAccess) {
+      alert(text.premiumOnly);
+      return;
+    }
+
     try {
       setValuating(true);
 
       const res = await fetch(`${API}/items/${id}/valuate`, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          ...getAuthHeaders()
-        }
+        credentials: "include"
       });
 
       if (!res.ok) {
+        if (res.status === 403) {
+          throw new Error(text.premiumOnly);
+        }
+
         throw new Error("Failed to valuate item");
       }
 
       window.location.reload();
-    } catch {
-      alert(locale === "es" ? "No se pudo valorar." : "Could not valuate.");
+    } catch (error) {
+      if (error instanceof Error && error.message === text.premiumOnly) {
+        alert(text.premiumOnly);
+      } else {
+        alert(locale === "es" ? "No se pudo valorar." : "Could not valuate.");
+      }
     } finally {
       setValuating(false);
     }
@@ -298,7 +296,11 @@ export default function ItemActions({
           type="button"
           onClick={handleValuate}
           disabled={valuating}
-          style={darkBtn}
+          title={!hasValuationAccess ? text.premiumOnly : undefined}
+          style={{
+            ...darkBtn,
+            opacity: valuating ? 0.8 : 1
+          }}
         >
           {valuating ? text.valuating : text.valuate}
         </button>

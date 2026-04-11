@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { theme } from "../theme";
+import { getThemeById, AppThemeId } from "../theme";
 import { getCategoryLabel } from "./categoryLabels";
 
 type TopItem = {
@@ -17,25 +17,30 @@ async function getTopItems(
   cookieHeader: string,
   category?: string
 ): Promise<TopItem[]> {
-  const qs = new URLSearchParams();
-  qs.set("limit", "10");
+  try {
+    const qs = new URLSearchParams();
+    qs.set("limit", "10");
 
-  if (category) {
-    qs.set("category", category);
-  }
-
-  const res = await fetch(`${API}/stats/top-items?${qs.toString()}`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieHeader
+    if (category) {
+      qs.set("category", category);
     }
-  });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch top items");
+    const res = await fetch(`${API}/stats/top-items?${qs.toString()}`, {
+      cache: "no-store",
+      headers: {
+        cookie: cookieHeader
+      }
+    });
+
+    if (!res.ok) {
+      return [];
+    }
+
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
   }
-
-  return res.json();
 }
 
 export default async function TopItems({
@@ -47,6 +52,10 @@ export default async function TopItems({
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
+
+  const themeId =
+    (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
+  const theme = getThemeById(themeId);
 
   const items = await getTopItems(cookieHeader, category);
 

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
-const FREE_ITEM_LIMIT = 50;
+const FREE_ITEM_LIMIT = 25;
 
 const categories = [
   "videogame",
@@ -16,6 +16,10 @@ const categories = [
   "movie",
   "other"
 ] as const;
+
+function isPaidPlan(plan?: string) {
+  return plan === "premium" || plan === "market_pro";
+}
 
 function getPlatformOptions(category: string, locale: "en" | "es") {
   const commonOther = [
@@ -224,8 +228,8 @@ export default function AddItemForm({
     [category, locale]
   );
 
-  const isPremium = plan === "premium";
-  const freeLimitReached = !isPremium && currentCount >= FREE_ITEM_LIMIT;
+  const paidPlan = isPaidPlan(plan);
+  const freeLimitReached = !paidPlan && currentCount >= FREE_ITEM_LIMIT;
 
   const text = {
     title: locale === "es" ? "Añadir nuevo objeto" : "Add new item",
@@ -250,10 +254,10 @@ export default function AddItemForm({
         : "Could not create the item.",
     freeLimitError:
       locale === "es"
-        ? "Has alcanzado el límite del plan Free. Sube a Premium para seguir añadiendo objetos."
-        : "You reached the Free plan limit. Upgrade to Premium to keep adding items.",
+        ? "Has alcanzado el límite del plan Free. Sube de plan para seguir añadiendo objetos."
+        : "You reached the Free plan limit. Upgrade to keep adding items.",
     upgrade:
-      locale === "es" ? "Ver Premium" : "See Premium"
+      locale === "es" ? "Ver planes" : "See plans"
   };
 
   async function handleSubmit(e: React.FormEvent) {

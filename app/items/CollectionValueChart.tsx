@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { theme } from "../theme";
+import { getThemeById, AppThemeId } from "../theme";
 import { getCategoryLabel } from "./categoryLabels";
 
 type HistoryPoint = {
@@ -13,20 +13,25 @@ async function getCollectionHistory(
   cookieHeader: string,
   category?: string
 ): Promise<HistoryPoint[]> {
-  const qs = category ? `?category=${encodeURIComponent(category)}` : "";
+  try {
+    const qs = category ? `?category=${encodeURIComponent(category)}` : "";
 
-  const res = await fetch(`${API}/stats/collection-history${qs}`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieHeader
+    const res = await fetch(`${API}/stats/collection-history${qs}`, {
+      cache: "no-store",
+      headers: {
+        cookie: cookieHeader
+      }
+    });
+
+    if (!res.ok) {
+      return [];
     }
-  });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch collection history");
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
   }
-
-  return res.json();
 }
 
 export default async function CollectionValueChart({
@@ -38,6 +43,10 @@ export default async function CollectionValueChart({
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
+
+  const themeId =
+    (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
+  const theme = getThemeById(themeId);
 
   const points = await getCollectionHistory(cookieHeader, category);
 
@@ -125,6 +134,7 @@ export default async function CollectionValueChart({
       title={title}
       subtitle={subtitle}
       locale={locale}
+      theme={theme}
     />
   );
 }
@@ -133,12 +143,14 @@ function CollectionChartCard({
   points,
   title,
   subtitle,
-  locale
+  locale,
+  theme
 }: {
   points: HistoryPoint[];
   title: string;
   subtitle: string;
   locale: "en" | "es";
+  theme: ReturnType<typeof getThemeById>;
 }) {
   const width = 880;
   const height = 280;
@@ -246,22 +258,26 @@ function CollectionChartCard({
           <MetricPill
             label={locale === "es" ? "Inicial" : "Initial"}
             value={`${first.toFixed(2)} €`}
+            theme={theme}
           />
           <MetricPill
             label={locale === "es" ? "Actual" : "Current"}
             value={`${latest.toFixed(2)} €`}
+            theme={theme}
           />
           <MetricPill
             label={locale === "es" ? "Cambio" : "Change"}
             value={`${positive ? "+" : ""}${delta.toFixed(2)} €`}
             bg={trendBg}
             color={trendColor}
+            theme={theme}
           />
           <MetricPill
             label={locale === "es" ? "Variación" : "Variation"}
             value={`${percent >= 0 ? "+" : ""}${percent.toFixed(1)}%`}
             bg={trendBg}
             color={trendColor}
+            theme={theme}
           />
         </div>
       </div>
@@ -329,18 +345,8 @@ function CollectionChartCard({
 
             return (
               <g key={`${point.date}-${index}`}>
-                <circle
-                  cx={x}
-                  cy={y}
-                  r="5"
-                  fill={theme.colors.black}
-                />
-                <circle
-                  cx={x}
-                  cy={y}
-                  r="10"
-                  fill="transparent"
-                >
+                <circle cx={x} cy={y} r="5" fill={theme.colors.black} />
+                <circle cx={x} cy={y} r="10" fill="transparent">
                   <title>{`${point.date} — ${point.total.toFixed(2)} €`}</title>
                 </circle>
               </g>
@@ -381,13 +387,15 @@ function CollectionChartCard({
 function MetricPill({
   label,
   value,
-  bg = theme.colors.surfaceAlt,
-  color = theme.colors.text
+  bg,
+  color,
+  theme
 }: {
   label: string;
   value: string;
   bg?: string;
   color?: string;
+  theme: ReturnType<typeof getThemeById>;
 }) {
   return (
     <div
@@ -395,12 +403,14 @@ function MetricPill({
         padding: "8px 10px",
         borderRadius: 999,
         border: `1px solid ${theme.colors.border}`,
-        background: bg,
+        background: bg ?? theme.colors.surfaceAlt,
         fontSize: 12
       }}
     >
       <span style={{ color: theme.colors.textMuted }}>{label}: </span>
-      <span style={{ fontWeight: 800, color }}>{value}</span>
+      <span style={{ fontWeight: 800, color: color ?? theme.colors.text }}>
+        {value}
+      </span>
     </div>
   );
 }
