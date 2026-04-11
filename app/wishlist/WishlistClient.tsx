@@ -53,7 +53,8 @@ function getDeltaData(
     return {
       label: "—",
       tone: "neutral" as const,
-      message: locale === "es" ? "Falta precio o objetivo" : "Missing price or target"
+      message:
+        locale === "es" ? "Falta precio o objetivo" : "Missing price or target"
     };
   }
 
@@ -240,6 +241,44 @@ function getRegionOptions(category: string, locale: "en" | "es") {
   ];
 }
 
+function buildMarketplaceUrl(item: WishlistItem) {
+  const name = encodeURIComponent(getDisplayName(item));
+  const category = item.category || "";
+
+  if (category === "book" || category === "comic") {
+    return {
+      label: "Amazon",
+      url: `https://www.amazon.es/s?k=${name}`
+    };
+  }
+
+  if (category === "boardgame") {
+    return {
+      label: "Google Shopping",
+      url: `https://www.google.com/search?tbm=shop&q=${name}`
+    };
+  }
+
+  if (category === "videogame") {
+    return {
+      label: "eBay",
+      url: `https://www.ebay.es/sch/i.html?_nkw=${name}`
+    };
+  }
+
+  if (category === "movie") {
+    return {
+      label: "Amazon",
+      url: `https://www.amazon.es/s?k=${name}`
+    };
+  }
+
+  return {
+    label: "Google",
+    url: `https://www.google.com/search?q=${name}`
+  };
+}
+
 export default function WishlistClient({
   initialItems,
   locale,
@@ -294,6 +333,7 @@ export default function WishlistClient({
     currentValue: locale === "es" ? "Valor actual" : "Current value",
     status: locale === "es" ? "Estado" : "Status",
     delta: locale === "es" ? "Diferencia" : "Delta",
+    buyLink: locale === "es" ? "Ver oferta" : "View offer",
     remove: locale === "es" ? "Eliminar" : "Remove",
     moveToCollection:
       locale === "es" ? "Añadir a colección" : "Add to collection",
@@ -632,7 +672,10 @@ export default function WishlistClient({
                   style={inputStyle(theme)}
                 >
                   {platformOptions.map((option) => (
-                    <option key={`${category}-platform-${option.value}`} value={option.value}>
+                    <option
+                      key={`${category}-platform-${option.value}`}
+                      value={option.value}
+                    >
                       {option.label}
                     </option>
                   ))}
@@ -647,7 +690,10 @@ export default function WishlistClient({
                   style={inputStyle(theme)}
                 >
                   {regionOptions.map((option) => (
-                    <option key={`${category}-region-${option.value}`} value={option.value}>
+                    <option
+                      key={`${category}-region-${option.value}`}
+                      value={option.value}
+                    >
                       {option.label}
                     </option>
                   ))}
@@ -747,6 +793,7 @@ export default function WishlistClient({
                   item.currentMarketValue,
                   locale
                 );
+                const deal = buildMarketplaceUrl(item);
 
                 return (
                   <article
@@ -802,6 +849,22 @@ export default function WishlistClient({
                           flexWrap: "wrap"
                         }}
                       >
+                        <a
+                          href={deal.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            textDecoration: "none",
+                            borderRadius: 999,
+                            padding: "8px 12px",
+                            background: "#16A34A",
+                            color: "white",
+                            fontWeight: 800
+                          }}
+                        >
+                          {text.buyLink} · {deal.label}
+                        </a>
+
                         <button
                           type="button"
                           onClick={() => handleMoveToCollection(item.id)}
