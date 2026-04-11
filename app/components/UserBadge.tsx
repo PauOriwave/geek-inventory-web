@@ -24,17 +24,36 @@ async function getMe(cookieHeader: string): Promise<Me> {
   return res.json();
 }
 
+function getPlanMeta(plan?: string) {
+  if (plan === "market_pro") {
+    return {
+      isPaid: true,
+      label: "📈 Market Pro"
+    };
+  }
+
+  if (plan === "premium") {
+    return {
+      isPaid: true,
+      label: "💎 Premium"
+    };
+  }
+
+  return {
+    isPaid: false,
+    label: "Free"
+  };
+}
+
 export default async function UserBadge() {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
 
-  const themeId =
-    (cookieStore.get("ui_theme")?.value as any) ?? "classic";
+  const themeId = (cookieStore.get("ui_theme")?.value as string) ?? "classic";
   const theme = getThemeById(themeId);
 
   const me = await getMe(cookieHeader);
-
-  const isPremium = me.plan === "premium";
+  const planMeta = getPlanMeta(me.plan);
   const months = getPremiumMonths(me.premiumStartedAt ?? null);
 
   return (
@@ -48,20 +67,21 @@ export default async function UserBadge() {
         fontSize: 12,
         fontWeight: 800,
         border: `1px solid ${theme.colors.border}`,
-        background: isPremium
+        background: planMeta.isPaid
           ? theme.colors.gold
           : theme.colors.surfaceAlt,
-        color: isPremium
+        color: planMeta.isPaid
           ? theme.colors.black
           : theme.colors.text
       }}
     >
-      {isPremium ? (
+      {planMeta.isPaid ? (
         <>
-          💎 Premium · {months}m
+          {planMeta.label}
+          {months > 0 ? ` · ${months}m` : ""}
         </>
       ) : (
-        <>Free</>
+        <>{planMeta.label}</>
       )}
     </div>
   );
