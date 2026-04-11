@@ -1,7 +1,28 @@
-import PublicSiteShell from "../components/PublicSiteShell";
-import { availableThemes, getThemeById } from "../theme";
+import { cookies } from "next/headers";
+import { getThemeById, AppThemeId } from "../theme";
 import { getLocale } from "../i18n";
-import { getServerTheme } from "../getServerTheme";
+
+type Me = {
+  id: string;
+  email?: string;
+  plan?: string;
+};
+
+const API = process.env.NEXT_PUBLIC_API_URL!;
+
+async function getMe(cookie: string): Promise<Me | null> {
+  try {
+    const res = await fetch(`${API}/auth/me`, {
+      cache: "no-store",
+      headers: { cookie }
+    });
+
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
 
 export default async function PricingPage({
   searchParams
@@ -10,668 +31,788 @@ export default async function PricingPage({
     | Promise<Record<string, string | string[] | undefined>>
     | Record<string, string | string[] | undefined>;
 }) {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
   const sp =
     searchParams instanceof Promise ? await searchParams : searchParams ?? {};
 
   const locale = getLocale(sp);
-  const currentTheme = await getServerTheme();
-  const premiumThemes = availableThemes.filter((item) => item.premium);
+
+  const themeId =
+    (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
+  const theme = getThemeById(themeId);
+
+  const me = await getMe(cookieHeader);
+  const currentPlan = me?.plan ?? "free";
+
+  const langEnHref = `/pricing?lang=en`;
+  const langEsHref = `/pricing?lang=es`;
 
   const text = {
-    badge: locale === "es" ? "Precios" : "Pricing",
+    collection: locale === "es" ? "Colección" : "Collection",
+    profile: locale === "es" ? "Perfil" : "Profile",
+    wishlist: "Wishlist",
+    activeSection: locale === "es" ? "Planes" : "Pricing",
+
     title:
       locale === "es"
-        ? "Empieza gratis. Mejora cuando necesites más profundidad."
-        : "Start free. Upgrade when you want deeper insights.",
+        ? "Elige cómo quieres usar DrakoryVault"
+        : "Choose how you want to use DrakoryVault",
+
     subtitle:
       locale === "es"
-        ? "DrakoryVault está pensado para ser útil desde el primer día, con planes premium que desbloquean histórico de valoraciones, insights avanzados, temas por fidelización y futuras automatizaciones."
-        : "DrakoryVault is built to be useful from day one, with premium plans unlocking valuation history, advanced insights, loyalty themes and future automation.",
+        ? "Empieza organizando tu colección, escala a herramientas avanzadas y desbloquea una capa market para decisiones más inteligentes."
+        : "Start by organizing your collection, scale to advanced tools, and unlock a market layer for smarter decisions.",
 
-    freeTitle: "Free",
-    freePrice: "0€",
-    freeSubtitle:
+    sectionTitle:
+      locale === "es" ? "Planes disponibles" : "Available plans",
+
+    sectionSub:
       locale === "es"
-        ? "Para empezar tu vault"
-        : "For starting your vault",
+        ? "Tres niveles para tres formas distintas de vivir la colección."
+        : "Three tiers for three different ways to live your collection.",
+
+    currentPlan:
+      locale === "es" ? "Tu plan actual" : "Your current plan",
+
+    free: locale === "es" ? "Starter Collector" : "Starter Collector",
+    collector: "Collector",
+    marketPro: "Market Pro",
+
+    perMonth: locale === "es" ? "/mes" : "/month",
+
+    freeDesc:
+      locale === "es"
+        ? "Para empezar tu colección y probar la app."
+        : "To start your collection and try the app.",
+
+    collectorDesc:
+      locale === "es"
+        ? "Para quien quiere dominar y valorar su colección."
+        : "For people who want to manage and value their collection seriously.",
+
+    marketDesc:
+      locale === "es"
+        ? "Para usuarios avanzados que quieren señales, oportunidades y visión de mercado."
+        : "For advanced users who want signals, opportunities and market visibility.",
+
+    current:
+      locale === "es" ? "Plan actual" : "Current plan",
+    startFree:
+      locale === "es" ? "Empezar gratis" : "Start free",
+    upgradeCollector:
+      locale === "es" ? "Pasar a Collector" : "Upgrade to Collector",
+    upgradeMarket:
+      locale === "es" ? "Pasar a Market Pro" : "Upgrade to Market Pro",
+
+    compare:
+      locale === "es" ? "Comparativa rápida" : "Quick comparison",
+
+    bestFor:
+      locale === "es" ? "Ideal para" : "Best for",
+
+    freeBest:
+      locale === "es"
+        ? "Usuarios que empiezan y quieren ordenar su colección."
+        : "People getting started who want to organize their collection.",
+
+    collectorBest:
+      locale === "es"
+        ? "Coleccionistas serios que quieren profundidad, valoración y control."
+        : "Serious collectors who want depth, valuation and control.",
+
+    marketBest:
+      locale === "es"
+        ? "Usuarios avanzados que quieren convertir wishlist en una capa de decisión."
+        : "Advanced users who want to turn wishlist into a decision layer.",
+
     freeFeatures:
       locale === "es"
         ? [
-            "Hasta 100 objetos",
-            "Dashboard básico",
-            "Importación/exportación CSV",
-            "Valoración manual",
-            "Tema por defecto",
-            "Gestión base de colección"
+            "Hasta 25 items",
+            "Hasta 10 items en wishlist",
+            "Valoración manual individual",
+            "Perfil y logros básicos",
+            "Themes básicos",
+            "Wishlist con objetivo y oferta"
           ]
         : [
-            "Up to 100 items",
-            "Basic dashboard",
-            "CSV import/export",
-            "Manual valuation",
-            "Default theme",
-            "Core collection management"
+            "Up to 25 items",
+            "Up to 10 wishlist items",
+            "Manual individual valuation",
+            "Basic profile and achievements",
+            "Basic themes",
+            "Wishlist with target and offer"
           ],
-    freeCta: locale === "es" ? "Empezar gratis" : "Start free",
 
-    proTitle: "Pro",
-    proPrice: "4.99€ / month",
-    proSubtitle:
-      locale === "es"
-        ? "Para coleccionistas activos"
-        : "For active collectors",
-    proFeatures:
-      locale === "es"
-        ? [
-            "Objetos ilimitados",
-            "Dashboard avanzado",
-            "Historial de valoraciones",
-            "Top movers y tendencias por categoría",
-            "Evolución del valor de la colección",
-            "Temas premium y ruta de desbloqueo por fidelización",
-            "Futuras valoraciones automáticas"
-          ]
-        : [
-            "Unlimited items",
-            "Advanced dashboard",
-            "Valuation history",
-            "Top movers and category trends",
-            "Collection value evolution",
-            "Premium themes and loyalty unlock path",
-            "Future automatic valuations"
-          ],
-    proCta: locale === "es" ? "Elegir Pro" : "Choose Pro",
-    proBadge:
-      locale === "es" ? "Más equilibrado" : "Most balanced",
-
-    collectorTitle: "Collector",
-    collectorPrice: "9.99€ / month",
-    collectorSubtitle:
-      locale === "es"
-        ? "Para power users y early adopters"
-        : "For power users and early adopters",
     collectorFeatures:
       locale === "es"
         ? [
-            "Todo lo incluido en Pro",
-            "Acceso prioritario a nuevas funciones",
-            "Futuras fuentes de valoración más profundas",
-            "Cosméticos premium e identidad de supporter",
-            "Mayores límites de automatización en el futuro",
-            "Recompensas por fidelización"
+            "Items ilimitados",
+            "Wishlist ilimitada",
+            "Valuate all",
+            "Mejores estadísticas",
+            "Themes por fidelización",
+            "Wishlist más potente"
           ]
         : [
-            "Everything in Pro",
-            "Priority feature access",
-            "Deeper future valuation sources",
-            "Premium cosmetics and supporter identity",
-            "Higher future automation limits",
-            "Long-term loyalty rewards"
+            "Unlimited items",
+            "Unlimited wishlist",
+            "Valuate all",
+            "Better collection stats",
+            "Loyalty themes",
+            "Stronger wishlist experience"
           ],
-    collectorCta:
-      locale === "es" ? "Hazte Collector" : "Become Collector",
 
-    loyaltyEyebrow:
-      locale === "es" ? "Estéticas por fidelidad" : "Loyalty aesthetics",
-    loyaltyTitle:
-      locale === "es"
-        ? "Los temas forman parte del producto, no son un añadido"
-        : "Themes are part of the product, not an afterthought",
-    loyaltyText:
-      locale === "es"
-        ? "DrakoryVault está construido con una arquitectura multi-theme para que los planes premium y los supporters de largo plazo puedan desbloquear estilos visuales distintos en toda la app."
-        : "DrakoryVault is built with a multi-theme architecture so premium plans and long-term supporters can unlock different visual styles across the whole app.",
-    createAccount:
-      locale === "es" ? "Crear cuenta" : "Create account",
-
-    includedTitle:
-      locale === "es"
-        ? "Lo que ya forma parte de la dirección del producto"
-        : "What is already included in the product direction",
-    includedItems:
+    marketFeatures:
       locale === "es"
         ? [
-            "Inventario de colección con estructura por categorías",
-            "Flujos de importación y exportación CSV",
-            "Snapshots de valor de mercado y gráficos históricos",
-            "Tendencias por categoría y top movers",
-            "Arquitectura de temas lista para desbloqueos premium",
-            "Roadmap futuro para logros, fidelización y mejores proveedores de valoración"
+            "Todo lo de Collector",
+            "Market Watch",
+            "Señales de oportunidad",
+            "Priorización por target",
+            "Lectura market más avanzada",
+            "Base para alertas futuras"
           ]
         : [
-            "Collection inventory with category-aware structure",
-            "CSV import and export workflows",
-            "Market value snapshots and historical charts",
-            "Category trends and top movers",
-            "Theme system architecture ready for premium unlocks",
-            "Future roadmap for achievements, loyalty rewards and better valuation providers"
+            "Everything in Collector",
+            "Market Watch",
+            "Opportunity signals",
+            "Target-based prioritization",
+            "More advanced market view",
+            "Foundation for future alerts"
           ],
 
-    startEyebrow:
-      locale === "es" ? "Empieza ahora" : "Get started",
-    startTitle:
+    feature: locale === "es" ? "Feature" : "Feature",
+    starter: locale === "es" ? "Starter" : "Starter",
+    yes: locale === "es" ? "Sí" : "Yes",
+    no: locale === "es" ? "No" : "No",
+    unlimited: locale === "es" ? "Ilimitado" : "Unlimited",
+
+    summaryTitle:
       locale === "es"
-        ? "Construye tu vault ahora y evoluciona a Pro cuando necesites más profundidad."
-        : "Build your vault now and grow into Pro when you need more depth.",
-    startFree:
-      locale === "es" ? "Empezar gratis" : "Start free",
-    login: locale === "es" ? "Entrar" : "Login"
+        ? "La lógica detrás de los planes"
+        : "The logic behind the plans",
+
+    summaryText:
+      locale === "es"
+        ? "Free te deja empezar. Collector te da control real sobre tu colección. Market Pro añade la capa premium para quienes quieren usar la wishlist como radar de compra."
+        : "Free gets you started. Collector gives you real control over your collection. Market Pro adds the premium layer for users who want to use wishlist as a buying radar."
   };
 
+  const plans = [
+    {
+      key: "free",
+      name: text.free,
+      price: "0€",
+      desc: text.freeDesc,
+      bestFor: text.freeBest,
+      cta: text.startFree,
+      highlight: false,
+      features: text.freeFeatures
+    },
+    {
+      key: "premium",
+      name: text.collector,
+      price: "4.99€",
+      desc: text.collectorDesc,
+      bestFor: text.collectorBest,
+      cta: text.upgradeCollector,
+      highlight: true,
+      features: text.collectorFeatures
+    },
+    {
+      key: "market_pro",
+      name: text.marketPro,
+      price: "9.99€",
+      desc: text.marketDesc,
+      bestFor: text.marketBest,
+      cta: text.upgradeMarket,
+      highlight: false,
+      features: text.marketFeatures
+    }
+  ] as const;
+
+  const comparisonRows = [
+    {
+      name: locale === "es" ? "Items en colección" : "Collection items",
+      free: "25",
+      collector: text.unlimited,
+      market: text.unlimited
+    },
+    {
+      name: locale === "es" ? "Wishlist" : "Wishlist",
+      free: "10",
+      collector: text.unlimited,
+      market: text.unlimited
+    },
+    {
+      name: locale === "es" ? "Valuate all" : "Valuate all",
+      free: text.no,
+      collector: text.yes,
+      market: text.yes
+    },
+    {
+      name: locale === "es" ? "Themes loyalty" : "Loyalty themes",
+      free: text.no,
+      collector: text.yes,
+      market: text.yes
+    },
+    {
+      name: "Market Watch",
+      free: text.no,
+      collector: text.no,
+      market: text.yes
+    },
+    {
+      name: locale === "es" ? "Señales de mercado" : "Market signals",
+      free: text.no,
+      collector: text.no,
+      market: text.yes
+    }
+  ];
+
   return (
-    <PublicSiteShell compact themeId={currentTheme.id}>
-      <section
-        style={{
-          maxWidth: 1180,
-          margin: "0 auto",
-          padding: "34px 24px 28px 24px"
-        }}
-      >
+    <main
+      style={{
+        minHeight: "100vh",
+        background: theme.colors.bg,
+        color: theme.colors.text,
+        padding: 24,
+        fontFamily: "system-ui"
+      }}
+    >
+      <div style={{ maxWidth: 1180, margin: "0 auto" }}>
         <div
           style={{
-            textAlign: "center",
-            maxWidth: 760,
-            margin: "0 auto"
+            display: "flex",
+            justifyContent: "flex-end",
+            marginBottom: 10
           }}
         >
           <div
             style={{
-              display: "inline-block",
-              padding: "6px 12px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "8px 10px",
               borderRadius: 999,
-              background: currentTheme.colors.surfaceAlt,
-              border: `1px solid ${currentTheme.colors.border}`,
-              color: currentTheme.colors.link,
-              fontWeight: 800,
-              fontSize: 12,
-              marginBottom: 14
+              background: theme.colors.surface,
+              border: `1px solid ${theme.colors.border}`
             }}
           >
-            {text.badge}
+            <a
+              href={langEnHref}
+              style={{
+                textDecoration: "none",
+                fontWeight: 800,
+                fontSize: 13,
+                color:
+                  locale === "en"
+                    ? theme.colors.text
+                    : theme.colors.textMuted
+              }}
+            >
+              EN
+            </a>
+
+            <span style={{ color: theme.colors.textMuted }}>/</span>
+
+            <a
+              href={langEsHref}
+              style={{
+                textDecoration: "none",
+                fontWeight: 800,
+                fontSize: 13,
+                color:
+                  locale === "es"
+                    ? theme.colors.text
+                    : theme.colors.textMuted
+              }}
+            >
+              ES
+            </a>
           </div>
-
-          <h1
-            style={{
-              fontSize: 42,
-              lineHeight: 1.08,
-              margin: 0,
-              fontWeight: 900,
-              color: currentTheme.colors.text
-            }}
-          >
-            {text.title}
-          </h1>
-
-          <p
-            style={{
-              marginTop: 16,
-              color: currentTheme.colors.textMuted,
-              fontSize: 17,
-              lineHeight: 1.7
-            }}
-          >
-            {text.subtitle}
-          </p>
         </div>
-      </section>
 
-      <section
-        style={{
-          maxWidth: 1180,
-          margin: "0 auto",
-          padding: "0 24px 18px 24px"
-        }}
-      >
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            gap: 18
+            display: "flex",
+            gap: 10,
+            marginBottom: 18,
+            flexWrap: "wrap"
           }}
         >
-          <PlanCard
-            title={text.freeTitle}
-            price={text.freePrice}
-            subtitle={text.freeSubtitle}
-            features={text.freeFeatures}
-            cta={text.freeCta}
-            href={`/register?lang=${locale}`}
-            currentTheme={currentTheme}
-          />
+          <a href={`/items?lang=${locale}`} style={navLink(theme)}>
+            {text.collection}
+          </a>
 
-          <PlanCard
-            title={text.proTitle}
-            price={text.proPrice}
-            subtitle={text.proSubtitle}
-            features={text.proFeatures}
-            cta={text.proCta}
-            href={`/register?lang=${locale}`}
-            highlight
-            badge={text.proBadge}
-            currentTheme={currentTheme}
-          />
+          <a href={`/profile?lang=${locale}`} style={navLink(theme)}>
+            {text.profile}
+          </a>
 
-          <PlanCard
-            title={text.collectorTitle}
-            price={text.collectorPrice}
-            subtitle={text.collectorSubtitle}
-            features={text.collectorFeatures}
-            cta={text.collectorCta}
-            href={`/register?lang=${locale}`}
-            currentTheme={currentTheme}
-          />
+          <a href={`/wishlist?lang=${locale}`} style={navLink(theme)}>
+            {text.wishlist}
+          </a>
+
+          <span
+            style={{
+              borderRadius: 999,
+              padding: "10px 14px",
+              background: theme.colors.black,
+              color: "white",
+              fontWeight: 800,
+              border: `1px solid ${theme.colors.black}`
+            }}
+          >
+            {text.activeSection}
+          </span>
         </div>
-      </section>
 
-      <section
-        style={{
-          maxWidth: 1180,
-          margin: "0 auto",
-          padding: "16px 24px 18px 24px"
-        }}
-      >
-        <div
+        <section
           style={{
-            background: currentTheme.colors.surface,
-            border: `1px solid ${currentTheme.colors.border}`,
-            borderRadius: 28,
-            padding: 24,
-            boxShadow: currentTheme.shadow.card
+            background: theme.colors.black,
+            color: "white",
+            borderRadius: theme.radius.xl,
+            padding: "20px 22px",
+            marginBottom: 20,
+            boxShadow: theme.shadow.card
           }}
         >
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              gap: 18,
-              alignItems: "flex-start",
+              gap: 16,
+              alignItems: "center",
               flexWrap: "wrap"
             }}
           >
-            <div style={{ maxWidth: 760 }}>
-              <div
-                style={{
-                  color: currentTheme.colors.link,
-                  fontWeight: 800,
-                  fontSize: 13,
-                  marginBottom: 8
-                }}
-              >
-                {text.loyaltyEyebrow}
-              </div>
-
-              <h2
+            <div style={{ maxWidth: 820 }}>
+              <h1
                 style={{
                   margin: 0,
-                  fontSize: 30,
-                  color: currentTheme.colors.text
+                  fontSize: 34,
+                  lineHeight: 1.08,
+                  fontWeight: 900
                 }}
               >
-                {text.loyaltyTitle}
-              </h2>
+                {text.title}
+              </h1>
 
               <p
                 style={{
-                  marginTop: 12,
+                  marginTop: 10,
                   marginBottom: 0,
-                  color: currentTheme.colors.textMuted,
-                  lineHeight: 1.7
+                  color: "rgba(255,255,255,0.78)",
+                  lineHeight: 1.65,
+                  fontSize: 15
                 }}
               >
-                {text.loyaltyText}
+                {text.subtitle}
               </p>
             </div>
 
-            <a
-              href={`/register?lang=${locale}`}
-              style={secondaryCta(currentTheme)}
+            <div
+              style={{
+                padding: "10px 14px",
+                borderRadius: 999,
+                background: theme.colors.gold,
+                color: theme.colors.black,
+                fontWeight: 900,
+                fontSize: 13
+              }}
             >
-              {text.createAccount}
-            </a>
+              {text.currentPlan}: {formatPlan(currentPlan, locale)}
+            </div>
+          </div>
+        </section>
+
+        <section style={{ marginBottom: 20 }}>
+          <div
+            style={{
+              marginBottom: 14
+            }}
+          >
+            <div
+              style={{
+                fontWeight: 900,
+                fontSize: 18,
+                color: theme.colors.text
+              }}
+            >
+              {text.sectionTitle}
+            </div>
+
+            <div
+              style={{
+                marginTop: 6,
+                fontSize: 14,
+                color: theme.colors.textMuted
+              }}
+            >
+              {text.sectionSub}
+            </div>
           </div>
 
           <div
             style={{
-              marginTop: 18,
               display: "grid",
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-              gap: 12
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 18
             }}
           >
-            {premiumThemes.map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  border: `1px solid ${currentTheme.colors.border}`,
-                  borderRadius: 22,
-                  padding: 16,
-                  background: currentTheme.colors.surfaceAlt
-                }}
-              >
-                <div
+            {plans.map((plan) => {
+              const isCurrent =
+                (currentPlan === "free" && plan.key === "free") ||
+                (currentPlan === "premium" && plan.key === "premium") ||
+                (currentPlan === "market_pro" && plan.key === "market_pro");
+
+              return (
+                <article
+                  key={plan.key}
                   style={{
+                    borderRadius: theme.radius.xl,
+                    padding: 22,
+                    border: `1px solid ${
+                      plan.highlight ? theme.colors.gold : theme.colors.border
+                    }`,
+                    background: plan.highlight
+                      ? theme.colors.black
+                      : theme.colors.surface,
+                    color: plan.highlight ? "white" : theme.colors.text,
+                    boxShadow: theme.shadow.card,
                     display: "flex",
+                    flexDirection: "column",
                     justifyContent: "space-between",
-                    gap: 10,
-                    alignItems: "center"
+                    minHeight: 420
                   }}
                 >
-                  <div
-                    style={{
-                      fontWeight: 800,
-                      color: currentTheme.colors.text
-                    }}
-                  >
-                    {item.label}
+                  <div>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 10,
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        marginBottom: 10
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 900,
+                          opacity: 0.78
+                        }}
+                      >
+                        {plan.name}
+                      </div>
+
+                      {isCurrent ? (
+                        <span
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: 999,
+                            background: plan.highlight
+                              ? "rgba(255,255,255,0.12)"
+                              : theme.colors.surfaceAlt,
+                            color: plan.highlight ? "white" : theme.colors.text,
+                            fontSize: 11,
+                            fontWeight: 900,
+                            border: `1px solid ${
+                              plan.highlight
+                                ? "rgba(255,255,255,0.15)"
+                                : theme.colors.border
+                            }`
+                          }}
+                        >
+                          {text.current}
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "baseline",
+                        gap: 4,
+                        marginBottom: 8
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 34,
+                          fontWeight: 900
+                        }}
+                      >
+                        {plan.price}
+                      </div>
+
+                      {plan.price !== "0€" && (
+                        <div
+                          style={{
+                            fontSize: 14,
+                            opacity: 0.72
+                          }}
+                        >
+                          {text.perMonth}
+                        </div>
+                      )}
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 14,
+                        lineHeight: 1.65,
+                        opacity: 0.82,
+                        marginBottom: 14
+                      }}
+                    >
+                      {plan.desc}
+                    </div>
+
+                    <div
+                      style={{
+                        marginBottom: 14,
+                        padding: "12px 14px",
+                        borderRadius: theme.radius.lg,
+                        background: plan.highlight
+                          ? "rgba(255,255,255,0.08)"
+                          : theme.colors.surfaceAlt,
+                        border: `1px solid ${
+                          plan.highlight
+                            ? "rgba(255,255,255,0.10)"
+                            : theme.colors.border
+                        }`
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 800,
+                          opacity: 0.74,
+                          marginBottom: 6
+                        }}
+                      >
+                        {text.bestFor}
+                      </div>
+
+                      <div
+                        style={{
+                          fontSize: 13,
+                          lineHeight: 1.6
+                        }}
+                      >
+                        {plan.bestFor}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gap: 8
+                      }}
+                    >
+                      {plan.features.map((feature) => (
+                        <div
+                          key={feature}
+                          style={{
+                            fontSize: 14,
+                            lineHeight: 1.5,
+                            display: "flex",
+                            gap: 8,
+                            alignItems: "flex-start"
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontWeight: 900,
+                              color: plan.highlight
+                                ? theme.colors.gold
+                                : theme.colors.text
+                            }}
+                          >
+                            •
+                          </span>
+                          <span>{feature}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <span
+                  <a
+                    href={`/profile?lang=${locale}`}
                     style={{
-                      fontSize: 11,
+                      marginTop: 20,
+                      textDecoration: "none",
                       borderRadius: 999,
-                      padding: "4px 8px",
-                      background: currentTheme.colors.black,
-                      color: "white"
+                      padding: "12px 16px",
+                      textAlign: "center",
+                      fontWeight: 900,
+                      background: plan.highlight
+                        ? "white"
+                        : theme.colors.black,
+                      color: plan.highlight ? "black" : "white"
                     }}
                   >
-                    {item.loyaltyMonthsRequired}m+
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 8,
-                    color: currentTheme.colors.textMuted,
-                    fontSize: 13,
-                    minHeight: 36
-                  }}
-                >
-                  {item.description}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 12,
-                    display: "flex",
-                    gap: 6
-                  }}
-                >
-                  <Swatch color={item.colors.bg} />
-                  <Swatch color={item.colors.surface} />
-                  <Swatch color={item.colors.gold} />
-                  <Swatch color={item.colors.black} />
-                </div>
-              </div>
-            ))}
+                    {isCurrent ? text.current : plan.cta}
+                  </a>
+                </article>
+              );
+            })}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section
-        style={{
-          maxWidth: 1180,
-          margin: "0 auto",
-          padding: "16px 24px 72px 24px"
-        }}
-      >
-        <div
+        <section
           style={{
-            display: "grid",
-            gridTemplateColumns: "1.1fr 0.9fr",
-            gap: 18
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.radius.xl,
+            background: theme.colors.surface,
+            boxShadow: theme.shadow.card,
+            overflow: "hidden",
+            marginBottom: 20
           }}
         >
           <div
             style={{
-              background: currentTheme.colors.surface,
-              border: `1px solid ${currentTheme.colors.border}`,
-              borderRadius: 24,
-              padding: 20,
-              boxShadow: currentTheme.shadow.soft
+              padding: "16px 18px",
+              borderBottom: `1px solid ${theme.colors.border}`,
+              background: theme.colors.surfaceAlt
             }}
           >
             <div
               style={{
-                fontWeight: 800,
-                fontSize: 18,
-                marginBottom: 10,
-                color: currentTheme.colors.text
+                fontWeight: 900,
+                fontSize: 16
               }}
             >
-              {text.includedTitle}
+              {text.compare}
             </div>
+          </div>
 
-            <div
+          <div style={{ overflowX: "auto" }}>
+            <table
               style={{
-                display: "grid",
-                gap: 10,
-                color: currentTheme.colors.textMuted,
-                lineHeight: 1.7,
-                fontSize: 14
+                width: "100%",
+                borderCollapse: "collapse"
               }}
             >
-              {text.includedItems.map((item) => (
-                <div key={item}>• {item}</div>
-              ))}
-            </div>
+              <thead>
+                <tr>
+                  <PricingTh theme={theme}>{text.feature}</PricingTh>
+                  <PricingTh theme={theme}>{text.starter}</PricingTh>
+                  <PricingTh theme={theme}>Collector</PricingTh>
+                  <PricingTh theme={theme}>Market Pro</PricingTh>
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonRows.map((row) => (
+                  <tr key={row.name}>
+                    <PricingTd theme={theme}>{row.name}</PricingTd>
+                    <PricingTd theme={theme}>{row.free}</PricingTd>
+                    <PricingTd theme={theme}>{row.collector}</PricingTd>
+                    <PricingTd theme={theme}>{row.market}</PricingTd>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section
+          style={{
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.radius.xl,
+            background: theme.colors.surface,
+            boxShadow: theme.shadow.soft,
+            padding: 18
+          }}
+        >
+          <div
+            style={{
+              fontWeight: 900,
+              fontSize: 16,
+              marginBottom: 8
+            }}
+          >
+            {text.summaryTitle}
           </div>
 
           <div
             style={{
-              background: currentTheme.colors.black,
-              color: "white",
-              borderRadius: 24,
-              padding: 20,
-              boxShadow: currentTheme.shadow.card
+              color: theme.colors.textMuted,
+              lineHeight: 1.7,
+              fontSize: 14
             }}
           >
-            <div
-              style={{
-                fontSize: 13,
-                color: "rgba(255,255,255,0.72)",
-                marginBottom: 8,
-                fontWeight: 800
-              }}
-            >
-              {text.startEyebrow}
-            </div>
-
-            <h3
-              style={{
-                margin: 0,
-                fontSize: 28,
-                lineHeight: 1.15
-              }}
-            >
-              {text.startTitle}
-            </h3>
-
-            <div
-              style={{
-                marginTop: 18,
-                display: "flex",
-                gap: 10,
-                flexWrap: "wrap"
-              }}
-            >
-              <a href={`/register?lang=${locale}`} style={primaryCta(currentTheme)}>
-                {text.startFree}
-              </a>
-              <a href={`/login?lang=${locale}`} style={ghostCta}>
-                {text.login}
-              </a>
-            </div>
+            {text.summaryText}
           </div>
-        </div>
-      </section>
-    </PublicSiteShell>
+        </section>
+      </div>
+    </main>
   );
 }
 
-function PlanCard({
-  title,
-  price,
-  subtitle,
-  features,
-  cta,
-  href,
-  highlight = false,
-  badge,
-  currentTheme
+function navLink(theme: ReturnType<typeof getThemeById>): React.CSSProperties {
+  return {
+    textDecoration: "none",
+    borderRadius: 999,
+    padding: "10px 14px",
+    background: theme.colors.surface,
+    color: theme.colors.text,
+    fontWeight: 800,
+    border: `1px solid ${theme.colors.border}`
+  };
+}
+
+function PricingTh({
+  children,
+  theme
 }: {
-  title: string;
-  price: string;
-  subtitle: string;
-  features: string[];
-  cta: string;
-  href: string;
-  highlight?: boolean;
-  badge?: string;
-  currentTheme: ReturnType<typeof getThemeById>;
+  children: React.ReactNode;
+  theme: ReturnType<typeof getThemeById>;
 }) {
   return (
-    <div
+    <th
       style={{
-        border: highlight
-          ? `2px solid ${currentTheme.colors.gold}`
-          : `1px solid ${currentTheme.colors.border}`,
-        borderRadius: 26,
-        padding: 22,
-        background: currentTheme.colors.surface,
-        boxShadow: highlight ? currentTheme.shadow.card : currentTheme.shadow.soft,
-        position: "relative"
+        textAlign: "left",
+        padding: 14,
+        fontSize: 12,
+        color: theme.colors.textMuted,
+        borderBottom: `1px solid ${theme.colors.border}`,
+        background: theme.colors.surfaceAlt
       }}
     >
-      {highlight && badge && (
-        <div
-          style={{
-            position: "absolute",
-            top: 14,
-            right: 14,
-            fontSize: 11,
-            fontWeight: 800,
-            borderRadius: 999,
-            padding: "5px 8px",
-            background: currentTheme.colors.gold,
-            color: currentTheme.colors.black
-          }}
-        >
-          {badge}
-        </div>
-      )}
-
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: 900,
-          color: currentTheme.colors.text
-        }}
-      >
-        {title}
-      </div>
-
-      <div
-        style={{
-          marginTop: 6,
-          color: currentTheme.colors.textMuted,
-          fontSize: 14
-        }}
-      >
-        {subtitle}
-      </div>
-
-      <div
-        style={{
-          marginTop: 18,
-          fontSize: 34,
-          fontWeight: 900,
-          color: currentTheme.colors.text
-        }}
-      >
-        {price}
-      </div>
-
-      <div
-        style={{
-          marginTop: 18,
-          display: "grid",
-          gap: 10,
-          color: currentTheme.colors.textMuted,
-          fontSize: 14,
-          lineHeight: 1.6
-        }}
-      >
-        {features.map((feature) => (
-          <div key={feature}>• {feature}</div>
-        ))}
-      </div>
-
-      <a
-        href={href}
-        style={{
-          display: "inline-block",
-          marginTop: 22,
-          textDecoration: "none",
-          background: highlight ? currentTheme.colors.gold : currentTheme.colors.black,
-          color: highlight ? currentTheme.colors.black : "white",
-          padding: "12px 16px",
-          borderRadius: 999,
-          fontWeight: 800
-        }}
-      >
-        {cta}
-      </a>
-    </div>
+      {children}
+    </th>
   );
 }
 
-function Swatch({ color }: { color: string }) {
+function PricingTd({
+  children,
+  theme
+}: {
+  children: React.ReactNode;
+  theme: ReturnType<typeof getThemeById>;
+}) {
   return (
-    <span
+    <td
       style={{
-        width: 20,
-        height: 20,
-        borderRadius: 999,
-        display: "inline-block",
-        background: color,
-        border: "1px solid rgba(0,0,0,0.08)"
+        padding: 14,
+        borderBottom: `1px solid ${theme.colors.border}`,
+        color: theme.colors.text,
+        fontSize: 14
       }}
-    />
+    >
+      {children}
+    </td>
   );
 }
 
-function secondaryCta(
-  currentTheme: ReturnType<typeof getThemeById>
-): React.CSSProperties {
-  return {
-    textDecoration: "none",
-    border: `1px solid ${currentTheme.colors.border}`,
-    color: currentTheme.colors.text,
-    padding: "11px 16px",
-    borderRadius: 999,
-    fontWeight: 800,
-    background: currentTheme.colors.surfaceAlt
-  };
+function formatPlan(plan: string, locale: "en" | "es") {
+  if (plan === "premium") return "Collector";
+  if (plan === "market_pro") return "Market Pro";
+  return locale === "es" ? "Starter Collector" : "Starter Collector";
 }
-
-function primaryCta(
-  currentTheme: ReturnType<typeof getThemeById>
-): React.CSSProperties {
-  return {
-    textDecoration: "none",
-    background: currentTheme.colors.gold,
-    color: currentTheme.colors.black,
-    padding: "12px 18px",
-    borderRadius: 999,
-    fontWeight: 800
-  };
-}
-
-const ghostCta: React.CSSProperties = {
-  textDecoration: "none",
-  border: "1px solid rgba(255,255,255,0.16)",
-  color: "white",
-  padding: "12px 18px",
-  borderRadius: 999,
-  fontWeight: 800
-};
