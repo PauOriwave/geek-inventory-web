@@ -4,6 +4,10 @@ import { useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
+function isPaidPlan(plan?: string) {
+  return plan === "premium" || plan === "market_pro";
+}
+
 export default function ValuateAllButton({
   plan = "free",
   locale = "en"
@@ -14,9 +18,19 @@ export default function ValuateAllButton({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  const paidPlan = isPaidPlan(plan);
+
   const text = {
     label: locale === "es" ? "Valorar todo" : "Valuate all",
     loading: locale === "es" ? "Valorando..." : "Valuating...",
+    premiumOnly:
+      locale === "es"
+        ? "Esta función está disponible solo en planes de pago."
+        : "This feature is available only on paid plans.",
+    premiumHint:
+      locale === "es"
+        ? "Actualiza tu plan para valorar toda la colección de una vez."
+        : "Upgrade your plan to valuate your whole collection at once.",
     success:
       locale === "es"
         ? "Colección valorada correctamente."
@@ -31,10 +45,16 @@ export default function ValuateAllButton({
         : "Could not valuate collection.",
     updated: locale === "es" ? "Actualizados" : "Updated",
     skipped: locale === "es" ? "Omitidos" : "Skipped",
-    processed: locale === "es" ? "Procesados" : "Processed"
+    processed: locale === "es" ? "Procesados" : "Processed",
+    pro: "PRO"
   };
 
   async function handleClick() {
+    if (!paidPlan) {
+      setMessage(`${text.premiumOnly} ${text.premiumHint}`);
+      return;
+    }
+
     try {
       setLoading(true);
       setMessage(null);
@@ -47,6 +67,11 @@ export default function ValuateAllButton({
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
+        if (res.status === 403) {
+          setMessage(`${text.premiumOnly} ${text.premiumHint}`);
+          return;
+        }
+
         setMessage(data?.message || text.genericError);
         return;
       }
@@ -69,22 +94,39 @@ export default function ValuateAllButton({
         type="button"
         onClick={handleClick}
         disabled={loading}
+        title={!paidPlan ? text.premiumOnly : undefined}
         style={{
           border: "none",
           borderRadius: 999,
           padding: "10px 14px",
           fontWeight: 800,
           cursor: loading ? "wait" : "pointer",
-          background: "#171717",
+          background: paidPlan ? "#171717" : "#9CA3AF",
           color: "white",
           display: "inline-flex",
           alignItems: "center",
           gap: 8,
           opacity: loading ? 0.85 : 1,
-          boxShadow: "0 8px 24px rgba(15,23,42,0.16)"
+          boxShadow: paidPlan ? "0 8px 24px rgba(15,23,42,0.16)" : "none"
         }}
       >
         <span>{loading ? text.loading : text.label}</span>
+
+        {!paidPlan && (
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 900,
+              padding: "3px 7px",
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.18)",
+              color: "white",
+              lineHeight: 1
+            }}
+          >
+            {text.pro}
+          </span>
+        )}
       </button>
 
       {message && (

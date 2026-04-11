@@ -117,7 +117,7 @@ export default function ItemActions({
   initialRegion = "",
   initialNotes = "",
   locale = "en",
-  plan = "free"
+  plan
 }: {
   id: string;
   initialQty: number;
@@ -150,6 +150,8 @@ export default function ItemActions({
     [locale]
   );
 
+  const isPaidPlan = plan === "premium" || plan === "market_pro";
+
   const text = {
     edit: locale === "es" ? "Editar" : "Edit",
     save: locale === "es" ? "Guardar" : "Save",
@@ -169,7 +171,17 @@ export default function ItemActions({
     confirmDelete:
       locale === "es"
         ? "¿Seguro que quieres eliminar este objeto?"
-        : "Are you sure you want to delete this item?"
+        : "Are you sure you want to delete this item?",
+    noValuation:
+      locale === "es"
+        ? "No se encontró valoración para este objeto ahora mismo."
+        : "No valuation found for this item right now.",
+    genericValuationError:
+      locale === "es" ? "No se pudo valorar." : "Could not valuate.",
+    premiumOnly:
+      locale === "es"
+        ? "Esta función está disponible solo en planes de pago."
+        : "This feature is available only on paid plans."
   };
 
   async function handleSave() {
@@ -231,6 +243,11 @@ export default function ItemActions({
   }
 
   async function handleValuate() {
+    if (!isPaidPlan) {
+      alert(text.premiumOnly);
+      return;
+    }
+
     try {
       setValuating(true);
 
@@ -239,13 +256,29 @@ export default function ItemActions({
         credentials: "include"
       });
 
+      const data = await res.json().catch(() => null);
+
       if (!res.ok) {
-        throw new Error("Failed to valuate item");
+        if (res.status === 403) {
+          alert(text.premiumOnly);
+          return;
+        }
+
+        if (data?.code === "NO_VALUATION_FOUND") {
+          alert(data?.message || text.noValuation);
+          return;
+        }
+
+        throw new Error(data?.message || text.genericValuationError);
       }
 
       window.location.reload();
-    } catch {
-      alert(locale === "es" ? "No se pudo valorar." : "Could not valuate.");
+    } catch (error) {
+      alert(
+        error instanceof Error && error.message
+          ? error.message
+          : text.genericValuationError
+      );
     } finally {
       setValuating(false);
     }
@@ -273,9 +306,10 @@ export default function ItemActions({
           type="button"
           onClick={handleValuate}
           disabled={valuating}
+          title={!isPaidPlan ? text.premiumOnly : undefined}
           style={{
             ...darkBtn,
-            opacity: valuating ? 0.8 : 1
+            opacity: valuating ? 0.8 : !isPaidPlan ? 0.7 : 1
           }}
         >
           {valuating ? text.valuating : text.valuate}
@@ -362,10 +396,7 @@ export default function ItemActions({
           style={inputStyle}
         >
           {completenessOptions.map((option) => (
-            <option
-              key={`completeness-${option.value}`}
-              value={option.value}
-            >
+            <option key={`completeness-${option.value}`} value={option.value}>
               {option.label}
             </option>
           ))}
