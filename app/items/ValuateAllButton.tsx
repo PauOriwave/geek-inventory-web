@@ -5,7 +5,6 @@ import { useState } from "react";
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 export default function ValuateAllButton({
-  plan = "free",
   locale = "en"
 }: {
   plan?: string;
@@ -14,15 +13,9 @@ export default function ValuateAllButton({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const isPaidPlan = plan === "premium" || plan === "market_pro";
-
   const text = {
     label: locale === "es" ? "Valorar todo" : "Valuate all",
     loading: locale === "es" ? "Valorando..." : "Valuating...",
-    premiumOnly:
-      locale === "es"
-        ? "Esta función está disponible solo en planes de pago."
-        : "This feature is available only on paid plans.",
     success:
       locale === "es"
         ? "Colección valorada correctamente."
@@ -41,11 +34,6 @@ export default function ValuateAllButton({
   };
 
   async function handleClick() {
-    if (!isPaidPlan) {
-      setMessage(text.premiumOnly);
-      return;
-    }
-
     try {
       setLoading(true);
       setMessage(null);
@@ -58,11 +46,6 @@ export default function ValuateAllButton({
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        if (res.status === 403) {
-          setMessage(text.premiumOnly);
-          return;
-        }
-
         setMessage(data?.message || text.genericError);
         return;
       }
@@ -85,22 +68,19 @@ export default function ValuateAllButton({
         type="button"
         onClick={handleClick}
         disabled={loading}
-        title={!isPaidPlan ? text.premiumOnly : undefined}
         style={{
           border: "none",
           borderRadius: 999,
           padding: "10px 14px",
           fontWeight: 800,
           cursor: loading ? "wait" : "pointer",
-          background: isPaidPlan ? "#171717" : "#9CA3AF",
+          background: "#171717",
           color: "white",
           display: "inline-flex",
           alignItems: "center",
           gap: 8,
           opacity: loading ? 0.85 : 1,
-          boxShadow: isPaidPlan
-            ? "0 8px 24px rgba(15,23,42,0.16)"
-            : "none"
+          boxShadow: "0 8px 24px rgba(15,23,42,0.16)"
         }}
       >
         <span>{loading ? text.loading : text.label}</span>

@@ -116,8 +116,7 @@ export default function ItemActions({
   initialCompleteness = "",
   initialRegion = "",
   initialNotes = "",
-  locale = "en",
-  plan
+  locale = "en"
 }: {
   id: string;
   initialQty: number;
@@ -150,8 +149,6 @@ export default function ItemActions({
     [locale]
   );
 
-  const isPaidPlan = plan === "premium" || plan === "market_pro";
-
   const text = {
     edit: locale === "es" ? "Editar" : "Edit",
     save: locale === "es" ? "Guardar" : "Save",
@@ -177,11 +174,7 @@ export default function ItemActions({
         ? "No se encontró valoración para este objeto ahora mismo."
         : "No valuation found for this item right now.",
     genericValuationError:
-      locale === "es" ? "No se pudo valorar." : "Could not valuate.",
-    premiumOnly:
-      locale === "es"
-        ? "Esta función está disponible solo en planes de pago."
-        : "This feature is available only on paid plans."
+      locale === "es" ? "No se pudo valorar." : "Could not valuate."
   };
 
   async function handleSave() {
@@ -243,11 +236,6 @@ export default function ItemActions({
   }
 
   async function handleValuate() {
-    if (!isPaidPlan) {
-      alert(text.premiumOnly);
-      return;
-    }
-
     try {
       setValuating(true);
 
@@ -259,11 +247,6 @@ export default function ItemActions({
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        if (res.status === 403) {
-          alert(text.premiumOnly);
-          return;
-        }
-
         if (data?.code === "NO_VALUATION_FOUND") {
           alert(data?.message || text.noValuation);
           return;
@@ -306,10 +289,9 @@ export default function ItemActions({
           type="button"
           onClick={handleValuate}
           disabled={valuating}
-          title={!isPaidPlan ? text.premiumOnly : undefined}
           style={{
             ...darkBtn,
-            opacity: valuating ? 0.8 : !isPaidPlan ? 0.7 : 1
+            opacity: valuating ? 0.8 : 1
           }}
         >
           {valuating ? text.valuating : text.valuate}

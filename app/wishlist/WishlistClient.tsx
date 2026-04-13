@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { AppThemeId, getThemeById } from "../theme";
 import type { WishlistItem } from "./page";
 
@@ -421,7 +421,7 @@ export default function WishlistClient({
       locale === "es" ? "Explorar Premium" : "Explore Premium"
   };
 
-  async function handleCreate(e: FormEvent) {
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
 
     if (!name.trim()) return;
@@ -1123,7 +1123,7 @@ function Field({
   children
 }: {
   label: string;
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
     <label
@@ -1146,7 +1146,7 @@ function Field({
   );
 }
 
-function inputStyle(theme: ReturnType<typeof getThemeById>): CSSProperties {
+function inputStyle(theme: ReturnType<typeof getThemeById>): React.CSSProperties {
   return {
     width: "100%",
     boxSizing: "border-box",

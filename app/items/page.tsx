@@ -569,7 +569,7 @@ export default async function ItemsPage({
               flexWrap: "wrap"
             }}
           >
-            <ValuateAllButton plan={me?.plan ?? "free"} locale={locale} />
+            <ValuateAllButton locale={locale} />
             <ImportCsvButton />
             <ExportCsvButton />
           </div>
