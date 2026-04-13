@@ -4,12 +4,19 @@ import { getLocale } from "../i18n";
 import { getThemeById, AppThemeId } from "../theme";
 import { getUnlockedThemes } from "../lib/themes";
 import ThemeSelector from "./ThemeSelector";
+import {
+  formatLimit,
+  formatPlanLabel,
+  getItemLimitByPlan,
+  getWishlistLimitByPlan,
+  normalizePlan
+} from "../lib/plans";
 
 type Me = {
   id: string;
   email?: string;
   plan?: string;
-  premiumSince?: string | null;
+  premiumStartedAt?: string | null;
   createdAt?: string;
 };
 
@@ -91,12 +98,6 @@ async function getAchievements(cookie: string): Promise<Achievement[]> {
   } catch {
     return [];
   }
-}
-
-function formatPlan(plan: string | undefined, locale: "en" | "es") {
-  if (plan === "market_pro") return "Market Pro";
-  if (plan === "premium") return "Collector";
-  return locale === "es" ? "Starter Collector" : "Starter Collector";
 }
 
 function monthsSince(dateString?: string | null) {
@@ -211,21 +212,22 @@ export default async function ProfilePage({
     getAchievements(cookieHeader)
   ]);
 
-  const plan = me?.plan ?? "free";
-  const premiumSince = me?.premiumSince ?? null;
-  const unlockedThemes = getUnlockedThemes(premiumSince);
+  const plan = normalizePlan(me?.plan);
+  const premiumStartedAt = me?.premiumStartedAt ?? null;
+  const unlockedThemes = getUnlockedThemes(premiumStartedAt);
   const unlockedAchievements = achievements.filter((a) => a.unlocked);
   const unlockedAchievementsCount = unlockedAchievements.length;
-  const premiumMonths = monthsSince(premiumSince);
+  const premiumMonths = monthsSince(premiumStartedAt);
   const nextTheme = nextThemeMilestone(unlockedThemes);
 
   const itemCount = items.length;
   const wishlistCount = wishlist.length;
 
-  const itemLimit = plan === "free" ? 25 : "∞";
-  const wishlistLimit = plan === "free" ? 10 : "∞";
+  const itemLimit = getItemLimitByPlan(plan);
+  const wishlistLimit = getWishlistLimitByPlan(plan);
 
-  const lastUnlocked = unlockedAchievements[unlockedAchievements.length - 1] ?? null;
+  const lastUnlocked =
+    unlockedAchievements[unlockedAchievements.length - 1] ?? null;
 
   const langEnHref = `/profile?lang=en`;
   const langEsHref = `/profile?lang=es`;
@@ -248,24 +250,35 @@ export default async function ProfilePage({
 
     collectorHint:
       locale === "es"
-        ? "Collector desbloquea colección ilimitada, wishlist ilimitada, valuate all y themes loyalty."
-        : "Collector unlocks unlimited collection, unlimited wishlist, valuate all and loyalty themes.",
+        ? "Collector desbloquea más espacio para colección, más wishlist y themes loyalty."
+        : "Collector unlocks more collection space, more wishlist and loyalty themes.",
 
     marketHint:
       locale === "es"
-        ? "Market Pro añade Market Watch, señales y una capa premium pensada para usuarios más avanzados."
-        : "Market Pro adds Market Watch, signals and a premium layer built for advanced users.",
+        ? "Market Pro añade la capa más avanzada pensada para señales, alertas y funciones de mercado."
+        : "Market Pro adds the most advanced layer built for signals, alerts and market features.",
 
     fullAccess:
       locale === "es"
         ? "Ya tienes acceso al nivel más alto disponible."
         : "You already have access to the highest available tier.",
 
-    stats: locale === "es" ? "Resumen de cuenta" : "Account summary",
     collectionUsage: locale === "es" ? "Colección" : "Collection",
     wishlistUsage: "Wishlist",
-    achievements: locale === "es" ? "Logros" : "Achievements",
-    themes: "Themes",
+    unlockedAchievements:
+      locale === "es" ? "Logros desbloqueados" : "Unlocked achievements",
+    memberSince:
+      locale === "es" ? "Miembro desde" : "Member since",
+
+    usageHintFree:
+      locale === "es"
+        ? "Tu plan Starter está pensado para empezar. Cuando quieras profundidad y mejor control, toca subir."
+        : "Your Starter plan is designed to get you started. Upgrade when you want more depth and control.",
+
+    usageHintPaid:
+      locale === "es"
+        ? "Tu cuenta ya tiene acceso ampliado. La siguiente capa está enfocada a inteligencia de mercado."
+        : "Your account already has expanded access. The next layer is focused on market intelligence.",
 
     loyaltyTitle:
       locale === "es" ? "Themes desbloqueables" : "Unlockable themes",
@@ -281,22 +294,6 @@ export default async function ProfilePage({
     nextUnlock:
       locale === "es" ? "Próximo desbloqueo" : "Next unlock",
 
-    unlockedAchievements:
-      locale === "es" ? "Logros desbloqueados" : "Unlocked achievements",
-
-    memberSince:
-      locale === "es" ? "Miembro desde" : "Member since",
-
-    usageHintFree:
-      locale === "es"
-        ? "Tu plan Starter está pensado para empezar. Cuando quieras profundidad y mejor control, toca subir."
-        : "Your Starter plan is designed to get you started. Upgrade when you want more depth and control.",
-
-    usageHintPaid:
-      locale === "es"
-        ? "Tu cuenta ya tiene acceso ampliado. La siguiente capa está enfocada a inteligencia de mercado."
-        : "Your account already has expanded access. The next layer is focused on market intelligence.",
-
     achievementsTitle:
       locale === "es" ? "Progreso y logros" : "Progress and achievements",
     achievementsSubtitle:
@@ -308,9 +305,7 @@ export default async function ProfilePage({
     inProgress:
       locale === "es" ? "En progreso" : "In progress",
     unlocked:
-      locale === "es" ? "Desbloqueado" : "Unlocked",
-    seePlans:
-      locale === "es" ? "Ver planes" : "See plans"
+      locale === "es" ? "Desbloqueado" : "Unlocked"
   };
 
   return (
@@ -464,7 +459,7 @@ export default async function ProfilePage({
                 fontSize: 13
               }}
             >
-              {formatPlan(plan, locale)}
+              {formatPlanLabel(plan, locale)}
             </div>
           </div>
         </section>
@@ -506,7 +501,7 @@ export default async function ProfilePage({
                   marginTop: 4
                 }}
               >
-                {formatPlan(plan, locale)}
+                {formatPlanLabel(plan, locale)}
               </div>
 
               <div
@@ -553,13 +548,13 @@ export default async function ProfilePage({
           <StatCard
             theme={theme}
             label={text.collectionUsage}
-            value={`${itemCount} / ${itemLimit}`}
-            hint={text.usageHintFree}
+            value={`${itemCount} / ${formatLimit(itemLimit)}`}
+            hint={plan === "free" ? text.usageHintFree : text.usageHintPaid}
           />
           <StatCard
             theme={theme}
             label={text.wishlistUsage}
-            value={`${wishlistCount} / ${wishlistLimit}`}
+            value={`${wishlistCount} / ${formatLimit(wishlistLimit)}`}
             hint={plan === "free" ? text.usageHintFree : text.usageHintPaid}
           />
           <StatCard
@@ -648,7 +643,7 @@ export default async function ProfilePage({
               <ThemeSelector
                 currentThemeId={themeId}
                 plan={plan}
-                premiumStartedAt={premiumSince}
+                premiumStartedAt={premiumStartedAt}
                 locale={locale}
               />
             </section>
@@ -934,7 +929,7 @@ export default async function ProfilePage({
               <InfoRow label="Email" value={me?.email || "—"} theme={theme} />
               <InfoRow
                 label={text.currentPlan}
-                value={formatPlan(plan, locale)}
+                value={formatPlanLabel(plan, locale)}
                 theme={theme}
               />
               <InfoRow

@@ -3,12 +3,12 @@
 import { useMemo, useState } from "react";
 import { AppThemeId, getThemeById } from "../theme";
 import type { WishlistItem } from "./page";
+import {
+  getWishlistLimitByPlan,
+  isPaidPlan
+} from "../lib/plans";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
-
-function isPaidPlan(plan?: string) {
-  return plan === "premium" || plan === "market_pro";
-}
 
 function formatPrice(value?: string | number | null) {
   if (value == null) return "—";
@@ -106,26 +106,6 @@ function getDeltaData(
       locale === "es"
         ? "Bastante por encima del objetivo"
         : "Well above your target"
-  };
-}
-
-function getSessionToken() {
-  if (typeof document === "undefined") return null;
-
-  const entry = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("session="));
-
-  return entry ? decodeURIComponent(entry.split("=")[1]) : null;
-}
-
-function getAuthHeaders(): Record<string, string> {
-  const token = getSessionToken();
-
-  if (!token) return {};
-
-  return {
-    Authorization: `Bearer ${token}`
   };
 }
 
@@ -328,6 +308,7 @@ export default function WishlistClient({
 }) {
   const theme = useMemo(() => getThemeById(themeId), [themeId]);
   const isPremium = isPaidPlan(plan);
+  const wishlistLimit = getWishlistLimitByPlan(plan);
 
   const [items, setItems] = useState<WishlistItem[]>(initialItems);
   const [name, setName] = useState("");
@@ -340,6 +321,8 @@ export default function WishlistClient({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  const limitReached = wishlistLimit != null && items.length >= wishlistLimit;
 
   const platformOptions = useMemo(
     () => getPlatformOptions(category, locale),
@@ -375,8 +358,8 @@ export default function WishlistClient({
       locale === "es" ? "Ver mejor oferta" : "See best offer",
     premiumHint:
       locale === "es"
-        ? "Premium te abrirá mejores comparativas y futuras ofertas optimizadas."
-        : "Premium unlocks better comparisons and future optimized offers.",
+        ? "Collector amplía tus límites y Market Pro prepara la capa más avanzada de seguimiento."
+        : "Collector expands your limits and Market Pro prepares the most advanced tracking layer.",
     remove: locale === "es" ? "Eliminar" : "Remove",
     moveToCollection:
       locale === "es" ? "Añadir a colección" : "Add to collection",
@@ -418,13 +401,22 @@ export default function WishlistClient({
         ? "No se pudo mover a la colección."
         : "Could not move to collection.",
     premiumCta:
-      locale === "es" ? "Explorar Premium" : "Explore Premium"
+      locale === "es" ? "Explorar Premium" : "Explore Premium",
+    wishlistLimitError:
+      locale === "es"
+        ? `Has alcanzado el límite de ${wishlistLimit ?? "∞"} elementos en wishlist.`
+        : `You reached the ${wishlistLimit ?? "∞"} wishlist item limit.`
   };
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
 
     if (!name.trim()) return;
+
+    if (limitReached) {
+      setMessage(text.wishlistLimitError);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -434,8 +426,7 @@ export default function WishlistClient({
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeaders()
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           name: name.trim(),
@@ -450,7 +441,8 @@ export default function WishlistClient({
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        throw new Error(data?.message || text.saveError);
+        setMessage(data?.message || text.saveError);
+        return;
       }
 
       setItems((prev) => [data, ...prev]);
@@ -461,10 +453,8 @@ export default function WishlistClient({
       setRegion("");
       setNotes("");
       setMessage(text.saved);
-    } catch (error) {
-      setMessage(
-        error instanceof Error && error.message ? error.message : text.saveError
-      );
+    } catch {
+      setMessage(text.saveError);
     } finally {
       setLoading(false);
     }
@@ -477,10 +467,7 @@ export default function WishlistClient({
 
       const res = await fetch(`${API}/wishlist/${id}`, {
         method: "DELETE",
-        credentials: "include",
-        headers: {
-          ...getAuthHeaders()
-        }
+        credentials: "include"
       });
 
       if (!res.ok) {
@@ -507,10 +494,7 @@ export default function WishlistClient({
 
       const res = await fetch(`${API}/wishlist/${id}/move-to-collection`, {
         method: "POST",
-        credentials: "include",
-        headers: {
-          ...getAuthHeaders()
-        }
+        credentials: "include"
       });
 
       const data = await res.json().catch(() => null);
@@ -689,6 +673,32 @@ export default function WishlistClient({
           </section>
         )}
 
+        {limitReached && (
+          <section
+            style={{
+              marginBottom: 18,
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.radius.xl,
+              padding: 16,
+              background: "#FEF3F2",
+              boxShadow: theme.shadow.soft,
+              color: "#B42318"
+            }}
+          >
+            {text.wishlistLimitError}{" "}
+            <a
+              href={`/pricing?lang=${locale}`}
+              style={{
+                color: "#B42318",
+                fontWeight: 900,
+                textDecoration: "none"
+              }}
+            >
+              {text.premiumCta}
+            </a>
+          </section>
+        )}
+
         <div
           style={{
             display: "grid",
@@ -729,7 +739,7 @@ export default function WishlistClient({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  disabled={loading}
+                  disabled={loading || limitReached}
                   style={inputStyle(theme)}
                 />
               </Field>
@@ -743,7 +753,7 @@ export default function WishlistClient({
                     setPlatform("");
                     setRegion("");
                   }}
-                  disabled={loading}
+                  disabled={loading || limitReached}
                   style={inputStyle(theme)}
                 >
                   <option value="videogame">videogame</option>
@@ -765,7 +775,7 @@ export default function WishlistClient({
                   min="0"
                   value={targetPrice}
                   onChange={(e) => setTargetPrice(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || limitReached}
                   style={inputStyle(theme)}
                 />
               </Field>
@@ -774,7 +784,7 @@ export default function WishlistClient({
                 <select
                   value={platform}
                   onChange={(e) => setPlatform(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || limitReached}
                   style={inputStyle(theme)}
                 >
                   {platformOptions.map((option) => (
@@ -792,7 +802,7 @@ export default function WishlistClient({
                 <select
                   value={region}
                   onChange={(e) => setRegion(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || limitReached}
                   style={inputStyle(theme)}
                 >
                   {regionOptions.map((option) => (
@@ -810,7 +820,7 @@ export default function WishlistClient({
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  disabled={loading}
+                  disabled={loading || limitReached}
                   style={{
                     ...inputStyle(theme),
                     minHeight: 90,
@@ -821,15 +831,15 @@ export default function WishlistClient({
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || limitReached}
                 style={{
                   border: "none",
                   borderRadius: 999,
                   padding: "12px 16px",
-                  background: theme.colors.black,
+                  background: limitReached ? "#9CA3AF" : theme.colors.black,
                   color: "white",
                   fontWeight: 900,
-                  cursor: "pointer"
+                  cursor: limitReached ? "not-allowed" : "pointer"
                 }}
               >
                 {loading ? text.saving : text.save}

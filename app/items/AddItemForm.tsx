@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  getItemLimitByPlan,
+  isPaidPlan
+} from "../lib/plans";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
-const FREE_ITEM_LIMIT = 25;
 
 const categories = [
   "videogame",
@@ -16,10 +19,6 @@ const categories = [
   "movie",
   "other"
 ] as const;
-
-function isPaidPlan(plan?: string) {
-  return plan === "premium" || plan === "market_pro";
-}
 
 function getPlatformOptions(category: string, locale: "en" | "es") {
   const commonOther = [
@@ -228,8 +227,9 @@ export default function AddItemForm({
     [category, locale]
   );
 
+  const itemLimit = getItemLimitByPlan(plan);
   const paidPlan = isPaidPlan(plan);
-  const freeLimitReached = !paidPlan && currentCount >= FREE_ITEM_LIMIT;
+  const freeLimitReached = itemLimit != null && currentCount >= itemLimit;
 
   const text = {
     title: locale === "es" ? "Añadir nuevo objeto" : "Add new item",
@@ -252,19 +252,23 @@ export default function AddItemForm({
       locale === "es"
         ? "No se pudo crear el objeto."
         : "Could not create the item.",
-    freeLimitError:
+    planLimitError:
       locale === "es"
-        ? "Has alcanzado el límite del plan Free. Sube de plan para seguir añadiendo objetos."
-        : "You reached the Free plan limit. Upgrade to keep adding items.",
+        ? `Has alcanzado el límite de ${itemLimit ?? "∞"} objetos de tu plan actual.`
+        : `You reached the ${itemLimit ?? "∞"} item limit for your current plan.`,
     upgrade:
-      locale === "es" ? "Ver planes" : "See plans"
+      locale === "es" ? "Ver planes" : "See plans",
+    paidHint:
+      locale === "es"
+        ? "Tu plan actual permite seguir ampliando la colección."
+        : "Your current plan lets you keep expanding your collection."
   };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     if (freeLimitReached) {
-      setMessage(text.freeLimitError);
+      setMessage(text.planLimitError);
       return;
     }
 
@@ -294,8 +298,12 @@ export default function AddItemForm({
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        if (res.status === 403 && data?.code === "FREE_ITEM_LIMIT_REACHED") {
-          setMessage(text.freeLimitError);
+        if (
+          res.status === 403 &&
+          (data?.code === "ITEM_LIMIT_REACHED" ||
+            data?.code === "FREE_ITEM_LIMIT_REACHED")
+        ) {
+          setMessage(data?.message || text.planLimitError);
           return;
         }
 
@@ -356,7 +364,7 @@ export default function AddItemForm({
             lineHeight: 1.6
           }}
         >
-          {text.freeLimitError}{" "}
+          {text.planLimitError}{" "}
           <a
             href={`/pricing?lang=${locale}`}
             style={{
@@ -367,6 +375,23 @@ export default function AddItemForm({
           >
             {text.upgrade}
           </a>
+        </div>
+      )}
+
+      {paidPlan && (
+        <div
+          style={{
+            marginBottom: 14,
+            padding: "12px 14px",
+            borderRadius: 16,
+            background: "#F0FDF4",
+            border: "1px solid #BBF7D0",
+            color: "#166534",
+            fontSize: 14,
+            lineHeight: 1.6
+          }}
+        >
+          {text.paidHint}
         </div>
       )}
 
@@ -457,7 +482,10 @@ export default function AddItemForm({
             style={inputStyle}
           >
             {platformOptions.map((option) => (
-              <option key={`${category}-platform-${option.value}`} value={option.value}>
+              <option
+                key={`${category}-platform-${option.value}`}
+                value={option.value}
+              >
                 {option.label}
               </option>
             ))}
@@ -472,7 +500,10 @@ export default function AddItemForm({
             style={inputStyle}
           >
             {completenessOptions.map((option) => (
-              <option key={`${category}-completeness-${option.value}`} value={option.value}>
+              <option
+                key={`${category}-completeness-${option.value}`}
+                value={option.value}
+              >
                 {option.label}
               </option>
             ))}
@@ -487,7 +518,10 @@ export default function AddItemForm({
             style={inputStyle}
           >
             {regionOptions.map((option) => (
-              <option key={`${category}-region-${option.value}`} value={option.value}>
+              <option
+                key={`${category}-region-${option.value}`}
+                value={option.value}
+              >
                 {option.label}
               </option>
             ))}
