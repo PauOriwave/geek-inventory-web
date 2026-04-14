@@ -1,29 +1,82 @@
+import {
+  AppThemeId,
+  availableThemes,
+  canUseTheme,
+  getPremiumMonths
+} from "../theme";
+
 export type ThemeUnlock = {
-  id: string;
+  id: AppThemeId;
   requiredMonths: number;
 };
 
-export const THEMES: ThemeUnlock[] = [
-  { id: "classic", requiredMonths: 0 },
-  { id: "dark", requiredMonths: 1 },
-  { id: "dragon", requiredMonths: 3 },
-  { id: "cyber", requiredMonths: 6 },
-  { id: "legendary", requiredMonths: 12 }
-];
+export const THEMES: ThemeUnlock[] = availableThemes.map((theme) => ({
+  id: theme.id,
+  requiredMonths:
+    theme.access.kind === "loyalty" ? theme.access.monthsRequired : 0
+}));
 
-export function getUnlockedThemes(premiumSince?: string | null) {
-  if (!premiumSince) {
-    return ["classic"];
+export function getUnlockedThemes(
+  premiumSince?: string | null,
+  plan?: string | null
+): AppThemeId[] {
+  return availableThemes
+    .filter((theme) =>
+      canUseTheme({
+        themeId: theme.id,
+        plan: plan ?? "free",
+        premiumStartedAt: premiumSince ?? null
+      })
+    )
+    .map((theme) => theme.id);
+}
+
+export function getNextLockedTheme(
+  premiumSince?: string | null,
+  plan?: string | null
+) {
+  const unlocked = new Set(getUnlockedThemes(premiumSince, plan));
+
+  return (
+    availableThemes.find((theme) => !unlocked.has(theme.id)) ?? null
+  );
+}
+
+export function getThemeProgress(
+  themeId: AppThemeId,
+  premiumSince?: string | null,
+  plan?: string | null
+) {
+  const theme = availableThemes.find((item) => item.id === themeId);
+
+  if (!theme) {
+    return {
+      unlocked: false,
+      progress: 0,
+      target: 0
+    };
   }
 
-  const start = new Date(premiumSince);
-  const now = new Date();
+  const allowed = canUseTheme({
+    themeId,
+    plan: plan ?? "free",
+    premiumStartedAt: premiumSince ?? null
+  });
 
-  const months =
-    (now.getFullYear() - start.getFullYear()) * 12 +
-    (now.getMonth() - start.getMonth());
+  if (theme.access.kind !== "loyalty") {
+    return {
+      unlocked: allowed,
+      progress: allowed ? 1 : 0,
+      target: 1
+    };
+  }
 
-  return THEMES
-    .filter((t) => months >= t.requiredMonths)
-    .map((t) => t.id);
+  const months = getPremiumMonths(premiumSince);
+  const target = theme.access.monthsRequired;
+
+  return {
+    unlocked: allowed,
+    progress: Math.min(months, target),
+    target
+  };
 }

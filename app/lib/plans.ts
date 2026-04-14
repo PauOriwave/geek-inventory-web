@@ -29,6 +29,15 @@ export function getWishlistLimitByPlan(plan?: string | null): number | null {
   return null;
 }
 
+export function getPublicProfilePreviewLimit(plan?: string | null): number {
+  const normalized = normalizePlan(plan);
+
+  if (normalized === "free") return 6;
+  if (normalized === "premium") return 12;
+
+  return 18;
+}
+
 export function formatPlanLabel(
   plan: string | undefined,
   locale: "en" | "es"

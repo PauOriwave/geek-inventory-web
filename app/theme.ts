@@ -1,8 +1,16 @@
 export type AppThemeId =
   | "classic"
+  | "dark"
   | "cyberpunk"
   | "fantasy"
   | "retro";
+
+export type ThemeAccess =
+  | { kind: "free" }
+  | { kind: "premium" }
+  | { kind: "market_pro" }
+  | { kind: "loyalty"; monthsRequired: number }
+  | { kind: "annual_bundle" };
 
 type ThemeColors = {
   bg: string;
@@ -34,8 +42,7 @@ export type AppTheme = {
   id: AppThemeId;
   label: string;
   description: string;
-  premium: boolean;
-  loyaltyMonthsRequired: number;
+  access: ThemeAccess;
   colors: ThemeColors;
   radius: ThemeRadius;
   shadow: ThemeShadow;
@@ -58,8 +65,7 @@ export const availableThemes: AppTheme[] = [
     id: "classic",
     label: "Classic",
     description: "La identidad base de DrakoryVault.",
-    premium: false,
-    loyaltyMonthsRequired: 0,
+    access: { kind: "free" },
     colors: {
       bg: "#F5F3EE",
       surface: "#FFFFFF",
@@ -77,11 +83,34 @@ export const availableThemes: AppTheme[] = [
     shadow
   },
   {
+    id: "dark",
+    label: "Dark",
+    description: "Modo oscuro base para probar la personalización.",
+    access: { kind: "free" },
+    colors: {
+      bg: "#0B0B0C",
+      surface: "#111113",
+      surfaceAlt: "#1A1A1D",
+      text: "#F5F5F5",
+      textMuted: "#A1A1AA",
+      border: "#27272A",
+      gold: "#C8A44D",
+      black: "#000000",
+      success: "#22C55E",
+      danger: "#EF4444",
+      link: "#EAB308"
+    },
+    radius,
+    shadow: {
+      soft: "0 8px 24px rgba(0,0,0,0.18)",
+      card: "0 20px 40px rgba(0,0,0,0.30)"
+    }
+  },
+  {
     id: "cyberpunk",
     label: "Cyberpunk",
     description: "Neón oscuro, alto contraste y energía arcade.",
-    premium: true,
-    loyaltyMonthsRequired: 1,
+    access: { kind: "premium" },
     colors: {
       bg: "#0D0B1A",
       surface: "#161228",
@@ -105,8 +134,7 @@ export const availableThemes: AppTheme[] = [
     id: "fantasy",
     label: "Fantasy",
     description: "Tonos cálidos, dorados y una estética más épica.",
-    premium: true,
-    loyaltyMonthsRequired: 3,
+    access: { kind: "premium" },
     colors: {
       bg: "#F4EFE6",
       surface: "#FFF8EE",
@@ -130,8 +158,7 @@ export const availableThemes: AppTheme[] = [
     id: "retro",
     label: "Retro CRT",
     description: "Inspirado en interfaces retro y vitrinas clásicas.",
-    premium: true,
-    loyaltyMonthsRequired: 6,
+    access: { kind: "premium" },
     colors: {
       bg: "#ECE8D9",
       surface: "#F8F3E3",
@@ -170,6 +197,10 @@ export function getPremiumMonths(premiumStartedAt?: string | null) {
   return Math.max(0, months);
 }
 
+export function isPaidPlan(plan?: string | null) {
+  return plan === "premium" || plan === "market_pro";
+}
+
 export function canUseTheme(input: {
   themeId: AppThemeId;
   plan?: string | null;
@@ -177,16 +208,28 @@ export function canUseTheme(input: {
 }) {
   const theme = getThemeById(input.themeId);
 
-  if (!theme.premium) {
-    return true;
-  }
+  switch (theme.access.kind) {
+    case "free":
+      return true;
 
-  if (input.plan !== "premium") {
-    return false;
-  }
+    case "premium":
+      return isPaidPlan(input.plan);
 
-  const months = getPremiumMonths(input.premiumStartedAt);
-  return months >= theme.loyaltyMonthsRequired;
+    case "market_pro":
+      return input.plan === "market_pro";
+
+    case "loyalty": {
+      if (!isPaidPlan(input.plan)) return false;
+      const months = getPremiumMonths(input.premiumStartedAt);
+      return months >= theme.access.monthsRequired;
+    }
+
+    case "annual_bundle":
+      return false;
+
+    default:
+      return false;
+  }
 }
 
 export const theme = getThemeById("classic");

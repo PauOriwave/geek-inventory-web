@@ -1,184 +1,184 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { getUnlockedThemes } from "../lib/themes";
-
-type ThemeId = "classic" | "dark" | "dragon" | "cyber" | "legendary";
-
-type ThemeMeta = {
-  id: ThemeId;
-  name: {
-    es: string;
-    en: string;
-  };
-  description: {
-    es: string;
-    en: string;
-  };
-  requiredMonths: number;
-  preview: {
-    bg: string;
-    surface: string;
-    accent: string;
-    text: string;
-  };
-};
-
-const THEMES: ThemeMeta[] = [
-  {
-    id: "classic",
-    name: {
-      es: "Classic",
-      en: "Classic"
-    },
-    description: {
-      es: "La base limpia y elegante de DrakoryVault.",
-      en: "The clean and elegant DrakoryVault base."
-    },
-    requiredMonths: 0,
-    preview: {
-      bg: "#F8FAFC",
-      surface: "#FFFFFF",
-      accent: "#171717",
-      text: "#111827"
-    }
-  },
-  {
-    id: "dark",
-    name: {
-      es: "Dark",
-      en: "Dark"
-    },
-    description: {
-      es: "Un tono más serio para sesiones largas.",
-      en: "A more serious tone for long sessions."
-    },
-    requiredMonths: 1,
-    preview: {
-      bg: "#0F172A",
-      surface: "#111827",
-      accent: "#E5E7EB",
-      text: "#F9FAFB"
-    }
-  },
-  {
-    id: "dragon",
-    name: {
-      es: "Dragon",
-      en: "Dragon"
-    },
-    description: {
-      es: "Una identidad más épica y coleccionista.",
-      en: "A more epic collector identity."
-    },
-    requiredMonths: 3,
-    preview: {
-      bg: "#1F2937",
-      surface: "#111827",
-      accent: "#F59E0B",
-      text: "#F9FAFB"
-    }
-  },
-  {
-    id: "cyber",
-    name: {
-      es: "Cyber",
-      en: "Cyber"
-    },
-    description: {
-      es: "Visual más avanzado para usuarios fieles.",
-      en: "A more advanced visual style for loyal users."
-    },
-    requiredMonths: 6,
-    preview: {
-      bg: "#0B1020",
-      surface: "#111827",
-      accent: "#22D3EE",
-      text: "#E0F2FE"
-    }
-  },
-  {
-    id: "legendary",
-    name: {
-      es: "Legendary",
-      en: "Legendary"
-    },
-    description: {
-      es: "La recompensa visual para los usuarios top.",
-      en: "The visual reward for top users."
-    },
-    requiredMonths: 12,
-    preview: {
-      bg: "#1C1917",
-      surface: "#292524",
-      accent: "#FBBF24",
-      text: "#FEF3C7"
-    }
-  }
-];
+import {
+  AppThemeId,
+  availableThemes,
+  canUseTheme,
+  getPremiumMonths
+} from "../theme";
 
 export default function ThemeSelector({
   currentThemeId,
   plan,
   premiumStartedAt,
-  locale = "en"
+  locale
 }: {
-  currentThemeId: string;
-  plan: string;
+  currentThemeId: AppThemeId;
+  plan?: string;
   premiumStartedAt?: string | null;
-  locale?: "en" | "es";
+  locale: "en" | "es";
 }) {
-  const [pendingTheme, setPendingTheme] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const unlockedThemes = useMemo(() => {
-    if (plan === "free") {
-      return ["classic"];
-    }
-
-    return getUnlockedThemes(premiumStartedAt);
-  }, [plan, premiumStartedAt]);
+  const premiumMonths = getPremiumMonths(premiumStartedAt);
 
   const text = {
-    current: locale === "es" ? "Actual" : "Current",
-    active: locale === "es" ? "Usando ahora" : "Currently active",
-    locked: locale === "es" ? "Bloqueado" : "Locked",
-    unlockAt:
-      locale === "es" ? "Se desbloquea en" : "Unlocks at",
-    month: locale === "es" ? "mes" : "month",
-    months: locale === "es" ? "meses" : "months",
+    title: locale === "es" ? "Selecciona tu theme" : "Choose your theme",
+    active: locale === "es" ? "Activa" : "Active",
+    apply: locale === "es" ? "Aplicar" : "Apply",
+    applying: locale === "es" ? "Aplicando..." : "Applying...",
+    saved:
+      locale === "es"
+        ? "Theme aplicada correctamente."
+        : "Theme applied successfully.",
+    locked: locale === "es" ? "Bloqueada" : "Locked",
+    free: locale === "es" ? "Gratis" : "Free",
+    premium: locale === "es" ? "Premium" : "Premium",
+    marketPro: "Market Pro",
+    annual: locale === "es" ? "Anual" : "Annual",
     availableNow:
       locale === "es" ? "Disponible ahora" : "Available now",
-    starterOnly:
+    needPremium:
       locale === "es"
-        ? "El plan Starter solo puede usar Classic."
-        : "Starter plan can only use Classic.",
-    loyaltyHint:
+        ? "Requiere plan de pago."
+        : "Requires a paid plan.",
+    needMarketPro:
       locale === "es"
-        ? "Los themes loyalty se desbloquean según tu antigüedad premium."
-        : "Loyalty themes unlock based on your premium age."
+        ? "Requiere Market Pro."
+        : "Requires Market Pro.",
+    needAnnual:
+      locale === "es"
+        ? "Reservada para pack anual."
+        : "Reserved for annual bundle.",
+    loyaltyMonths:
+      locale === "es"
+        ? "Meses de fidelidad"
+        : "Loyalty months",
+    loyaltyLocked:
+      locale === "es"
+        ? "Se desbloquea por antigüedad."
+        : "Unlocks with loyalty.",
+    genericError:
+      locale === "es"
+        ? "No se pudo aplicar la theme."
+        : "Could not apply theme."
   };
 
-  function applyTheme(themeId: string) {
+  const items = useMemo(() => {
+    return availableThemes.map((theme) => {
+      const allowed = canUseTheme({
+        themeId: theme.id,
+        plan,
+        premiumStartedAt
+      });
+
+      let accessLabel = text.free;
+      let accessHint = text.availableNow;
+
+      switch (theme.access.kind) {
+        case "free":
+          accessLabel = text.free;
+          accessHint = text.availableNow;
+          break;
+
+        case "premium":
+          accessLabel = text.premium;
+          accessHint = allowed ? text.availableNow : text.needPremium;
+          break;
+
+        case "market_pro":
+          accessLabel = text.marketPro;
+          accessHint = allowed ? text.availableNow : text.needMarketPro;
+          break;
+
+        case "annual_bundle":
+          accessLabel = text.annual;
+          accessHint = text.needAnnual;
+          break;
+
+        case "loyalty":
+          accessLabel = `${text.loyaltyMonths}: ${theme.access.monthsRequired}`;
+          accessHint = allowed
+            ? text.availableNow
+            : `${text.loyaltyLocked} ${premiumMonths}/${theme.access.monthsRequired}`;
+          break;
+      }
+
+      return {
+        ...theme,
+        allowed,
+        active: currentThemeId === theme.id,
+        accessLabel,
+        accessHint
+      };
+    });
+  }, [currentThemeId, plan, premiumMonths, premiumStartedAt, text]);
+
+  async function handleApply(themeId: AppThemeId) {
+    const selectedTheme = availableThemes.find((theme) => theme.id === themeId);
+
+    if (!selectedTheme) {
+      setMessage(text.genericError);
+      return;
+    }
+
+    const allowed = canUseTheme({
+      themeId,
+      plan,
+      premiumStartedAt
+    });
+
+    if (!allowed) {
+      switch (selectedTheme.access.kind) {
+        case "premium":
+          setMessage(text.needPremium);
+          return;
+        case "market_pro":
+          setMessage(text.needMarketPro);
+          return;
+        case "annual_bundle":
+          setMessage(text.needAnnual);
+          return;
+        case "loyalty":
+          setMessage(
+            `${text.loyaltyLocked} ${premiumMonths}/${selectedTheme.access.monthsRequired}`
+          );
+          return;
+        default:
+          setMessage(text.genericError);
+          return;
+      }
+    }
+
     try {
-      setPendingTheme(themeId);
-      document.cookie = `ui_theme=${encodeURIComponent(themeId)}; path=/; max-age=31536000`;
+      setSaving(true);
+      setMessage(null);
+
+      document.cookie = `ui_theme=${encodeURIComponent(
+        themeId
+      )}; path=/; max-age=31536000; samesite=lax`;
+
+      setMessage(text.saved);
       window.location.reload();
     } catch {
-      setPendingTheme(null);
+      setMessage(text.genericError);
+    } finally {
+      setSaving(false);
     }
   }
 
   return (
-    <div>
+    <section>
       <div
         style={{
-          marginBottom: 14,
-          fontSize: 13,
-          color: "#6B7280",
-          lineHeight: 1.6
+          fontSize: 14,
+          fontWeight: 800,
+          marginBottom: 12
         }}
       >
-        {plan === "free" ? text.starterOnly : text.loyaltyHint}
+        {text.title}
       </div>
 
       <div
@@ -188,166 +188,144 @@ export default function ThemeSelector({
           gap: 12
         }}
       >
-        {THEMES.map((theme) => {
-          const unlocked = unlockedThemes.includes(theme.id);
-          const active = currentThemeId === theme.id;
-          const monthsLabel =
-            theme.requiredMonths === 1 ? text.month : text.months;
-
-          return (
-            <button
-              key={theme.id}
-              type="button"
-              disabled={!unlocked || pendingTheme !== null}
-              onClick={() => applyTheme(theme.id)}
+        {items.map((item) => (
+          <article
+            key={item.id}
+            style={{
+              border: `1px solid ${item.colors.border}`,
+              borderRadius: item.radius.lg,
+              background: item.colors.surface,
+              boxShadow: item.shadow.soft,
+              overflow: "hidden"
+            }}
+          >
+            <div
               style={{
-                textAlign: "left",
-                border: active
-                  ? "2px solid #111827"
-                  : unlocked
-                    ? "1px solid #E5E7EB"
-                    : "1px solid #E5E7EB",
-                borderRadius: 18,
+                height: 72,
+                background: `linear-gradient(135deg, ${item.colors.bg} 0%, ${item.colors.surfaceAlt} 100%)`,
+                borderBottom: `1px solid ${item.colors.border}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "12px 14px"
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 900,
+                    color: item.colors.text
+                  }}
+                >
+                  {item.label}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 4,
+                    fontSize: 12,
+                    color: item.colors.textMuted
+                  }}
+                >
+                  {item.accessLabel}
+                </div>
+              </div>
+
+              {item.active && (
+                <span
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: 999,
+                    background: item.colors.gold,
+                    color: item.colors.black,
+                    fontSize: 11,
+                    fontWeight: 900
+                  }}
+                >
+                  {text.active}
+                </span>
+              )}
+            </div>
+
+            <div
+              style={{
                 padding: 14,
-                background: unlocked ? "#FFFFFF" : "#F9FAFB",
-                cursor:
-                  unlocked && pendingTheme === null ? "pointer" : "not-allowed",
-                opacity: unlocked ? 1 : 0.72,
-                boxShadow: active
-                  ? "0 10px 30px rgba(15,23,42,0.12)"
-                  : "0 8px 20px rgba(15,23,42,0.06)"
+                color: item.colors.text
               }}
             >
               <div
                 style={{
-                  height: 86,
-                  borderRadius: 14,
-                  padding: 10,
-                  background: theme.preview.bg,
-                  border: "1px solid rgba(0,0,0,0.08)",
-                  marginBottom: 12,
-                  position: "relative",
-                  overflow: "hidden"
-                }}
-              >
-                <div
-                  style={{
-                    width: "72%",
-                    height: 16,
-                    borderRadius: 999,
-                    background: theme.preview.accent,
-                    marginBottom: 8
-                  }}
-                />
-                <div
-                  style={{
-                    width: "100%",
-                    height: 42,
-                    borderRadius: 12,
-                    background: theme.preview.surface,
-                    border: "1px solid rgba(255,255,255,0.08)"
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 10,
-                    top: 10,
-                    fontSize: 11,
-                    fontWeight: 900,
-                    color: theme.preview.text,
-                    background: "rgba(255,255,255,0.12)",
-                    padding: "4px 8px",
-                    borderRadius: 999,
-                    backdropFilter: "blur(4px)"
-                  }}
-                >
-                  {theme.name[locale]}
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: 10,
-                  alignItems: "center",
-                  marginBottom: 6
-                }}
-              >
-                <div
-                  style={{
-                    fontWeight: 900,
-                    fontSize: 15,
-                    color: "#111827"
-                  }}
-                >
-                  {theme.name[locale]}
-                </div>
-
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 900,
-                    borderRadius: 999,
-                    padding: "4px 8px",
-                    background: active
-                      ? "#111827"
-                      : unlocked
-                        ? "#F3F4F6"
-                        : "#E5E7EB",
-                    color: active ? "#FFFFFF" : unlocked ? "#111827" : "#6B7280",
-                    whiteSpace: "nowrap"
-                  }}
-                >
-                  {active
-                    ? text.active
-                    : unlocked
-                      ? text.availableNow
-                      : text.locked}
-                </span>
-              </div>
-
-              <div
-                style={{
                   fontSize: 13,
-                  color: "#6B7280",
-                  lineHeight: 1.55,
-                  marginBottom: 10,
-                  minHeight: 40
+                  lineHeight: 1.6,
+                  minHeight: 42
                 }}
               >
-                {theme.description[locale]}
+                {item.description}
               </div>
 
               <div
                 style={{
+                  marginTop: 10,
                   fontSize: 12,
-                  fontWeight: 800,
-                  color: unlocked ? "#374151" : "#9CA3AF"
+                  color: item.colors.textMuted,
+                  lineHeight: 1.5,
+                  minHeight: 36
                 }}
               >
-                {theme.requiredMonths === 0
-                  ? text.availableNow
-                  : `${text.unlockAt} ${theme.requiredMonths} ${monthsLabel}`}
+                {item.accessHint}
               </div>
 
-              {active && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    fontSize: 12,
-                    fontWeight: 800,
-                    color: "#111827"
-                  }}
-                >
-                  {text.current}
-                </div>
-              )}
-            </button>
-          );
-        })}
+              <button
+                type="button"
+                onClick={() => handleApply(item.id)}
+                disabled={saving || item.active || !item.allowed}
+                style={{
+                  marginTop: 12,
+                  width: "100%",
+                  border: "none",
+                  borderRadius: 999,
+                  padding: "10px 14px",
+                  background:
+                    item.active || !item.allowed
+                      ? item.colors.border
+                      : item.colors.black,
+                  color:
+                    item.active || !item.allowed
+                      ? item.colors.textMuted
+                      : "white",
+                  fontWeight: 900,
+                  cursor:
+                    item.active || !item.allowed || saving
+                      ? "not-allowed"
+                      : "pointer"
+                }}
+              >
+                {saving && !item.active
+                  ? text.applying
+                  : item.active
+                    ? text.active
+                    : item.allowed
+                      ? text.apply
+                      : text.locked}
+              </button>
+            </div>
+          </article>
+        ))}
       </div>
-    </div>
+
+      {message && (
+        <div
+          style={{
+            marginTop: 14,
+            fontSize: 13,
+            color: "#6B7280",
+            lineHeight: 1.6
+          }}
+        >
+          {message}
+        </div>
+      )}
+    </section>
   );
 }

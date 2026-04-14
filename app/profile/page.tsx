@@ -2,8 +2,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale } from "../i18n";
 import { getThemeById, AppThemeId } from "../theme";
-import { getUnlockedThemes } from "../lib/themes";
+import { getUnlockedThemes, getNextLockedTheme } from "../lib/themes";
 import ThemeSelector from "./ThemeSelector";
+import CopyPublicProfileButton from "./CopyPublicProfileButton";
 import {
   formatLimit,
   formatPlanLabel,
@@ -113,18 +114,6 @@ function monthsSince(dateString?: string | null) {
   return Math.max(0, months);
 }
 
-function nextThemeMilestone(unlockedIds: string[]) {
-  const order = [
-    { id: "classic", months: 0 },
-    { id: "dark", months: 1 },
-    { id: "dragon", months: 3 },
-    { id: "cyber", months: 6 },
-    { id: "legendary", months: 12 }
-  ];
-
-  return order.find((theme) => !unlockedIds.includes(theme.id)) ?? null;
-}
-
 function prettifyAchievementId(id: string, locale: "en" | "es") {
   const labels: Record<string, { es: string; en: string }> = {
     first_item: { es: "Primer objeto", en: "First item" },
@@ -214,11 +203,13 @@ export default async function ProfilePage({
 
   const plan = normalizePlan(me?.plan);
   const premiumStartedAt = me?.premiumStartedAt ?? null;
-  const unlockedThemes = getUnlockedThemes(premiumStartedAt);
+
+  const unlockedThemes = getUnlockedThemes(premiumStartedAt, plan);
+  const nextTheme = getNextLockedTheme(premiumStartedAt, plan);
+
   const unlockedAchievements = achievements.filter((a) => a.unlocked);
   const unlockedAchievementsCount = unlockedAchievements.length;
   const premiumMonths = monthsSince(premiumStartedAt);
-  const nextTheme = nextThemeMilestone(unlockedThemes);
 
   const itemCount = items.length;
   const wishlistCount = wishlist.length;
@@ -231,6 +222,7 @@ export default async function ProfilePage({
 
   const langEnHref = `/profile?lang=en`;
   const langEsHref = `/profile?lang=es`;
+  const publicProfilePath = me?.id ? `/u/${me.id}` : null;
 
   const text = {
     collection: locale === "es" ? "Colección" : "Collection",
@@ -250,8 +242,8 @@ export default async function ProfilePage({
 
     collectorHint:
       locale === "es"
-        ? "Collector desbloquea más espacio para colección, más wishlist y themes loyalty."
-        : "Collector unlocks more collection space, more wishlist and loyalty themes.",
+        ? "Collector desbloquea más espacio para colección, más wishlist y acceso a themes premium."
+        : "Collector unlocks more collection space, more wishlist and access to premium themes.",
 
     marketHint:
       locale === "es"
@@ -284,15 +276,15 @@ export default async function ProfilePage({
       locale === "es" ? "Themes desbloqueables" : "Unlockable themes",
     loyaltyText:
       locale === "es"
-        ? "Los themes premium se desbloquean con tu antigüedad. Cuanto más tiempo mantienes tu plan, más identidad visual ganas."
-        : "Premium themes unlock with loyalty. The longer you stay subscribed, the more visual identity you earn.",
+        ? "Classic y Dark están disponibles para todos. Las themes premium amplían la identidad visual de tu vault."
+        : "Classic and Dark are available for everyone. Premium themes expand the visual identity of your vault.",
 
     unlockedThemes:
       locale === "es" ? "Themes desbloqueados" : "Unlocked themes",
     premiumMonths:
       locale === "es" ? "Meses premium" : "Premium months",
     nextUnlock:
-      locale === "es" ? "Próximo desbloqueo" : "Next unlock",
+      locale === "es" ? "Próxima theme" : "Next theme",
 
     achievementsTitle:
       locale === "es" ? "Progreso y logros" : "Progress and achievements",
@@ -305,7 +297,17 @@ export default async function ProfilePage({
     inProgress:
       locale === "es" ? "En progreso" : "In progress",
     unlocked:
-      locale === "es" ? "Desbloqueado" : "Unlocked"
+      locale === "es" ? "Desbloqueado" : "Unlocked",
+    viewPublicProfile:
+      locale === "es" ? "Ver perfil público" : "View public profile",
+    copyPublicLink:
+      locale === "es" ? "Copiar enlace" : "Copy link",
+    copied:
+      locale === "es" ? "Enlace copiado" : "Link copied",
+    copyError:
+      locale === "es"
+        ? "No se pudo copiar el enlace."
+        : "Could not copy the link."
   };
 
   return (
@@ -463,6 +465,85 @@ export default async function ProfilePage({
             </div>
           </div>
         </section>
+
+        {publicProfilePath && (
+          <section
+            style={{
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.radius.xl,
+              padding: 16,
+              background: theme.colors.surface,
+              boxShadow: theme.shadow.soft,
+              marginBottom: 18
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "center",
+                flexWrap: "wrap"
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontWeight: 900,
+                    fontSize: 15,
+                    color: theme.colors.text
+                  }}
+                >
+                  {text.viewPublicProfile}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 6,
+                    fontSize: 13,
+                    color: theme.colors.textMuted,
+                    lineHeight: 1.6
+                  }}
+                >
+                  {publicProfilePath}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                  alignItems: "center"
+                }}
+              >
+                <a
+                  href={publicProfilePath}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    textDecoration: "none",
+                    borderRadius: 999,
+                    padding: "10px 14px",
+                    background: theme.colors.black,
+                    color: "white",
+                    fontWeight: 900
+                  }}
+                >
+                  {text.viewPublicProfile}
+                </a>
+
+                <CopyPublicProfileButton
+                  path={publicProfilePath}
+                  label={text.copyPublicLink}
+                  copiedLabel={text.copied}
+                  errorLabel={text.copyError}
+                  theme={theme}
+                />
+              </div>
+            </div>
+          </section>
+        )}
 
         <section
           style={{
@@ -636,7 +717,7 @@ export default async function ProfilePage({
                 <MiniStat
                   theme={theme}
                   label={text.nextUnlock}
-                  value={nextTheme ? `${nextTheme.id} · ${nextTheme.months}m` : "—"}
+                  value={nextTheme ? nextTheme.label : "—"}
                 />
               </div>
 
