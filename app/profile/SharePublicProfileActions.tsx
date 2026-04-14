@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { getThemeById } from "../theme";
 
 export default function SharePublicProfileActions({
@@ -14,11 +14,13 @@ export default function SharePublicProfileActions({
 }) {
   const [copied, setCopied] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [origin, setOrigin] = useState("");
 
-  const absoluteUrl = useMemo(() => {
-    if (typeof window === "undefined") return path;
-    return `${window.location.origin}${path}`;
-  }, [path]);
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const absoluteUrl = origin ? `${origin}${path}` : path;
 
   const text = {
     copy: locale === "es" ? "Copiar enlace" : "Copy link",
@@ -26,7 +28,7 @@ export default function SharePublicProfileActions({
     share: locale === "es" ? "Compartir" : "Share",
     sharing: locale === "es" ? "Compartiendo..." : "Sharing...",
     x: locale === "es" ? "Compartir en X" : "Share on X",
-    whatsapp: locale === "es" ? "WhatsApp" : "WhatsApp",
+    whatsapp: "WhatsApp",
     shareText:
       locale === "es"
         ? "Mira mi perfil público de coleccionista en DrakoryVault"
