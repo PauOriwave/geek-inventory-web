@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getThemeById, AppThemeId } from "../../theme";
 import { getUnlockedThemes } from "../../lib/themes";
@@ -41,6 +42,7 @@ type PublicProfile = {
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
 
 async function getPublicProfile(id: string): Promise<PublicProfile | null> {
   try {
@@ -74,6 +76,43 @@ function formatCategory(value: string) {
   return value
     .replace(/_/g, " ")
     .replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ id: string }> | { id: string };
+}): Promise<Metadata> {
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const profile = await getPublicProfile(resolvedParams.id);
+
+  if (!profile) {
+    return {
+      title: "Collector profile • DrakoryVault",
+      description: "Public collector profile on DrakoryVault."
+    };
+  }
+
+  const title = `${profile.displayName} • DrakoryVault`;
+  const description = `${profile.stats.totalItems} items • ${profile.stats.totalValue.toFixed(
+    2
+  )} € • ${profile.achievements.totalUnlocked} achievements`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}/u/${profile.id}`,
+      type: "profile"
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description
+    }
+  };
 }
 
 export default async function PublicUserPage({

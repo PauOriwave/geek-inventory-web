@@ -4,7 +4,7 @@ import { getLocale } from "../i18n";
 import { getThemeById, AppThemeId } from "../theme";
 import { getUnlockedThemes, getNextLockedTheme } from "../lib/themes";
 import ThemeSelector from "./ThemeSelector";
-import CopyPublicProfileButton from "./CopyPublicProfileButton";
+import SharePublicProfileActions from "./SharePublicProfileActions";
 import {
   formatLimit,
   formatPlanLabel,
@@ -298,16 +298,14 @@ export default async function ProfilePage({
       locale === "es" ? "En progreso" : "In progress",
     unlocked:
       locale === "es" ? "Desbloqueado" : "Unlocked",
-    viewPublicProfile:
-      locale === "es" ? "Ver perfil público" : "View public profile",
-    copyPublicLink:
-      locale === "es" ? "Copiar enlace" : "Copy link",
-    copied:
-      locale === "es" ? "Enlace copiado" : "Link copied",
-    copyError:
+    publicProfileTitle:
+      locale === "es" ? "Comparte tu perfil" : "Share your profile",
+    publicProfileHint:
       locale === "es"
-        ? "No se pudo copiar el enlace."
-        : "Could not copy the link."
+        ? "Abre tu perfil público y compártelo en redes o mensajería."
+        : "Open your public profile and share it on social media or messaging apps.",
+    openPublicProfile:
+      locale === "es" ? "Abrir perfil público" : "Open public profile"
   };
 
   return (
@@ -486,7 +484,7 @@ export default async function ProfilePage({
                 flexWrap: "wrap"
               }}
             >
-              <div>
+              <div style={{ maxWidth: 560 }}>
                 <div
                   style={{
                     fontWeight: 900,
@@ -494,7 +492,7 @@ export default async function ProfilePage({
                     color: theme.colors.text
                   }}
                 >
-                  {text.viewPublicProfile}
+                  {text.publicProfileTitle}
                 </div>
 
                 <div
@@ -505,16 +503,26 @@ export default async function ProfilePage({
                     lineHeight: 1.6
                   }}
                 >
+                  {text.publicProfileHint}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 8,
+                    fontSize: 12,
+                    color: theme.colors.textMuted,
+                    wordBreak: "break-all"
+                  }}
+                >
                   {publicProfilePath}
                 </div>
               </div>
 
               <div
                 style={{
-                  display: "flex",
+                  display: "grid",
                   gap: 10,
-                  flexWrap: "wrap",
-                  alignItems: "center"
+                  justifyItems: "start"
                 }}
               >
                 <a
@@ -530,14 +538,12 @@ export default async function ProfilePage({
                     fontWeight: 900
                   }}
                 >
-                  {text.viewPublicProfile}
+                  {text.openPublicProfile}
                 </a>
 
-                <CopyPublicProfileButton
+                <SharePublicProfileActions
                   path={publicProfilePath}
-                  label={text.copyPublicLink}
-                  copiedLabel={text.copied}
-                  errorLabel={text.copyError}
+                  locale={locale}
                   theme={theme}
                 />
               </div>
