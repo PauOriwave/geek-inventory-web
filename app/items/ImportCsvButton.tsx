@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getSessionTokenFromCookie } from "../lib/auth";
 import { theme } from "../theme";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -16,22 +15,17 @@ export default function ImportCsvButton() {
 
   const text = {
     label: locale === "es" ? "Importar CSV" : "Import CSV",
-    loading: locale === "es" ? "Importando…" : "Importing…",
-    noSession: locale === "es" ? "No hay sesión activa" : "No active session",
+    loading: locale === "es" ? "Importando..." : "Importing...",
     failed: locale === "es" ? "Importación fallida" : "Import failed",
     chooseFile:
-      locale === "es" ? "Selecciona un archivo CSV" : "Choose a CSV file"
+      locale === "es" ? "Selecciona un archivo CSV" : "Choose a CSV file",
+    success:
+      locale === "es" ? "Importación completada" : "Import completed"
   };
 
   async function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const token = getSessionTokenFromCookie();
-    if (!token) {
-      alert(text.noSession);
-      return;
-    }
 
     setLoading(true);
 
@@ -39,26 +33,62 @@ export default function ImportCsvButton() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch(`${API}/import/csv`, {
+      const importUrl = `${API}/import/items`;
+
+      console.log("API =", API);
+      console.log("IMPORT URL =", importUrl);
+      console.log("FILE =", {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+
+      const res = await fetch(importUrl, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
+        credentials: "include",
         body: formData
       });
 
-      const data = await res.json().catch(() => null);
+      const rawText = await res.text();
+
+      console.log("IMPORT STATUS =", res.status, res.statusText);
+      console.log("IMPORT RAW RESPONSE =", rawText);
+
+      let data: {
+        inserted?: number;
+        updated?: number;
+        failed?: number;
+        message?: string;
+        stoppedByPlanLimit?: boolean;
+      } | null = null;
+
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        data = null;
+      }
 
       if (!res.ok) {
-        throw new Error(data?.message || text.failed);
+        throw new Error(
+          data?.message ||
+            rawText ||
+            `${text.failed} (${res.status} ${res.statusText})`
+        );
       }
 
       router.refresh();
+
+      alert(
+        `${text.success}. Inserted: ${data?.inserted ?? 0}, updated: ${data?.updated ?? 0}, failed: ${data?.failed ?? 0}.`
+      );
     } catch (err) {
+      console.error("IMPORT ERROR =", err);
       alert(err instanceof Error ? err.message : text.failed);
     } finally {
       setLoading(false);
-      if (inputRef.current) inputRef.current.value = "";
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
     }
   }
 
