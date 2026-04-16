@@ -2,12 +2,14 @@ import { cookies } from "next/headers";
 import { getThemeById, AppThemeId } from "../theme";
 import { getCategoryLabel } from "./categoryLabels";
 
-type HistoryPointSource = "manual" | "import" | "valuation";
-
 type HistoryPoint = {
   date: string;
   total: number;
-  source: HistoryPointSource;
+};
+
+type CollectionHistoryResponse = {
+  base: HistoryPoint[];
+  market: HistoryPoint[];
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -15,7 +17,7 @@ const API = process.env.NEXT_PUBLIC_API_URL!;
 async function getCollectionHistory(
   cookieHeader: string,
   category?: string
-): Promise<HistoryPoint[]> {
+): Promise<CollectionHistoryResponse> {
   try {
     const qs = category ? `?category=${encodeURIComponent(category)}` : "";
 
@@ -27,13 +29,17 @@ async function getCollectionHistory(
     });
 
     if (!res.ok) {
-      return [];
+      return { base: [], market: [] };
     }
 
     const data = await res.json();
-    return Array.isArray(data) ? data : [];
+
+    return {
+      base: Array.isArray(data?.base) ? data.base : [],
+      market: Array.isArray(data?.market) ? data.market : []
+    };
   } catch {
-    return [];
+    return { base: [], market: [] };
   }
 }
 
@@ -51,7 +57,7 @@ export default async function CollectionValueChart({
     (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
   const theme = getThemeById(themeId);
 
-  const points = await getCollectionHistory(cookieHeader, category);
+  const history = await getCollectionHistory(cookieHeader, category);
 
   const title = category
     ? locale === "es"
@@ -66,10 +72,10 @@ export default async function CollectionValueChart({
       ? "Histórico filtrado por categoría"
       : "History filtered by category"
     : locale === "es"
-      ? "Histórico global de snapshots"
-      : "Global snapshot history";
+      ? "Base introducida + validación de mercado"
+      : "Entered baseline + market validation";
 
-  if (points.length === 0) {
+  if (history.base.length === 0 && history.market.length === 0) {
     return (
       <section
         style={{
@@ -125,7 +131,7 @@ export default async function CollectionValueChart({
 
   return (
     <CollectionChartCard
-      points={points}
+      history={history}
       title={title}
       subtitle={subtitle}
       locale={locale}
@@ -135,38 +141,37 @@ export default async function CollectionValueChart({
 }
 
 function CollectionChartCard({
-  points,
+  history,
   title,
   subtitle,
   locale,
   theme
 }: {
-  points: HistoryPoint[];
+  history: CollectionHistoryResponse;
   title: string;
   subtitle: string;
   locale: "en" | "es";
   theme: ReturnType<typeof getThemeById>;
 }) {
   const width = 1040;
-  const height = 380;
+  const height = 400;
   const paddingLeft = 56;
   const paddingRight = 24;
   const paddingTop = 24;
-  const paddingBottom = 48;
+  const paddingBottom = 52;
 
-  const values = points.map((p) => p.total);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const allPoints = [...history.base, ...history.market].sort((a, b) =>
+    a.date.localeCompare(b.date)
+  );
 
-  const hasSinglePoint = points.length === 1;
-  const paddedMin = hasSinglePoint
-    ? Math.max(0, min * 0.92)
-    : Math.max(0, min * 0.94);
-  const paddedMax = hasSinglePoint ? max * 1.08 || max + 1 : max * 1.04;
-  const range = Math.max(1, paddedMax - paddedMin);
+  const basePoints = history.base;
+  const marketPoints = history.market;
 
-  const first = points[0].total;
-  const latest = points[points.length - 1].total;
+  const visibleSeries =
+    marketPoints.length > 0 ? marketPoints : basePoints;
+
+  const first = visibleSeries[0]?.total ?? 0;
+  const latest = visibleSeries[visibleSeries.length - 1]?.total ?? 0;
   const delta = latest - first;
   const percent = first > 0 ? (delta / first) * 100 : 0;
 
@@ -185,31 +190,62 @@ function CollectionChartCard({
       ? "rgba(180,35,24,0.10)"
       : theme.colors.surfaceAlt;
 
+  const values = allPoints.map((p) => p.total);
+  const min = values.length > 0 ? Math.min(...values) : 0;
+  const max = values.length > 0 ? Math.max(...values) : 1;
+
+  const hasSinglePoint = allPoints.length === 1;
+  const paddedMin = hasSinglePoint
+    ? Math.max(0, min * 0.92)
+    : Math.max(0, min * 0.94);
+  const paddedMax = hasSinglePoint ? max * 1.08 || max + 1 : max * 1.04;
+  const range = Math.max(1, paddedMax - paddedMin);
+
+  const earliestDate = allPoints[0]?.date ?? new Date().toISOString();
+  const latestDate = allPoints[allPoints.length - 1]?.date ?? earliestDate;
+
+  const allDates = [...new Set(allPoints.map((p) => p.date))].sort();
+
   const usableWidth = width - paddingLeft - paddingRight;
   const usableHeight = height - paddingTop - paddingBottom;
 
-  const toX = (index: number) => {
-    if (points.length === 1) return paddingLeft + usableWidth / 2;
-    return paddingLeft + (index * usableWidth) / (points.length - 1);
+  const toXByDate = (date: string) => {
+    if (allDates.length === 1) return paddingLeft + usableWidth / 2;
+    const index = allDates.indexOf(date);
+    return paddingLeft + (index * usableWidth) / (allDates.length - 1);
   };
 
   const toY = (value: number) => {
     return paddingTop + (1 - (value - paddedMin) / range) * usableHeight;
   };
 
-  const coords = points.map((point, index) => ({
-    x: toX(index),
+  const baseCoords = basePoints.map((point) => ({
+    x: toXByDate(point.date),
     y: toY(point.total),
     value: point.total,
-    date: point.date,
-    source: point.source
+    date: point.date
   }));
 
-  const yTicks = buildNiceTicks(paddedMin, paddedMax, 4);
-  const markerIndexes = getMarkerIndexes(points.length);
+  const marketCoords = marketPoints.map((point) => ({
+    x: toXByDate(point.date),
+    y: toY(point.total),
+    value: point.total,
+    date: point.date
+  }));
 
-  const lineSegments = buildLineSegments(coords);
-  const areaPath = hasSinglePoint ? "" : buildAreaPath(coords, height - paddingBottom);
+  const basePath =
+    baseCoords.length >= 2 ? buildSmoothPath(baseCoords) : "";
+  const marketPath =
+    marketCoords.length >= 2 ? buildSmoothPath(marketCoords) : "";
+
+  const marketAreaPath =
+    marketCoords.length >= 2
+      ? buildAreaPath(marketCoords, height - paddingBottom)
+      : "";
+
+  const yTicks = buildNiceTicks(paddedMin, paddedMax, 4);
+  const baseMarkerIndexes = getMarkerIndexes(baseCoords.length);
+  const marketMarkerIndexes = getMarkerIndexes(marketCoords.length);
 
   return (
     <section
@@ -300,14 +336,8 @@ function CollectionChartCard({
         }}
       >
         <LegendPill
-          label={locale === "es" ? "Base manual" : "Manual base"}
-          color="#9CA3AF"
-          dashed
-          theme={theme}
-        />
-        <LegendPill
-          label={locale === "es" ? "Importado" : "Imported"}
-          color="#64748B"
+          label={locale === "es" ? "Base manual/importada" : "Manual/import baseline"}
+          color="#94A3B8"
           dashed
           theme={theme}
         />
@@ -317,25 +347,6 @@ function CollectionChartCard({
           theme={theme}
         />
       </div>
-
-      {hasSinglePoint && (
-        <div
-          style={{
-            marginBottom: 14,
-            padding: "10px 12px",
-            borderRadius: 14,
-            background: theme.colors.surfaceAlt,
-            border: `1px solid ${theme.colors.border}`,
-            color: theme.colors.textMuted,
-            fontSize: 13,
-            lineHeight: 1.6
-          }}
-        >
-          {locale === "es"
-            ? "Este es tu punto inicial de histórico. A medida que importes más datos o ejecutes nuevas valoraciones, aquí empezará a dibujarse la evolución real."
-            : "This is your initial history point. As you import more data or run new valuations, the real evolution will start to appear here."}
-        </div>
-      )}
 
       <div
         style={{
@@ -354,13 +365,13 @@ function CollectionChartCard({
           }}
         >
           <defs>
-            <linearGradient id="collectionAreaFillV4" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.22" />
-              <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.08" />
+            <linearGradient id="marketAreaFillV5" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.26" />
+              <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.09" />
               <stop offset="100%" stopColor={theme.colors.gold} stopOpacity="0.02" />
             </linearGradient>
 
-            <filter id="softGlowV4">
+            <filter id="marketGlowV5">
               <feGaussianBlur stdDeviation="5" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -402,89 +413,123 @@ function CollectionChartCard({
             stroke={theme.colors.border}
           />
 
-          {!hasSinglePoint && (
+          {marketAreaPath && (
+            <path d={marketAreaPath} fill="url(#marketAreaFillV5)" stroke="none" />
+          )}
+
+          {basePath && (
+            <path
+              d={basePath}
+              fill="none"
+              stroke="#94A3B8"
+              strokeWidth="3"
+              strokeDasharray="7 8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity={0.95}
+            />
+          )}
+
+          {marketPath && (
             <>
-              <path d={areaPath} fill="url(#collectionAreaFillV4)" stroke="none" />
-
-              {lineSegments.map((segment, index) => {
-                const color =
-                  segment.source === "valuation"
-                    ? theme.colors.gold
-                    : segment.source === "import"
-                      ? "#64748B"
-                      : "#9CA3AF";
-
-                const dashed = segment.source !== "valuation";
-
-                return (
-                  <path
-                    key={`${segment.source}-${index}`}
-                    d={segment.path}
-                    fill="none"
-                    stroke={color}
-                    strokeOpacity={segment.source === "valuation" ? 1 : 0.95}
-                    strokeWidth={segment.source === "valuation" ? 4 : 3}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeDasharray={dashed ? "7 7" : undefined}
-                    filter={segment.source === "valuation" ? "url(#softGlowV4)" : undefined}
-                  />
-                );
-              })}
+              <path
+                d={marketPath}
+                fill="none"
+                stroke={theme.colors.gold}
+                strokeOpacity="0.16"
+                strokeWidth="12"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                filter="url(#marketGlowV5)"
+              />
+              <path
+                d={marketPath}
+                fill="none"
+                stroke={theme.colors.gold}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </>
           )}
 
-          {hasSinglePoint && (
+          {baseCoords.length === 1 && (
             <>
               <line
                 x1={paddingLeft}
-                y1={toY(points[0].total)}
+                y1={baseCoords[0].y}
                 x2={width - paddingRight}
-                y2={toY(points[0].total)}
+                y2={baseCoords[0].y}
+                stroke="#94A3B8"
+                strokeWidth="3"
+                strokeDasharray="8 8"
+                opacity={0.9}
+              />
+              <circle cx={baseCoords[0].x} cy={baseCoords[0].y} r="6" fill="#94A3B8" />
+            </>
+          )}
+
+          {marketCoords.length === 1 && (
+            <>
+              <line
+                x1={paddingLeft}
+                y1={marketCoords[0].y}
+                x2={width - paddingRight}
+                y2={marketCoords[0].y}
                 stroke={theme.colors.gold}
                 strokeWidth="3"
                 strokeDasharray="8 8"
-                opacity={0.8}
+                opacity={0.9}
               />
+              <circle cx={marketCoords[0].x} cy={marketCoords[0].y} r="7" fill={theme.colors.gold} />
               <circle
-                cx={coords[0].x}
-                cy={coords[0].y}
-                r="7"
-                fill={theme.colors.gold}
-              />
-              <circle
-                cx={coords[0].x}
-                cy={coords[0].y}
+                cx={marketCoords[0].x}
+                cy={marketCoords[0].y}
                 r="16"
                 fill={theme.colors.gold}
-                opacity="0.14"
+                opacity="0.12"
               />
             </>
           )}
 
-          {!hasSinglePoint &&
-            markerIndexes.map((index) => {
-              const point = coords[index];
-              const isLast = index === coords.length - 1;
-              const stroke =
-                point.source === "valuation"
-                  ? theme.colors.gold
-                  : point.source === "import"
-                    ? "#64748B"
-                    : "#9CA3AF";
+          {baseCoords.length > 1 &&
+            baseMarkerIndexes.map((index) => {
+              const point = baseCoords[index];
 
               return (
-                <g key={`marker-${index}`}>
+                <g key={`base-marker-${index}`}>
                   <circle
                     cx={point.x}
                     cy={point.y}
-                    r={isLast ? "5.5" : "3.5"}
+                    r="3"
+                    fill={theme.colors.surface}
+                    stroke="#94A3B8"
+                    strokeWidth="2"
+                  />
+                  <circle cx={point.x} cy={point.y} r="12" fill="transparent">
+                    <title>{`${formatChartDate(point.date, locale)} — ${point.value.toFixed(2)} € — ${locale === "es" ? "Base" : "Baseline"}`}</title>
+                  </circle>
+                </g>
+              );
+            })}
+
+          {marketCoords.length > 1 &&
+            marketMarkerIndexes.map((index) => {
+              const point = marketCoords[index];
+              const isLast = index === marketCoords.length - 1;
+
+              return (
+                <g key={`market-marker-${index}`}>
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={isLast ? "5.5" : "4"}
                     fill={isLast ? theme.colors.black : theme.colors.surface}
-                    stroke={stroke}
+                    stroke={theme.colors.gold}
                     strokeWidth="2.5"
                   />
                   <circle cx={point.x} cy={point.y} r="14" fill="transparent">
-                    <title>{`${formatChartDate(point.date, locale)} — ${point.value.toFixed(2)} € — ${formatSource(point.source, locale)}`}</title>
+                    <title>{`${formatChartDate(point.date, locale)} — ${point.value.toFixed(2)} € — ${locale === "es" ? "Mercado" : "Market"}`}</title>
                   </circle>
                 </g>
               );
@@ -496,7 +541,7 @@ function CollectionChartCard({
             fontSize="11"
             fill={theme.colors.textMuted}
           >
-            {formatChartDate(points[0].date, locale)}
+            {formatChartDate(earliestDate, locale)}
           </text>
 
           <text
@@ -507,8 +552,8 @@ function CollectionChartCard({
             fill={theme.colors.textMuted}
           >
             {locale === "es"
-              ? `${points.length} snapshots`
-              : `${points.length} snapshots`}
+              ? `Base: ${basePoints.length} · Mercado: ${marketPoints.length}`
+              : `Base: ${basePoints.length} · Market: ${marketPoints.length}`}
           </text>
 
           <text
@@ -518,7 +563,7 @@ function CollectionChartCard({
             textAnchor="end"
             fill={theme.colors.textMuted}
           >
-            {formatChartDate(points[points.length - 1].date, locale)}
+            {formatChartDate(latestDate, locale)}
           </text>
         </svg>
       </div>
@@ -651,39 +696,6 @@ function buildAreaPath(
   return `${linePath} L ${points[points.length - 1].x} ${bottomY} L ${points[0].x} ${bottomY} Z`;
 }
 
-function buildLineSegments(
-  points: Array<{
-    x: number;
-    y: number;
-    source: HistoryPointSource;
-  }>
-) {
-  if (points.length < 2) return [];
-
-  const segments: Array<{
-    source: HistoryPointSource;
-    path: string;
-  }> = [];
-
-  for (let i = 0; i < points.length - 1; i++) {
-    const current = points[i];
-    const next = points[i + 1];
-    const controlX = (current.x + next.x) / 2;
-
-    const path = [
-      `M ${current.x} ${current.y}`,
-      `C ${controlX} ${current.y}, ${controlX} ${next.y}, ${next.x} ${next.y}`
-    ].join(" ");
-
-    segments.push({
-      source: next.source,
-      path
-    });
-  }
-
-  return segments;
-}
-
 function getMarkerIndexes(length: number) {
   if (length <= 2) {
     return Array.from({ length }, (_, i) => i);
@@ -719,16 +731,4 @@ function formatEuroCompact(value: number) {
   }
 
   return `${Math.round(value)} €`;
-}
-
-function formatSource(source: HistoryPointSource, locale: "en" | "es") {
-  if (source === "manual") {
-    return locale === "es" ? "Manual" : "Manual";
-  }
-
-  if (source === "import") {
-    return locale === "es" ? "Importado" : "Imported";
-  }
-
-  return locale === "es" ? "Mercado" : "Market";
 }
