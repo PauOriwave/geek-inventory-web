@@ -2,9 +2,12 @@ import { cookies } from "next/headers";
 import { getThemeById, AppThemeId } from "../theme";
 import { getCategoryLabel } from "./categoryLabels";
 
+type HistoryPointSource = "manual" | "import" | "valuation";
+
 type HistoryPoint = {
   date: string;
   total: number;
+  source: HistoryPointSource;
 };
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
@@ -198,16 +201,15 @@ function CollectionChartCard({
     x: toX(index),
     y: toY(point.total),
     value: point.total,
-    date: point.date
+    date: point.date,
+    source: point.source
   }));
-
-  const linePath = hasSinglePoint ? "" : buildSmoothPath(coords);
-  const areaPath = hasSinglePoint
-    ? ""
-    : `${linePath} L ${coords[coords.length - 1].x} ${height - paddingBottom} L ${coords[0].x} ${height - paddingBottom} Z`;
 
   const yTicks = buildNiceTicks(paddedMin, paddedMax, 4);
   const markerIndexes = getMarkerIndexes(points.length);
+
+  const lineSegments = buildLineSegments(coords);
+  const areaPath = hasSinglePoint ? "" : buildAreaPath(coords, height - paddingBottom);
 
   return (
     <section
@@ -289,6 +291,33 @@ function CollectionChartCard({
         </div>
       </div>
 
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          flexWrap: "wrap",
+          marginBottom: 14
+        }}
+      >
+        <LegendPill
+          label={locale === "es" ? "Base manual" : "Manual base"}
+          color="#9CA3AF"
+          dashed
+          theme={theme}
+        />
+        <LegendPill
+          label={locale === "es" ? "Importado" : "Imported"}
+          color="#64748B"
+          dashed
+          theme={theme}
+        />
+        <LegendPill
+          label={locale === "es" ? "Valoración de mercado" : "Market valuation"}
+          color={theme.colors.gold}
+          theme={theme}
+        />
+      </div>
+
       {hasSinglePoint && (
         <div
           style={{
@@ -325,13 +354,13 @@ function CollectionChartCard({
           }}
         >
           <defs>
-            <linearGradient id="collectionAreaFillV3" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.30" />
-              <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.10" />
+            <linearGradient id="collectionAreaFillV4" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.22" />
+              <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.08" />
               <stop offset="100%" stopColor={theme.colors.gold} stopOpacity="0.02" />
             </linearGradient>
 
-            <filter id="softGlowV3">
+            <filter id="softGlowV4">
               <feGaussianBlur stdDeviation="5" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -375,27 +404,33 @@ function CollectionChartCard({
 
           {!hasSinglePoint && (
             <>
-              <path d={areaPath} fill="url(#collectionAreaFillV3)" stroke="none" />
+              <path d={areaPath} fill="url(#collectionAreaFillV4)" stroke="none" />
 
-              <path
-                d={linePath}
-                fill="none"
-                stroke={theme.colors.gold}
-                strokeOpacity="0.18"
-                strokeWidth="12"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#softGlowV3)"
-              />
+              {lineSegments.map((segment, index) => {
+                const color =
+                  segment.source === "valuation"
+                    ? theme.colors.gold
+                    : segment.source === "import"
+                      ? "#64748B"
+                      : "#9CA3AF";
 
-              <path
-                d={linePath}
-                fill="none"
-                stroke={theme.colors.gold}
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+                const dashed = segment.source !== "valuation";
+
+                return (
+                  <path
+                    key={`${segment.source}-${index}`}
+                    d={segment.path}
+                    fill="none"
+                    stroke={color}
+                    strokeOpacity={segment.source === "valuation" ? 1 : 0.95}
+                    strokeWidth={segment.source === "valuation" ? 4 : 3}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeDasharray={dashed ? "7 7" : undefined}
+                    filter={segment.source === "valuation" ? "url(#softGlowV4)" : undefined}
+                  />
+                );
+              })}
             </>
           )}
 
@@ -431,6 +466,12 @@ function CollectionChartCard({
             markerIndexes.map((index) => {
               const point = coords[index];
               const isLast = index === coords.length - 1;
+              const stroke =
+                point.source === "valuation"
+                  ? theme.colors.gold
+                  : point.source === "import"
+                    ? "#64748B"
+                    : "#9CA3AF";
 
               return (
                 <g key={`marker-${index}`}>
@@ -439,11 +480,11 @@ function CollectionChartCard({
                     cy={point.y}
                     r={isLast ? "5.5" : "3.5"}
                     fill={isLast ? theme.colors.black : theme.colors.surface}
-                    stroke={theme.colors.gold}
+                    stroke={stroke}
                     strokeWidth="2.5"
                   />
                   <circle cx={point.x} cy={point.y} r="14" fill="transparent">
-                    <title>{`${formatChartDate(point.date, locale)} — ${point.value.toFixed(2)} €`}</title>
+                    <title>{`${formatChartDate(point.date, locale)} — ${point.value.toFixed(2)} € — ${formatSource(point.source, locale)}`}</title>
                   </circle>
                 </g>
               );
@@ -535,6 +576,45 @@ function SummaryChip({
   );
 }
 
+function LegendPill({
+  label,
+  color,
+  dashed,
+  theme
+}: {
+  label: string;
+  color: string;
+  dashed?: boolean;
+  theme: ReturnType<typeof getThemeById>;
+}) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "8px 10px",
+        borderRadius: 999,
+        border: `1px solid ${theme.colors.border}`,
+        background: theme.colors.surfaceAlt,
+        fontSize: 12,
+        color: theme.colors.textMuted,
+        fontWeight: 700
+      }}
+    >
+      <span
+        style={{
+          width: 18,
+          height: 0,
+          borderTop: `3px ${dashed ? "dashed" : "solid"} ${color}`,
+          display: "inline-block"
+        }}
+      />
+      {label}
+    </div>
+  );
+}
+
 function buildNiceTicks(min: number, max: number, steps = 4) {
   if (min === max) return [min];
 
@@ -560,6 +640,48 @@ function buildSmoothPath(points: Array<{ x: number; y: number }>) {
   }
 
   return d;
+}
+
+function buildAreaPath(
+  points: Array<{ x: number; y: number }>,
+  bottomY: number
+) {
+  if (points.length < 2) return "";
+  const linePath = buildSmoothPath(points);
+  return `${linePath} L ${points[points.length - 1].x} ${bottomY} L ${points[0].x} ${bottomY} Z`;
+}
+
+function buildLineSegments(
+  points: Array<{
+    x: number;
+    y: number;
+    source: HistoryPointSource;
+  }>
+) {
+  if (points.length < 2) return [];
+
+  const segments: Array<{
+    source: HistoryPointSource;
+    path: string;
+  }> = [];
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const current = points[i];
+    const next = points[i + 1];
+    const controlX = (current.x + next.x) / 2;
+
+    const path = [
+      `M ${current.x} ${current.y}`,
+      `C ${controlX} ${current.y}, ${controlX} ${next.y}, ${next.x} ${next.y}`
+    ].join(" ");
+
+    segments.push({
+      source: next.source,
+      path
+    });
+  }
+
+  return segments;
 }
 
 function getMarkerIndexes(length: number) {
@@ -597,4 +719,16 @@ function formatEuroCompact(value: number) {
   }
 
   return `${Math.round(value)} €`;
+}
+
+function formatSource(source: HistoryPointSource, locale: "en" | "es") {
+  if (source === "manual") {
+    return locale === "es" ? "Manual" : "Manual";
+  }
+
+  if (source === "import") {
+    return locale === "es" ? "Importado" : "Imported";
+  }
+
+  return locale === "es" ? "Mercado" : "Market";
 }
