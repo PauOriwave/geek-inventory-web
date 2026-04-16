@@ -74,38 +74,28 @@ export default async function CollectionValueChart({
           background: theme.colors.surface,
           border: `1px solid ${theme.colors.border}`,
           borderRadius: theme.radius.xl,
-          padding: 18,
+          padding: 20,
           boxShadow: theme.shadow.card
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 12,
-            alignItems: "baseline",
-            marginBottom: 8
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontWeight: 800,
-                fontSize: 16,
-                color: theme.colors.text
-              }}
-            >
-              {title}
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: theme.colors.textMuted,
-                marginTop: 4
-              }}
-            >
-              {subtitle}
-            </div>
+        <div style={{ marginBottom: 12 }}>
+          <div
+            style={{
+              fontWeight: 900,
+              fontSize: 18,
+              color: theme.colors.text
+            }}
+          >
+            {title}
+          </div>
+          <div
+            style={{
+              fontSize: 13,
+              color: theme.colors.textMuted,
+              marginTop: 6
+            }}
+          >
+            {subtitle}
           </div>
         </div>
 
@@ -114,15 +104,17 @@ export default async function CollectionValueChart({
             marginTop: 16,
             border: `1px dashed ${theme.colors.border}`,
             borderRadius: theme.radius.lg,
-            padding: 24,
+            padding: 28,
             textAlign: "center",
             background: theme.colors.surfaceAlt,
-            color: theme.colors.textMuted
+            color: theme.colors.textMuted,
+            lineHeight: 1.7,
+            fontSize: 14
           }}
         >
           {locale === "es"
-            ? "Todavía no hay suficientes snapshots para mostrar la evolución. Valora tus objetos para empezar a construir el histórico."
-            : "There are not enough snapshots yet to show evolution. Valuate your items to start building history."}
+            ? "Todavía no hay snapshots para mostrar la evolución. Añade objetos con precio, importa tu CSV o valora tu colección para empezar a construir el histórico."
+            : "There are no snapshots yet to show the evolution. Add priced items, import your CSV or valuate your collection to start building the history."}
         </div>
       </section>
     );
@@ -152,16 +144,21 @@ function CollectionChartCard({
   locale: "en" | "es";
   theme: ReturnType<typeof getThemeById>;
 }) {
-  const width = 880;
-  const height = 280;
-  const paddingX = 26;
-  const paddingTop = 28;
-  const paddingBottom = 38;
+  const width = 980;
+  const height = 360;
+  const paddingLeft = 54;
+  const paddingRight = 26;
+  const paddingTop = 26;
+  const paddingBottom = 42;
 
   const values = points.map((p) => p.total);
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const range = max - min || 1;
+
+  const hasSinglePoint = points.length === 1;
+  const paddedMin = hasSinglePoint ? Math.max(0, min * 0.92) : Math.max(0, min * 0.94);
+  const paddedMax = hasSinglePoint ? max * 1.08 || max + 1 : max * 1.04;
+  const range = Math.max(1, paddedMax - paddedMin);
 
   const first = points[0].total;
   const latest = points[points.length - 1].total;
@@ -171,38 +168,44 @@ function CollectionChartCard({
   const positive = delta > 0;
   const negative = delta < 0;
 
+  const trendColor = positive
+    ? theme.colors.success
+    : negative
+      ? theme.colors.danger
+      : theme.colors.textMuted;
+
+  const trendSurface = positive
+    ? "rgba(2,122,72,0.10)"
+    : negative
+      ? "rgba(180,35,24,0.10)"
+      : theme.colors.surfaceAlt;
+
+  const usableWidth = width - paddingLeft - paddingRight;
+  const usableHeight = height - paddingTop - paddingBottom;
+
   const toX = (index: number) => {
-    if (points.length === 1) return width / 2;
-    return (
-      paddingX +
-      (index * (width - paddingX * 2)) / Math.max(1, points.length - 1)
-    );
+    if (points.length === 1) return paddingLeft + usableWidth / 2;
+    return paddingLeft + (index * usableWidth) / (points.length - 1);
   };
 
   const toY = (value: number) => {
-    const usableHeight = height - paddingTop - paddingBottom;
-    return paddingTop + (1 - (value - min) / range) * usableHeight;
+    return paddingTop + (1 - (value - paddedMin) / range) * usableHeight;
   };
 
-  const linePoints = points
-    .map((point, index) => `${toX(index)},${toY(point.total)}`)
-    .join(" ");
+  const coords = points.map((point, index) => ({
+    x: toX(index),
+    y: toY(point.total),
+    value: point.total,
+    date: point.date
+  }));
 
-  const areaPoints = [
-    `${toX(0)},${height - paddingBottom}`,
-    ...points.map((point, index) => `${toX(index)},${toY(point.total)}`),
-    `${toX(points.length - 1)},${height - paddingBottom}`
-  ].join(" ");
+  const linePath = hasSinglePoint ? "" : buildSmoothPath(coords);
+  const areaPath = hasSinglePoint
+    ? ""
+    : `${linePath} L ${coords[coords.length - 1].x} ${height - paddingBottom} L ${coords[0].x} ${height - paddingBottom} Z`;
 
-  const trendColor = positive
-    ? "#027A48"
-    : negative
-      ? "#B42318"
-      : theme.colors.textMuted;
-
-  const trendBg = positive ? "#ECFDF3" : negative ? "#FEF3F2" : "#F9FAFB";
-
-  const yTicks = buildYTicks(min, max);
+  const yTicks = buildNiceTicks(paddedMin, paddedMax, 4);
+  const markerIndexes = getMarkerIndexes(points.length);
 
   return (
     <section
@@ -211,24 +214,25 @@ function CollectionChartCard({
         background: theme.colors.surface,
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.xl,
-        padding: 18,
+        padding: 20,
         boxShadow: theme.shadow.card
       }}
     >
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 16,
-          flexWrap: "wrap"
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) auto",
+          gap: 18,
+          alignItems: "start",
+          marginBottom: 18
         }}
       >
         <div>
           <div
             style={{
-              fontWeight: 800,
-              fontSize: 16,
+              fontWeight: 900,
+              fontSize: 20,
+              lineHeight: 1.1,
               color: theme.colors.text
             }}
           >
@@ -237,9 +241,10 @@ function CollectionChartCard({
 
           <div
             style={{
-              fontSize: 12,
+              marginTop: 8,
+              fontSize: 13,
               color: theme.colors.textMuted,
-              marginTop: 4
+              lineHeight: 1.6
             }}
           >
             {subtitle}
@@ -248,48 +253,64 @@ function CollectionChartCard({
 
         <div
           style={{
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "flex-end"
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(140px, 1fr))",
+            gap: 10,
+            minWidth: 300
           }}
         >
-          <MetricPill
+          <MetricCard
             label={locale === "es" ? "Inicial" : "Initial"}
             value={`${first.toFixed(2)} €`}
             theme={theme}
           />
-          <MetricPill
+          <MetricCard
             label={locale === "es" ? "Actual" : "Current"}
             value={`${latest.toFixed(2)} €`}
             theme={theme}
           />
-          <MetricPill
+          <MetricCard
             label={locale === "es" ? "Cambio" : "Change"}
             value={`${positive ? "+" : ""}${delta.toFixed(2)} €`}
-            bg={trendBg}
-            color={trendColor}
             theme={theme}
+            accentColor={trendColor}
+            accentBg={trendSurface}
           />
-          <MetricPill
+          <MetricCard
             label={locale === "es" ? "Variación" : "Variation"}
             value={`${percent >= 0 ? "+" : ""}${percent.toFixed(1)}%`}
-            bg={trendBg}
-            color={trendColor}
             theme={theme}
+            accentColor={trendColor}
+            accentBg={trendSurface}
           />
         </div>
       </div>
 
+      {hasSinglePoint && (
+        <div
+          style={{
+            marginBottom: 14,
+            padding: "10px 12px",
+            borderRadius: 14,
+            background: theme.colors.surfaceAlt,
+            border: `1px solid ${theme.colors.border}`,
+            color: theme.colors.textMuted,
+            fontSize: 13,
+            lineHeight: 1.6
+          }}
+        >
+          {locale === "es"
+            ? "Este es tu punto inicial de histórico. A medida que importes más datos o ejecutes nuevas valoraciones, aquí empezará a dibujarse la evolución real."
+            : "This is your initial history point. As you import more data or run new valuations, the real evolution will start to appear here."}
+        </div>
+      )}
+
       <div
         style={{
-          marginTop: 16,
-          borderRadius: theme.radius.lg,
+          borderRadius: 22,
           overflow: "hidden",
           border: `1px solid ${theme.colors.border}`,
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(249,250,251,1) 100%)"
+          background: `linear-gradient(180deg, ${theme.colors.surface} 0%, ${theme.colors.surfaceAlt} 100%)`
         }}
       >
         <svg
@@ -300,141 +321,275 @@ function CollectionChartCard({
             display: "block"
           }}
         >
-          {yTicks.map((tick) => {
+          <defs>
+            <linearGradient id="collectionAreaFillV2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.26" />
+              <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.10" />
+              <stop offset="100%" stopColor={theme.colors.gold} stopOpacity="0.01" />
+            </linearGradient>
+
+            <filter id="softGlow">
+              <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {yTicks.map((tick, index) => {
             const y = toY(tick);
+
             return (
-              <g key={tick}>
+              <g key={`${tick}-${index}`}>
                 <line
-                  x1={paddingX}
+                  x1={paddingLeft}
                   y1={y}
-                  x2={width - paddingX}
+                  x2={width - paddingRight}
                   y2={y}
-                  stroke="#E5E7EB"
-                  strokeDasharray="4 4"
+                  stroke={theme.colors.border}
+                  strokeDasharray="4 8"
                 />
                 <text
-                  x={paddingX}
-                  y={y - 6}
+                  x={paddingLeft}
+                  y={y - 8}
                   fontSize="11"
-                  fill="#6B7280"
+                  fill={theme.colors.textMuted}
                 >
-                  {tick.toFixed(0)} €
+                  {formatEuroCompact(tick)}
                 </text>
               </g>
             );
           })}
 
-          <polyline
-            fill="rgba(200,164,77,0.16)"
-            stroke="none"
-            points={areaPoints}
-          />
-
-          <polyline
-            fill="none"
-            stroke={theme.colors.gold}
-            strokeWidth="4"
-            points={linePoints}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {points.map((point, index) => {
-            const x = toX(index);
-            const y = toY(point.total);
-
-            return (
-              <g key={`${point.date}-${index}`}>
-                <circle cx={x} cy={y} r="5" fill={theme.colors.black} />
-                <circle cx={x} cy={y} r="10" fill="transparent">
-                  <title>{`${point.date} — ${point.total.toFixed(2)} €`}</title>
-                </circle>
-              </g>
-            );
-          })}
-
           <line
-            x1={paddingX}
+            x1={paddingLeft}
             y1={height - paddingBottom}
-            x2={width - paddingX}
+            x2={width - paddingRight}
             y2={height - paddingBottom}
-            stroke="#D1D5DB"
+            stroke={theme.colors.border}
           />
-        </svg>
-      </div>
 
-      <div
-        style={{
-          marginTop: 10,
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          color: theme.colors.textMuted,
-          fontSize: 12,
-          flexWrap: "wrap"
-        }}
-      >
-        <span>{formatChartDate(points[0].date, locale)}</span>
-        <span>
-          {locale === "es" ? "Snapshots" : "Snapshots"}: {points.length}
-        </span>
-        <span>{formatChartDate(points[points.length - 1].date, locale)}</span>
+          {!hasSinglePoint && (
+            <>
+              <path d={areaPath} fill="url(#collectionAreaFillV2)" stroke="none" />
+
+              <path
+                d={linePath}
+                fill="none"
+                stroke={theme.colors.gold}
+                strokeOpacity="0.24"
+                strokeWidth="10"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                filter="url(#softGlow)"
+              />
+
+              <path
+                d={linePath}
+                fill="none"
+                stroke={theme.colors.gold}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </>
+          )}
+
+          {hasSinglePoint && (
+            <>
+              <line
+                x1={paddingLeft}
+                y1={toY(points[0].total)}
+                x2={width - paddingRight}
+                y2={toY(points[0].total)}
+                stroke={theme.colors.gold}
+                strokeWidth="3"
+                strokeDasharray="8 8"
+                opacity={0.8}
+              />
+              <circle
+                cx={coords[0].x}
+                cy={coords[0].y}
+                r="7"
+                fill={theme.colors.gold}
+              />
+              <circle
+                cx={coords[0].x}
+                cy={coords[0].y}
+                r="16"
+                fill={theme.colors.gold}
+                opacity="0.14"
+              />
+            </>
+          )}
+
+          {!hasSinglePoint &&
+            markerIndexes.map((index) => {
+              const point = coords[index];
+              const isFirst = index === 0;
+              const isLast = index === coords.length - 1;
+
+              return (
+                <g key={`marker-${index}`}>
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={isFirst || isLast ? "5.5" : "3.5"}
+                    fill={isLast ? theme.colors.black : theme.colors.gold}
+                    stroke={theme.colors.surface}
+                    strokeWidth="2.5"
+                  />
+                  <circle cx={point.x} cy={point.y} r="12" fill="transparent">
+                    <title>{`${formatChartDate(point.date, locale)} — ${point.value.toFixed(2)} €`}</title>
+                  </circle>
+                </g>
+              );
+            })}
+
+          <text
+            x={paddingLeft}
+            y={height - 12}
+            fontSize="11"
+            fill={theme.colors.textMuted}
+          >
+            {formatChartDate(points[0].date, locale)}
+          </text>
+
+          <text
+            x={width / 2}
+            y={height - 12}
+            fontSize="11"
+            textAnchor="middle"
+            fill={theme.colors.textMuted}
+          >
+            {locale === "es" ? `Snapshots: ${points.length}` : `Snapshots: ${points.length}`}
+          </text>
+
+          <text
+            x={width - paddingRight}
+            y={height - 12}
+            fontSize="11"
+            textAnchor="end"
+            fill={theme.colors.textMuted}
+          >
+            {formatChartDate(points[points.length - 1].date, locale)}
+          </text>
+        </svg>
       </div>
     </section>
   );
 }
 
-function MetricPill({
+function MetricCard({
   label,
   value,
-  bg,
-  color,
-  theme
+  theme,
+  accentColor,
+  accentBg
 }: {
   label: string;
   value: string;
-  bg?: string;
-  color?: string;
   theme: ReturnType<typeof getThemeById>;
+  accentColor?: string;
+  accentBg?: string;
 }) {
   return (
     <div
       style={{
-        padding: "8px 10px",
-        borderRadius: 999,
+        padding: "10px 12px",
+        borderRadius: 16,
         border: `1px solid ${theme.colors.border}`,
-        background: bg ?? theme.colors.surfaceAlt,
-        fontSize: 12
+        background: accentBg ?? theme.colors.surfaceAlt
       }}
     >
-      <span style={{ color: theme.colors.textMuted }}>{label}: </span>
-      <span style={{ fontWeight: 800, color: color ?? theme.colors.text }}>
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: 0.2,
+          color: theme.colors.textMuted,
+          marginBottom: 6,
+          textTransform: "uppercase"
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize: 16,
+          fontWeight: 900,
+          color: accentColor ?? theme.colors.text,
+          lineHeight: 1.1
+        }}
+      >
         {value}
-      </span>
+      </div>
     </div>
   );
 }
 
-function buildYTicks(min: number, max: number) {
-  if (min === max) {
-    return [min];
-  }
+function buildNiceTicks(min: number, max: number, steps = 4) {
+  if (min === max) return [min];
 
-  const steps = 4;
   const ticks: number[] = [];
-
   for (let i = 0; i <= steps; i++) {
     ticks.push(min + ((max - min) * i) / steps);
   }
-
   return ticks;
+}
+
+function buildSmoothPath(points: Array<{ x: number; y: number }>) {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  let d = `M ${points[0].x} ${points[0].y}`;
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const current = points[i];
+    const next = points[i + 1];
+    const controlX = (current.x + next.x) / 2;
+
+    d += ` C ${controlX} ${current.y}, ${controlX} ${next.y}, ${next.x} ${next.y}`;
+  }
+
+  return d;
+}
+
+function getMarkerIndexes(length: number) {
+  if (length <= 2) {
+    return Array.from({ length }, (_, i) => i);
+  }
+
+  const indexes = new Set<number>();
+  indexes.add(0);
+  indexes.add(length - 1);
+
+  const desiredMarkers = Math.min(6, length);
+  const step = (length - 1) / Math.max(1, desiredMarkers - 1);
+
+  for (let i = 1; i < desiredMarkers - 1; i++) {
+    indexes.add(Math.round(step * i));
+  }
+
+  return [...indexes].sort((a, b) => a - b);
 }
 
 function formatChartDate(value: string, locale: "en" | "es") {
   const date = new Date(value);
+
   return new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric"
   }).format(date);
+}
+
+function formatEuroCompact(value: number) {
+  if (value >= 1000) {
+    return `${Math.round(value).toLocaleString("en-GB")} €`;
+  }
+
+  return `${Math.round(value)} €`;
 }
