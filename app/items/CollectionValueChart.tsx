@@ -144,19 +144,21 @@ function CollectionChartCard({
   locale: "en" | "es";
   theme: ReturnType<typeof getThemeById>;
 }) {
-  const width = 980;
-  const height = 360;
-  const paddingLeft = 54;
-  const paddingRight = 26;
-  const paddingTop = 26;
-  const paddingBottom = 42;
+  const width = 1040;
+  const height = 380;
+  const paddingLeft = 56;
+  const paddingRight = 24;
+  const paddingTop = 24;
+  const paddingBottom = 48;
 
   const values = points.map((p) => p.total);
   const min = Math.min(...values);
   const max = Math.max(...values);
 
   const hasSinglePoint = points.length === 1;
-  const paddedMin = hasSinglePoint ? Math.max(0, min * 0.92) : Math.max(0, min * 0.94);
+  const paddedMin = hasSinglePoint
+    ? Math.max(0, min * 0.92)
+    : Math.max(0, min * 0.94);
   const paddedMax = hasSinglePoint ? max * 1.08 || max + 1 : max * 1.04;
   const range = Math.max(1, paddedMax - paddedMin);
 
@@ -220,14 +222,15 @@ function CollectionChartCard({
     >
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) auto",
+          display: "flex",
+          justifyContent: "space-between",
           gap: 18,
-          alignItems: "start",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
           marginBottom: 18
         }}
       >
-        <div>
+        <div style={{ maxWidth: 560 }}>
           <div
             style={{
               fontWeight: 900,
@@ -253,30 +256,30 @@ function CollectionChartCard({
 
         <div
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(2, minmax(140px, 1fr))",
-            gap: 10,
-            minWidth: 300
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            justifyContent: "flex-end"
           }}
         >
-          <MetricCard
+          <SummaryChip
             label={locale === "es" ? "Inicial" : "Initial"}
             value={`${first.toFixed(2)} €`}
             theme={theme}
           />
-          <MetricCard
+          <SummaryChip
             label={locale === "es" ? "Actual" : "Current"}
             value={`${latest.toFixed(2)} €`}
             theme={theme}
           />
-          <MetricCard
+          <SummaryChip
             label={locale === "es" ? "Cambio" : "Change"}
             value={`${positive ? "+" : ""}${delta.toFixed(2)} €`}
             theme={theme}
             accentColor={trendColor}
             accentBg={trendSurface}
           />
-          <MetricCard
+          <SummaryChip
             label={locale === "es" ? "Variación" : "Variation"}
             value={`${percent >= 0 ? "+" : ""}${percent.toFixed(1)}%`}
             theme={theme}
@@ -307,7 +310,7 @@ function CollectionChartCard({
 
       <div
         style={{
-          borderRadius: 22,
+          borderRadius: 24,
           overflow: "hidden",
           border: `1px solid ${theme.colors.border}`,
           background: `linear-gradient(180deg, ${theme.colors.surface} 0%, ${theme.colors.surfaceAlt} 100%)`
@@ -322,14 +325,14 @@ function CollectionChartCard({
           }}
         >
           <defs>
-            <linearGradient id="collectionAreaFillV2" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.26" />
+            <linearGradient id="collectionAreaFillV3" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.30" />
               <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.10" />
-              <stop offset="100%" stopColor={theme.colors.gold} stopOpacity="0.01" />
+              <stop offset="100%" stopColor={theme.colors.gold} stopOpacity="0.02" />
             </linearGradient>
 
-            <filter id="softGlow">
-              <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+            <filter id="softGlowV3">
+              <feGaussianBlur stdDeviation="5" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
                 <feMergeNode in="SourceGraphic" />
@@ -372,17 +375,17 @@ function CollectionChartCard({
 
           {!hasSinglePoint && (
             <>
-              <path d={areaPath} fill="url(#collectionAreaFillV2)" stroke="none" />
+              <path d={areaPath} fill="url(#collectionAreaFillV3)" stroke="none" />
 
               <path
                 d={linePath}
                 fill="none"
                 stroke={theme.colors.gold}
-                strokeOpacity="0.24"
-                strokeWidth="10"
+                strokeOpacity="0.18"
+                strokeWidth="12"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                filter="url(#softGlow)"
+                filter="url(#softGlowV3)"
               />
 
               <path
@@ -427,7 +430,6 @@ function CollectionChartCard({
           {!hasSinglePoint &&
             markerIndexes.map((index) => {
               const point = coords[index];
-              const isFirst = index === 0;
               const isLast = index === coords.length - 1;
 
               return (
@@ -435,12 +437,12 @@ function CollectionChartCard({
                   <circle
                     cx={point.x}
                     cy={point.y}
-                    r={isFirst || isLast ? "5.5" : "3.5"}
-                    fill={isLast ? theme.colors.black : theme.colors.gold}
-                    stroke={theme.colors.surface}
+                    r={isLast ? "5.5" : "3.5"}
+                    fill={isLast ? theme.colors.black : theme.colors.surface}
+                    stroke={theme.colors.gold}
                     strokeWidth="2.5"
                   />
-                  <circle cx={point.x} cy={point.y} r="12" fill="transparent">
+                  <circle cx={point.x} cy={point.y} r="14" fill="transparent">
                     <title>{`${formatChartDate(point.date, locale)} — ${point.value.toFixed(2)} €`}</title>
                   </circle>
                 </g>
@@ -449,7 +451,7 @@ function CollectionChartCard({
 
           <text
             x={paddingLeft}
-            y={height - 12}
+            y={height - 14}
             fontSize="11"
             fill={theme.colors.textMuted}
           >
@@ -458,17 +460,19 @@ function CollectionChartCard({
 
           <text
             x={width / 2}
-            y={height - 12}
+            y={height - 14}
             fontSize="11"
             textAnchor="middle"
             fill={theme.colors.textMuted}
           >
-            {locale === "es" ? `Snapshots: ${points.length}` : `Snapshots: ${points.length}`}
+            {locale === "es"
+              ? `${points.length} snapshots`
+              : `${points.length} snapshots`}
           </text>
 
           <text
             x={width - paddingRight}
-            y={height - 12}
+            y={height - 14}
             fontSize="11"
             textAnchor="end"
             fill={theme.colors.textMuted}
@@ -481,7 +485,7 @@ function CollectionChartCard({
   );
 }
 
-function MetricCard({
+function SummaryChip({
   label,
   value,
   theme,
@@ -498,9 +502,10 @@ function MetricCard({
     <div
       style={{
         padding: "10px 12px",
-        borderRadius: 16,
+        borderRadius: 999,
         border: `1px solid ${theme.colors.border}`,
-        background: accentBg ?? theme.colors.surfaceAlt
+        background: accentBg ?? theme.colors.surfaceAlt,
+        minWidth: 128
       }}
     >
       <div
@@ -509,7 +514,7 @@ function MetricCard({
           fontWeight: 800,
           letterSpacing: 0.2,
           color: theme.colors.textMuted,
-          marginBottom: 6,
+          marginBottom: 4,
           textTransform: "uppercase"
         }}
       >
@@ -518,7 +523,7 @@ function MetricCard({
 
       <div
         style={{
-          fontSize: 16,
+          fontSize: 15,
           fontWeight: 900,
           color: accentColor ?? theme.colors.text,
           lineHeight: 1.1
