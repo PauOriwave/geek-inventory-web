@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getThemeById } from "../theme";
 
 type HistoryPoint = {
@@ -18,19 +18,84 @@ type HoverState = {
   x: number;
 };
 
+type ChartRange = "7d" | "30d" | "90d" | "all";
+type ChartSeries = "all" | "base" | "market";
+
 export default function CollectionValueChartClient({
-  history,
+  initialHistory,
   title,
   subtitle,
   locale,
-  theme
+  theme,
+  category,
+  apiBaseUrl
 }: {
-  history: CollectionHistoryResponse;
+  initialHistory: CollectionHistoryResponse;
   title: string;
   subtitle: string;
   locale: "en" | "es";
   theme: ReturnType<typeof getThemeById>;
+  category?: string;
+  apiBaseUrl: string;
 }) {
+  const [range, setRange] = useState<ChartRange>("all");
+  const [series, setSeries] = useState<ChartSeries>("all");
+  const [history, setHistory] = useState<CollectionHistoryResponse>(initialHistory);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadHistory() {
+      if (range === "all") {
+        setHistory(initialHistory);
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const params = new URLSearchParams();
+        if (category) {
+          params.set("category", category);
+        }
+        params.set("range", range);
+
+        const res = await fetch(
+          `${apiBaseUrl}/stats/collection-history?${params.toString()}`,
+          {
+            credentials: "include"
+          }
+        );
+
+        if (!res.ok) {
+          return;
+        }
+
+        const data = await res.json();
+
+        if (!cancelled) {
+          setHistory({
+            base: Array.isArray(data?.base) ? data.base : [],
+            market: Array.isArray(data?.market) ? data.market : []
+          });
+        }
+      } catch {
+        // noop
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBaseUrl, category, initialHistory, range]);
+
   if (history.base.length === 0 && history.market.length === 0) {
     return (
       <section
@@ -92,6 +157,11 @@ export default function CollectionValueChartClient({
       subtitle={subtitle}
       locale={locale}
       theme={theme}
+      range={range}
+      onRangeChange={setRange}
+      series={series}
+      onSeriesChange={setSeries}
+      loading={loading}
     />
   );
 }
@@ -101,13 +171,23 @@ function CollectionChartCard({
   title,
   subtitle,
   locale,
-  theme
+  theme,
+  range,
+  onRangeChange,
+  series,
+  onSeriesChange,
+  loading
 }: {
   history: CollectionHistoryResponse;
   title: string;
   subtitle: string;
   locale: "en" | "es";
   theme: ReturnType<typeof getThemeById>;
+  range: ChartRange;
+  onRangeChange: (value: ChartRange) => void;
+  series: ChartSeries;
+  onSeriesChange: (value: ChartSeries) => void;
+  loading: boolean;
 }) {
   const width = 1040;
   const height = 400;
@@ -115,6 +195,9 @@ function CollectionChartCard({
   const paddingRight = 24;
   const paddingTop = 24;
   const paddingBottom = 52;
+
+  const showBase = series === "all" || series === "base";
+  const showMarket = series === "all" || series === "market";
 
   const allPoints = useMemo(
     () =>
@@ -124,8 +207,8 @@ function CollectionChartCard({
     [history]
   );
 
-  const basePoints = history.base;
-  const marketPoints = history.market;
+  const basePoints = showBase ? history.base : [];
+  const marketPoints = showMarket ? history.market : [];
   const visibleSeries = marketPoints.length > 0 ? marketPoints : basePoints;
 
   const first = visibleSeries[0]?.total ?? 0;
@@ -148,24 +231,24 @@ function CollectionChartCard({
       ? "rgba(180,35,24,0.10)"
       : theme.colors.surfaceAlt;
 
-  const values = allPoints.map((p) => p.total);
+  const values = [
+    ...basePoints.map((p) => p.total),
+    ...marketPoints.map((p) => p.total)
+  ];
+
   const min = values.length > 0 ? Math.min(...values) : 0;
   const max = values.length > 0 ? Math.max(...values) : 1;
 
-  const hasSinglePoint = allPoints.length === 1;
+  const hasSinglePoint = values.length === 1;
   const paddedMin = hasSinglePoint
     ? Math.max(0, min * 0.92)
     : Math.max(0, min * 0.94);
   const paddedMax = hasSinglePoint ? max * 1.08 || max + 1 : max * 1.04;
-  const range = Math.max(1, paddedMax - paddedMin);
+  const rangeValue = Math.max(1, paddedMax - paddedMin);
 
-  const earliestDate = allPoints[0]?.date ?? new Date().toISOString();
-  const latestDate = allPoints[allPoints.length - 1]?.date ?? earliestDate;
-
-  const allDates = useMemo(
-    () => [...new Set(allPoints.map((p) => p.date))].sort(),
-    [allPoints]
-  );
+  const datePool = [...new Set([...basePoints, ...marketPoints].map((p) => p.date))].sort();
+  const earliestDate = datePool[0] ?? new Date().toISOString();
+  const latestDate = datePool[datePool.length - 1] ?? earliestDate;
 
   const baseByDate = useMemo(() => {
     const map = new Map<string, number>();
@@ -183,13 +266,13 @@ function CollectionChartCard({
   const usableHeight = height - paddingTop - paddingBottom;
 
   const toXByDate = (date: string) => {
-    if (allDates.length === 1) return paddingLeft + usableWidth / 2;
-    const index = allDates.indexOf(date);
-    return paddingLeft + (index * usableWidth) / (allDates.length - 1);
+    if (datePool.length === 1) return paddingLeft + usableWidth / 2;
+    const index = datePool.indexOf(date);
+    return paddingLeft + (index * usableWidth) / (datePool.length - 1);
   };
 
   const toY = (value: number) => {
-    return paddingTop + (1 - (value - paddedMin) / range) * usableHeight;
+    return paddingTop + (1 - (value - paddedMin) / rangeValue) * usableHeight;
   };
 
   const baseCoords = basePoints.map((point) => ({
@@ -224,7 +307,7 @@ function CollectionChartCard({
 
   const hoverData = hover
     ? (() => {
-        const date = allDates[hover.index];
+        const date = datePool[hover.index];
         const baseValue = baseByDate.get(date) ?? null;
         const marketValue = marketByDate.get(date) ?? null;
         const seriesDelta =
@@ -324,22 +407,88 @@ function CollectionChartCard({
       <div
         style={{
           display: "flex",
-          gap: 8,
+          justifyContent: "space-between",
+          gap: 12,
           flexWrap: "wrap",
           marginBottom: 14
         }}
       >
-        <LegendPill
-          label={locale === "es" ? "Base manual/importada" : "Manual/import baseline"}
-          color="#94A3B8"
-          dashed
-          theme={theme}
-        />
-        <LegendPill
-          label={locale === "es" ? "Valoración de mercado" : "Market valuation"}
-          color={theme.colors.gold}
-          theme={theme}
-        />
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap"
+          }}
+        >
+          <LegendPill
+            label={locale === "es" ? "Base manual/importada" : "Manual/import baseline"}
+            color="#94A3B8"
+            dashed
+            theme={theme}
+          />
+          <LegendPill
+            label={locale === "es" ? "Valoración de mercado" : "Market valuation"}
+            color={theme.colors.gold}
+            theme={theme}
+          />
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            alignItems: "center"
+          }}
+        >
+          <ToggleGroup>
+            <ToggleButton
+              active={series === "all"}
+              onClick={() => onSeriesChange("all")}
+              label={locale === "es" ? "Todo" : "All"}
+              theme={theme}
+            />
+            <ToggleButton
+              active={series === "base"}
+              onClick={() => onSeriesChange("base")}
+              label={locale === "es" ? "Base" : "Base"}
+              theme={theme}
+            />
+            <ToggleButton
+              active={series === "market"}
+              onClick={() => onSeriesChange("market")}
+              label={locale === "es" ? "Mercado" : "Market"}
+              theme={theme}
+            />
+          </ToggleGroup>
+
+          <ToggleGroup>
+            <ToggleButton
+              active={range === "7d"}
+              onClick={() => onRangeChange("7d")}
+              label="7D"
+              theme={theme}
+            />
+            <ToggleButton
+              active={range === "30d"}
+              onClick={() => onRangeChange("30d")}
+              label="30D"
+              theme={theme}
+            />
+            <ToggleButton
+              active={range === "90d"}
+              onClick={() => onRangeChange("90d")}
+              label="90D"
+              theme={theme}
+            />
+            <ToggleButton
+              active={range === "all"}
+              onClick={() => onRangeChange("all")}
+              label="All"
+              theme={theme}
+            />
+          </ToggleGroup>
+        </div>
       </div>
 
       <div
@@ -351,6 +500,25 @@ function CollectionChartCard({
           background: `linear-gradient(180deg, ${theme.colors.surface} 0%, ${theme.colors.surfaceAlt} 100%)`
         }}
       >
+        {loading && (
+          <div
+            style={{
+              position: "absolute",
+              top: 12,
+              right: 12,
+              zIndex: 3,
+              padding: "6px 10px",
+              borderRadius: 999,
+              background: "rgba(15,23,42,0.78)",
+              color: "white",
+              fontSize: 12,
+              fontWeight: 800
+            }}
+          >
+            {locale === "es" ? "Cargando..." : "Loading..."}
+          </div>
+        )}
+
         <svg
           viewBox={`0 0 ${width} ${height}`}
           style={{
@@ -370,8 +538,8 @@ function CollectionChartCard({
             let nearestIndex = 0;
             let nearestDistance = Number.POSITIVE_INFINITY;
 
-            for (let i = 0; i < allDates.length; i++) {
-              const x = toXByDate(allDates[i]);
+            for (let i = 0; i < datePool.length; i++) {
+              const x = toXByDate(datePool[i]);
               const distance = Math.abs(x - clampedX);
 
               if (distance < nearestDistance) {
@@ -382,19 +550,19 @@ function CollectionChartCard({
 
             setHover({
               index: nearestIndex,
-              x: toXByDate(allDates[nearestIndex])
+              x: toXByDate(datePool[nearestIndex])
             });
           }}
           onMouseLeave={() => setHover(null)}
         >
           <defs>
-            <linearGradient id="marketAreaFillV6" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="marketAreaFillV7" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.26" />
               <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.09" />
               <stop offset="100%" stopColor={theme.colors.gold} stopOpacity="0.02" />
             </linearGradient>
 
-            <filter id="marketGlowV6">
+            <filter id="marketGlowV7">
               <feGaussianBlur stdDeviation="5" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -436,11 +604,11 @@ function CollectionChartCard({
             stroke={theme.colors.border}
           />
 
-          {marketAreaPath && (
-            <path d={marketAreaPath} fill="url(#marketAreaFillV6)" stroke="none" />
+          {showMarket && marketAreaPath && (
+            <path d={marketAreaPath} fill="url(#marketAreaFillV7)" stroke="none" />
           )}
 
-          {basePath && (
+          {showBase && basePath && (
             <path
               d={basePath}
               fill="none"
@@ -453,7 +621,7 @@ function CollectionChartCard({
             />
           )}
 
-          {marketPath && (
+          {showMarket && marketPath && (
             <>
               <path
                 d={marketPath}
@@ -463,7 +631,7 @@ function CollectionChartCard({
                 strokeWidth="12"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                filter="url(#marketGlowV6)"
+                filter="url(#marketGlowV7)"
               />
               <path
                 d={marketPath}
@@ -476,7 +644,7 @@ function CollectionChartCard({
             </>
           )}
 
-          {baseCoords.length === 1 && (
+          {showBase && baseCoords.length === 1 && (
             <>
               <line
                 x1={paddingLeft}
@@ -492,7 +660,7 @@ function CollectionChartCard({
             </>
           )}
 
-          {marketCoords.length === 1 && (
+          {showMarket && marketCoords.length === 1 && (
             <>
               <line
                 x1={paddingLeft}
@@ -515,7 +683,7 @@ function CollectionChartCard({
             </>
           )}
 
-          {baseCoords.length > 1 &&
+          {showBase && baseCoords.length > 1 &&
             baseMarkerIndexes.map((index) => {
               const point = baseCoords[index];
 
@@ -533,7 +701,7 @@ function CollectionChartCard({
               );
             })}
 
-          {marketCoords.length > 1 &&
+          {showMarket && marketCoords.length > 1 &&
             marketMarkerIndexes.map((index) => {
               const point = marketCoords[index];
               const isLast = index === marketCoords.length - 1;
@@ -564,7 +732,7 @@ function CollectionChartCard({
                 strokeDasharray="5 6"
               />
 
-              {hoverData.baseValue != null && (
+              {showBase && hoverData.baseValue != null && (
                 <circle
                   cx={hover.x}
                   cy={toY(hoverData.baseValue)}
@@ -575,7 +743,7 @@ function CollectionChartCard({
                 />
               )}
 
-              {hoverData.marketValue != null && (
+              {showMarket && hoverData.marketValue != null && (
                 <circle
                   cx={hover.x}
                   cy={toY(hoverData.marketValue)}
@@ -605,8 +773,8 @@ function CollectionChartCard({
             fill={theme.colors.textMuted}
           >
             {locale === "es"
-              ? `Base: ${basePoints.length} · Mercado: ${marketPoints.length}`
-              : `Base: ${basePoints.length} · Market: ${marketPoints.length}`}
+              ? `Base: ${history.base.length} · Mercado: ${history.market.length}`
+              : `Base: ${history.base.length} · Market: ${history.market.length}`}
           </text>
 
           <text
@@ -652,42 +820,48 @@ function CollectionChartCard({
               {formatChartDate(hoverData.date, locale)}
             </div>
 
-            <TooltipRow
-              label={locale === "es" ? "Base" : "Baseline"}
-              value={
-                hoverData.baseValue != null
-                  ? `${hoverData.baseValue.toFixed(2)} €`
-                  : "—"
-              }
-              color="#94A3B8"
-            />
+            {showBase && (
+              <TooltipRow
+                label={locale === "es" ? "Base" : "Baseline"}
+                value={
+                  hoverData.baseValue != null
+                    ? `${hoverData.baseValue.toFixed(2)} €`
+                    : "—"
+                }
+                color="#94A3B8"
+              />
+            )}
 
-            <TooltipRow
-              label={locale === "es" ? "Mercado" : "Market"}
-              value={
-                hoverData.marketValue != null
-                  ? `${hoverData.marketValue.toFixed(2)} €`
-                  : "—"
-              }
-              color={theme.colors.gold}
-            />
+            {showMarket && (
+              <TooltipRow
+                label={locale === "es" ? "Mercado" : "Market"}
+                value={
+                  hoverData.marketValue != null
+                    ? `${hoverData.marketValue.toFixed(2)} €`
+                    : "—"
+                }
+                color={theme.colors.gold}
+              />
+            )}
 
-            <TooltipRow
-              label="Δ"
-              value={
-                hoverData.seriesDelta != null
-                  ? `${hoverData.seriesDelta >= 0 ? "+" : ""}${hoverData.seriesDelta.toFixed(2)} €`
-                  : "—"
-              }
-              color={
-                hoverData.seriesDelta == null
-                  ? "rgba(255,255,255,0.72)"
-                  : hoverData.seriesDelta >= 0
-                    ? "#4ADE80"
-                    : "#FB7185"
-              }
-              strong
-            />
+            {showBase && showMarket && (
+              <TooltipRow
+                label="Δ"
+                value={
+                  hoverData.seriesDelta != null
+                    ? `${hoverData.seriesDelta >= 0 ? "+" : ""}${hoverData.seriesDelta.toFixed(2)} €`
+                    : "—"
+                }
+                color={
+                  hoverData.seriesDelta == null
+                    ? "rgba(255,255,255,0.72)"
+                    : hoverData.seriesDelta >= 0
+                      ? "#4ADE80"
+                      : "#FB7185"
+                }
+                strong
+              />
+            )}
           </div>
         )}
       </div>
@@ -781,6 +955,58 @@ function LegendPill({
       />
       {label}
     </div>
+  );
+}
+
+function ToggleGroup({
+  children
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        gap: 6,
+        padding: 4,
+        borderRadius: 999,
+        background: "rgba(15,23,42,0.04)",
+        border: "1px solid rgba(148,163,184,0.22)"
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function ToggleButton({
+  active,
+  onClick,
+  label,
+  theme
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  theme: ReturnType<typeof getThemeById>;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        border: "none",
+        borderRadius: 999,
+        padding: "8px 12px",
+        background: active ? theme.colors.black : "transparent",
+        color: active ? "white" : theme.colors.textMuted,
+        fontWeight: 800,
+        fontSize: 12,
+        cursor: "pointer"
+      }}
+    >
+      {label}
+    </button>
   );
 }
 

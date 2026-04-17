@@ -17,10 +17,19 @@ const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function getCollectionHistory(
   cookieHeader: string,
-  category?: string
+  category?: string,
+  range: "7d" | "30d" | "90d" | "all" = "all"
 ): Promise<CollectionHistoryResponse> {
   try {
-    const qs = category ? `?category=${encodeURIComponent(category)}` : "";
+    const params = new URLSearchParams();
+
+    if (category) {
+      params.set("category", category);
+    }
+
+    params.set("range", range);
+
+    const qs = params.toString() ? `?${params.toString()}` : "";
 
     const res = await fetch(`${API}/stats/collection-history${qs}`, {
       cache: "no-store",
@@ -58,7 +67,7 @@ export default async function CollectionValueChart({
     (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
   const theme = getThemeById(themeId);
 
-  const history = await getCollectionHistory(cookieHeader, category);
+  const history = await getCollectionHistory(cookieHeader, category, "all");
 
   const title = category
     ? locale === "es"
@@ -78,11 +87,13 @@ export default async function CollectionValueChart({
 
   return (
     <CollectionValueChartClient
-      history={history}
+      initialHistory={history}
       title={title}
       subtitle={subtitle}
       locale={locale}
       theme={theme}
+      category={category}
+      apiBaseUrl={API}
     />
   );
 }
