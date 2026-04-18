@@ -13,12 +13,15 @@ type CollectionHistoryResponse = {
   market: HistoryPoint[];
 };
 
+type ChartRange = "7d" | "30d" | "90d" | "all";
+type ChartSeries = "all" | "base" | "market";
+
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
 async function getCollectionHistory(
   cookieHeader: string,
   category?: string,
-  range: "7d" | "30d" | "90d" | "all" = "all"
+  range: ChartRange = "all"
 ): Promise<CollectionHistoryResponse> {
   try {
     const params = new URLSearchParams();
@@ -55,10 +58,14 @@ async function getCollectionHistory(
 
 export default async function CollectionValueChart({
   category,
-  locale = "en"
+  locale = "en",
+  initialChartRange = "all",
+  initialChartSeries = "all"
 }: {
   category?: string;
   locale?: "en" | "es";
+  initialChartRange?: ChartRange;
+  initialChartSeries?: ChartSeries;
 }) {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
@@ -67,7 +74,11 @@ export default async function CollectionValueChart({
     (cookieStore.get("ui_theme")?.value as AppThemeId | undefined) ?? "classic";
   const theme = getThemeById(themeId);
 
-  const history = await getCollectionHistory(cookieHeader, category, "all");
+  const history = await getCollectionHistory(
+    cookieHeader,
+    category,
+    initialChartRange
+  );
 
   const title = category
     ? locale === "es"
@@ -88,6 +99,8 @@ export default async function CollectionValueChart({
   return (
     <CollectionValueChartClient
       initialHistory={history}
+      initialRange={initialChartRange}
+      initialSeries={initialChartSeries}
       title={title}
       subtitle={subtitle}
       locale={locale}

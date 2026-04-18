@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getThemeById } from "../theme";
 
 type HistoryPoint = {
@@ -23,6 +24,8 @@ type ChartSeries = "all" | "base" | "market";
 
 export default function CollectionValueChartClient({
   initialHistory,
+  initialRange,
+  initialSeries,
   title,
   subtitle,
   locale,
@@ -31,6 +34,8 @@ export default function CollectionValueChartClient({
   apiBaseUrl
 }: {
   initialHistory: CollectionHistoryResponse;
+  initialRange: ChartRange;
+  initialSeries: ChartSeries;
   title: string;
   subtitle: string;
   locale: "en" | "es";
@@ -38,17 +43,33 @@ export default function CollectionValueChartClient({
   category?: string;
   apiBaseUrl: string;
 }) {
-  const [range, setRange] = useState<ChartRange>("all");
-  const [series, setSeries] = useState<ChartSeries>("all");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [range, setRange] = useState<ChartRange>(initialRange);
+  const [series, setSeries] = useState<ChartSeries>(initialSeries);
   const [history, setHistory] = useState<CollectionHistoryResponse>(initialHistory);
   const [loading, setLoading] = useState(false);
   const [rangeNotice, setRangeNotice] = useState<string | null>(null);
 
   useEffect(() => {
+    setRange(initialRange);
+  }, [initialRange]);
+
+  useEffect(() => {
+    setSeries(initialSeries);
+  }, [initialSeries]);
+
+  useEffect(() => {
+    setHistory(initialHistory);
+  }, [initialHistory]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function loadHistory() {
-      if (range === "all") {
+      if (range === initialRange) {
         setHistory(initialHistory);
         return;
       }
@@ -95,7 +116,7 @@ export default function CollectionValueChartClient({
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, category, initialHistory, range]);
+  }, [apiBaseUrl, category, initialHistory, initialRange, range]);
 
   useEffect(() => {
     if (!rangeNotice) return;
@@ -141,6 +162,16 @@ export default function CollectionValueChartClient({
     return true;
   };
 
+  function syncChartStateToUrl(nextRange: ChartRange, nextSeries: ChartSeries) {
+    const params = new URLSearchParams(searchParams.toString());
+
+    params.set("chartRange", nextRange);
+    params.set("chartSeries", nextSeries);
+
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
+
   const handleRangeChange = (value: ChartRange) => {
     if (!isRangeAvailable(value)) {
       setRangeNotice(getRangeNoticeMessage(value, locale));
@@ -149,6 +180,12 @@ export default function CollectionValueChartClient({
 
     setRangeNotice(null);
     setRange(value);
+    syncChartStateToUrl(value, series);
+  };
+
+  const handleSeriesChange = (value: ChartSeries) => {
+    setSeries(value);
+    syncChartStateToUrl(range, value);
   };
 
   if (history.base.length === 0 && history.market.length === 0) {
@@ -215,7 +252,7 @@ export default function CollectionValueChartClient({
       range={range}
       onRangeChange={handleRangeChange}
       series={series}
-      onSeriesChange={setSeries}
+      onSeriesChange={handleSeriesChange}
       loading={loading}
       isRangeAvailable={isRangeAvailable}
       rangeNotice={rangeNotice}
@@ -646,13 +683,13 @@ function CollectionChartCard({
           onMouseLeave={() => setHover(null)}
         >
           <defs>
-            <linearGradient id="marketAreaFillV9" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="marketAreaFillV10" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.26" />
               <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.09" />
               <stop offset="100%" stopColor={theme.colors.gold} stopOpacity="0.02" />
             </linearGradient>
 
-            <filter id="marketGlowV9">
+            <filter id="marketGlowV10">
               <feGaussianBlur stdDeviation="5" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -695,7 +732,7 @@ function CollectionChartCard({
           />
 
           {showMarket && marketAreaPath && (
-            <path d={marketAreaPath} fill="url(#marketAreaFillV9)" stroke="none" />
+            <path d={marketAreaPath} fill="url(#marketAreaFillV10)" stroke="none" />
           )}
 
           {showBase && basePath && (
@@ -721,7 +758,7 @@ function CollectionChartCard({
                 strokeWidth="12"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                filter="url(#marketGlowV9)"
+                filter="url(#marketGlowV10)"
               />
               <path
                 d={marketPath}
