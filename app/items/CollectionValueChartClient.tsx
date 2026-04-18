@@ -174,7 +174,9 @@ export default function CollectionValueChartClient({
 
   const handleRangeChange = (value: ChartRange) => {
     if (!isRangeAvailable(value)) {
-      setRangeNotice(getRangeNoticeMessage(value, locale));
+      if (value !== "all") {
+        setRangeNotice(getRangeNoticeMessage(value, locale));
+      }
       return;
     }
 
