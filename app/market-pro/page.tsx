@@ -41,7 +41,41 @@ type MarketOverview = {
   }>;
 };
 
+type Me = {
+  id: string;
+  email?: string;
+  plan?: string;
+};
+
 const API = process.env.NEXT_PUBLIC_API_URL!;
+
+function hasMarketProAccess(plan?: string | null) {
+  if (!plan) return false;
+
+  const normalized = plan.toLowerCase().trim();
+
+  return (
+    normalized === "market_pro" ||
+    normalized === "market-pro" ||
+    normalized === "marketpro"
+  );
+}
+
+async function getMe(cookieHeader: string): Promise<Me | null> {
+  try {
+    const res = await fetch(`${API}/auth/me`, {
+      cache: "no-store",
+      headers: {
+        cookie: cookieHeader
+      }
+    });
+
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
 
 async function getMarketOverview(
   cookieHeader: string,
@@ -94,10 +128,16 @@ export default async function MarketProPage({
   const locale = getLocale(sp);
   const category = typeof sp.category === "string" ? sp.category : undefined;
 
+  const me = await getMe(cookieHeader);
+
+  if (!hasMarketProAccess(me?.plan)) {
+    redirect(`/items?lang=${locale}`);
+  }
+
   const data = await getMarketOverview(cookieHeader, category);
 
   const text = {
-    title: locale === "es" ? "Market Pro" : "Market Pro",
+    title: "Market Pro",
     subtitle:
       locale === "es"
         ? "Lectura avanzada de mercado para tu colección"

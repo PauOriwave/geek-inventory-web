@@ -67,7 +67,38 @@ type Me = {
   premiumStartedAt?: string | null;
 };
 
+type ChartRange = "7d" | "30d" | "90d" | "all";
+type ChartSeries = "all" | "base" | "market";
+
 const API = process.env.NEXT_PUBLIC_API_URL!;
+
+function parseChartRange(value: unknown): ChartRange {
+  if (value === "7d" || value === "30d" || value === "90d") {
+    return value;
+  }
+
+  return "all";
+}
+
+function parseChartSeries(value: unknown): ChartSeries {
+  if (value === "base" || value === "market") {
+    return value;
+  }
+
+  return "all";
+}
+
+function hasMarketProAccess(plan?: string | null) {
+  if (!plan) return false;
+
+  const normalized = plan.toLowerCase().trim();
+
+  return (
+    normalized === "market_pro" ||
+    normalized === "market-pro" ||
+    normalized === "marketpro"
+  );
+}
 
 async function getItems(
   queryString: string,
@@ -191,6 +222,13 @@ export default async function ItemsPage({
   const page = typeof sp.page === "string" ? Number(sp.page) : 1;
   const pageSize = typeof sp.pageSize === "string" ? Number(sp.pageSize) : 25;
 
+  const chartRange = parseChartRange(
+    typeof sp.chartRange === "string" ? sp.chartRange : undefined
+  );
+  const chartSeries = parseChartSeries(
+    typeof sp.chartSeries === "string" ? sp.chartSeries : undefined
+  );
+
   const params = new URLSearchParams();
 
   if (q) params.set("q", q);
@@ -205,6 +243,8 @@ export default async function ItemsPage({
     "pageSize",
     String(Number.isFinite(pageSize) && pageSize >= 5 ? pageSize : 25)
   );
+  params.set("chartRange", chartRange);
+  params.set("chartSeries", chartSeries);
 
   const queryString = `?${params.toString()}`;
 
@@ -228,6 +268,7 @@ export default async function ItemsPage({
   const items = itemsRes.items;
   const totalPages = Math.max(1, Math.ceil(itemsRes.total / itemsRes.pageSize));
   const currentPage = Math.min(Math.max(1, itemsRes.page), totalPages);
+  const marketProAccess = hasMarketProAccess(me?.plan);
 
   const baseParams = Object.fromEntries(params.entries());
 
@@ -249,6 +290,11 @@ export default async function ItemsPage({
   const langEnHref = `/items?${new URLSearchParams({
     ...baseParams,
     lang: "en"
+  }).toString()}`;
+
+  const marketProHref = `/market-pro?${new URLSearchParams({
+    lang: locale,
+    ...(category ? { category } : {})
   }).toString()}`;
 
   const text = {
@@ -289,7 +335,14 @@ export default async function ItemsPage({
     actions: locale === "es" ? "Acciones" : "Actions",
     level: locale === "es" ? "Nivel" : "Level",
     pointsToNext:
-      locale === "es" ? "pts para subir" : "pts to level up"
+      locale === "es" ? "pts para subir" : "pts to level up",
+    marketPro: "Market Pro",
+    marketProLocked:
+      locale === "es" ? "Market Pro 🔒" : "Market Pro 🔒",
+    marketProTitle:
+      locale === "es"
+        ? "Disponible solo para usuarios Market Pro"
+        : "Available for Market Pro users only"
   };
 
   return (
@@ -460,6 +513,38 @@ export default async function ItemsPage({
               Wishlist
             </a>
 
+            {marketProAccess ? (
+              <a
+                href={marketProHref}
+                style={{
+                  textDecoration: "none",
+                  borderRadius: 999,
+                  padding: "10px 14px",
+                  background: currentTheme.colors.gold,
+                  color: currentTheme.colors.black,
+                  fontWeight: 900,
+                  border: "1px solid rgba(255,255,255,0.12)"
+                }}
+              >
+                {text.marketPro}
+              </a>
+            ) : (
+              <span
+                title={text.marketProTitle}
+                style={{
+                  borderRadius: 999,
+                  padding: "10px 14px",
+                  background: "rgba(255,255,255,0.06)",
+                  color: "rgba(255,255,255,0.58)",
+                  fontWeight: 800,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  cursor: "not-allowed"
+                }}
+              >
+                {text.marketProLocked}
+              </span>
+            )}
+
             <a
               href={`/profile?lang=${locale}`}
               style={{
@@ -521,7 +606,12 @@ export default async function ItemsPage({
               />
             </div>
 
-            <CollectionValueChart category={category} locale={locale} />
+            <CollectionValueChart
+              category={category}
+              locale={locale}
+              initialChartRange={chartRange}
+              initialChartSeries={chartSeries}
+            />
             <TrendingItems category={category} locale={locale} />
             <CategoryStats locale={locale} />
 
