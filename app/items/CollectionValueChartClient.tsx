@@ -42,6 +42,7 @@ export default function CollectionValueChartClient({
   const [series, setSeries] = useState<ChartSeries>("all");
   const [history, setHistory] = useState<CollectionHistoryResponse>(initialHistory);
   const [loading, setLoading] = useState(false);
+  const [rangeNotice, setRangeNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,6 +96,60 @@ export default function CollectionValueChartClient({
       cancelled = true;
     };
   }, [apiBaseUrl, category, initialHistory, range]);
+
+  useEffect(() => {
+    if (!rangeNotice) return;
+
+    const timeout = window.setTimeout(() => {
+      setRangeNotice(null);
+    }, 3200);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [rangeNotice]);
+
+  const allHistoryDates = useMemo(() => {
+    const allPoints = [...initialHistory.base, ...initialHistory.market].sort((a, b) =>
+      a.date.localeCompare(b.date)
+    );
+
+    return allPoints;
+  }, [initialHistory]);
+
+  const historyAgeDays = useMemo(() => {
+    if (allHistoryDates.length < 2) {
+      return 0;
+    }
+
+    const firstDate = new Date(allHistoryDates[0].date);
+    const lastDate = new Date(allHistoryDates[allHistoryDates.length - 1].date);
+
+    const diffMs = lastDate.getTime() - firstDate.getTime();
+    return diffMs / (1000 * 60 * 60 * 24);
+  }, [allHistoryDates]);
+
+  const hasEnoughFor7d = historyAgeDays >= 1;
+  const hasEnoughFor30d = historyAgeDays >= 7;
+  const hasEnoughFor90d = historyAgeDays >= 30;
+
+  const isRangeAvailable = (value: ChartRange) => {
+    if (value === "all") return true;
+    if (value === "7d") return hasEnoughFor7d;
+    if (value === "30d") return hasEnoughFor30d;
+    if (value === "90d") return hasEnoughFor90d;
+    return true;
+  };
+
+  const handleRangeChange = (value: ChartRange) => {
+    if (!isRangeAvailable(value)) {
+      setRangeNotice(getRangeNoticeMessage(value, locale));
+      return;
+    }
+
+    setRangeNotice(null);
+    setRange(value);
+  };
 
   if (history.base.length === 0 && history.market.length === 0) {
     return (
@@ -158,10 +213,12 @@ export default function CollectionValueChartClient({
       locale={locale}
       theme={theme}
       range={range}
-      onRangeChange={setRange}
+      onRangeChange={handleRangeChange}
       series={series}
       onSeriesChange={setSeries}
       loading={loading}
+      isRangeAvailable={isRangeAvailable}
+      rangeNotice={rangeNotice}
     />
   );
 }
@@ -176,7 +233,9 @@ function CollectionChartCard({
   onRangeChange,
   series,
   onSeriesChange,
-  loading
+  loading,
+  isRangeAvailable,
+  rangeNotice
 }: {
   history: CollectionHistoryResponse;
   title: string;
@@ -188,6 +247,8 @@ function CollectionChartCard({
   series: ChartSeries;
   onSeriesChange: (value: ChartSeries) => void;
   loading: boolean;
+  isRangeAvailable: (value: ChartRange) => boolean;
+  rangeNotice: string | null;
 }) {
   const width = 1040;
   const height = 400;
@@ -410,7 +471,7 @@ function CollectionChartCard({
           justifyContent: "space-between",
           gap: 12,
           flexWrap: "wrap",
-          marginBottom: 14
+          marginBottom: 10
         }}
       >
         <div
@@ -465,31 +526,60 @@ function CollectionChartCard({
           <ToggleGroup>
             <ToggleButton
               active={range === "7d"}
+              disabled={false}
               onClick={() => onRangeChange("7d")}
               label="7D"
               theme={theme}
+              muted={!isRangeAvailable("7d")}
             />
             <ToggleButton
               active={range === "30d"}
+              disabled={false}
               onClick={() => onRangeChange("30d")}
               label="30D"
               theme={theme}
+              muted={!isRangeAvailable("30d")}
             />
             <ToggleButton
               active={range === "90d"}
+              disabled={false}
               onClick={() => onRangeChange("90d")}
               label="90D"
               theme={theme}
+              muted={!isRangeAvailable("90d")}
             />
             <ToggleButton
               active={range === "all"}
+              disabled={false}
               onClick={() => onRangeChange("all")}
               label="All"
               theme={theme}
+              muted={!isRangeAvailable("all")}
             />
           </ToggleGroup>
         </div>
       </div>
+
+      {rangeNotice && (
+        <div
+          style={{
+            marginBottom: 14,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "9px 12px",
+            borderRadius: 999,
+            background: "rgba(15,23,42,0.06)",
+            border: `1px solid ${theme.colors.border}`,
+            color: theme.colors.textMuted,
+            fontSize: 12,
+            fontWeight: 700
+          }}
+        >
+          <span style={{ fontSize: 14 }}>ℹ️</span>
+          <span>{rangeNotice}</span>
+        </div>
+      )}
 
       <div
         style={{
@@ -556,13 +646,13 @@ function CollectionChartCard({
           onMouseLeave={() => setHover(null)}
         >
           <defs>
-            <linearGradient id="marketAreaFillV7" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="marketAreaFillV9" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.26" />
               <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.09" />
               <stop offset="100%" stopColor={theme.colors.gold} stopOpacity="0.02" />
             </linearGradient>
 
-            <filter id="marketGlowV7">
+            <filter id="marketGlowV9">
               <feGaussianBlur stdDeviation="5" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -605,7 +695,7 @@ function CollectionChartCard({
           />
 
           {showMarket && marketAreaPath && (
-            <path d={marketAreaPath} fill="url(#marketAreaFillV7)" stroke="none" />
+            <path d={marketAreaPath} fill="url(#marketAreaFillV9)" stroke="none" />
           )}
 
           {showBase && basePath && (
@@ -631,7 +721,7 @@ function CollectionChartCard({
                 strokeWidth="12"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                filter="url(#marketGlowV7)"
+                filter="url(#marketGlowV9)"
               />
               <path
                 d={marketPath}
@@ -981,11 +1071,15 @@ function ToggleGroup({
 
 function ToggleButton({
   active,
+  disabled,
+  muted,
   onClick,
   label,
   theme
 }: {
   active: boolean;
+  disabled?: boolean;
+  muted?: boolean;
   onClick: () => void;
   label: string;
   theme: ReturnType<typeof getThemeById>;
@@ -993,6 +1087,7 @@ function ToggleButton({
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
       style={{
         border: "none",
@@ -1002,7 +1097,8 @@ function ToggleButton({
         color: active ? "white" : theme.colors.textMuted,
         fontWeight: 800,
         fontSize: 12,
-        cursor: "pointer"
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: muted && !active ? 0.55 : 1
       }}
     >
       {label}
@@ -1115,4 +1211,31 @@ function formatEuroCompact(value: number) {
   }
 
   return `${Math.round(value)} €`;
+}
+
+function getRangeNoticeMessage(
+  range: Exclude<ChartRange, "all">,
+  locale: "en" | "es"
+) {
+  if (locale === "es") {
+    if (range === "7d") {
+      return "Todavía no hay suficiente histórico para mostrar un rango de 7 días con sentido.";
+    }
+
+    if (range === "30d") {
+      return "Todavía no hay suficiente histórico para mostrar un rango de 30 días.";
+    }
+
+    return "Todavía no hay suficiente histórico para mostrar un rango de 90 días.";
+  }
+
+  if (range === "7d") {
+    return "There is not enough history yet to show a meaningful 7-day range.";
+  }
+
+  if (range === "30d") {
+    return "There is not enough history yet to show a 30-day range.";
+  }
+
+  return "There is not enough history yet to show a 90-day range.";
 }
