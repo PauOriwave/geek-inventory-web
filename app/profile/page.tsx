@@ -318,14 +318,114 @@ export default async function ProfilePage({
         fontFamily: "system-ui"
       }}
     >
-      <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginBottom: 10
-          }}
-        >
+      <style>{`
+        .profile-shell {
+          max-width: 1180px;
+          margin: 0 auto;
+        }
+
+        .profile-topbar {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 10px;
+        }
+
+        .profile-nav {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 18px;
+          flex-wrap: wrap;
+        }
+
+        .profile-hero {
+          background: ${theme.colors.black};
+          color: white;
+          border-radius: ${theme.radius.xl}px;
+          padding: 20px 22px;
+          margin-bottom: 20px;
+          box-shadow: ${theme.shadow.card};
+        }
+
+        .profile-hero-inner {
+          display: flex;
+          justify-content: space-between;
+          gap: 16px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .profile-public-grid {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .profile-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 12px;
+          margin-bottom: 18px;
+        }
+
+        .profile-main-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 18px;
+          align-items: start;
+        }
+
+        .profile-mini-stats {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          gap: 10px;
+          margin-bottom: 16px;
+        }
+
+        .profile-achievements-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+
+        .profile-aside {
+          display: grid;
+          gap: 18px;
+        }
+
+        @media (min-width: 1024px) {
+          .profile-main-grid {
+            grid-template-columns: minmax(0, 1fr) 340px;
+          }
+
+          .profile-achievements-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .profile-mini-stats {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 767px) {
+          .profile-shell {
+            max-width: 100%;
+          }
+
+          .profile-hero {
+            padding: 16px;
+            border-radius: ${theme.radius.lg}px;
+          }
+
+          .profile-topbar {
+            justify-content: flex-start;
+          }
+        }
+      `}</style>
+
+      <div className="profile-shell">
+        <div className="profile-topbar">
           <div
             style={{
               display: "inline-flex",
@@ -371,14 +471,7 @@ export default async function ProfilePage({
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            marginBottom: 18,
-            flexWrap: "wrap"
-          }}
-        >
+        <div className="profile-nav">
           <a href={`/items?lang=${locale}`} style={navLink(theme)}>
             {text.collection}
           </a>
@@ -405,25 +498,8 @@ export default async function ProfilePage({
           </span>
         </div>
 
-        <section
-          style={{
-            background: theme.colors.black,
-            color: "white",
-            borderRadius: theme.radius.xl,
-            padding: "20px 22px",
-            marginBottom: 20,
-            boxShadow: theme.shadow.card
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 16,
-              alignItems: "center",
-              flexWrap: "wrap"
-            }}
-          >
+        <section className="profile-hero">
+          <div className="profile-hero-inner">
             <div style={{ maxWidth: 780 }}>
               <h1
                 style={{
@@ -475,15 +551,7 @@ export default async function ProfilePage({
               marginBottom: 18
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 12,
-                alignItems: "center",
-                flexWrap: "wrap"
-              }}
-            >
+            <div className="profile-public-grid">
               <div style={{ maxWidth: 560 }}>
                 <div
                   style={{
@@ -585,7 +653,8 @@ export default async function ProfilePage({
                 style={{
                   fontSize: 22,
                   fontWeight: 900,
-                  marginTop: 4
+                  marginTop: 4,
+                  wordBreak: "break-word"
                 }}
               >
                 {formatPlanLabel(plan, locale)}
@@ -624,14 +693,7 @@ export default async function ProfilePage({
           </div>
         </section>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 12,
-            marginBottom: 18
-          }}
-        >
+        <div className="profile-stats-grid">
           <StatCard
             theme={theme}
             label={text.collectionUsage}
@@ -662,14 +724,7 @@ export default async function ProfilePage({
           />
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) 340px",
-            gap: 18,
-            alignItems: "start"
-          }}
-        >
+        <div className="profile-main-grid">
           <div>
             <section
               style={{
@@ -702,14 +757,7 @@ export default async function ProfilePage({
                 {text.loyaltyText}
               </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                  gap: 10,
-                  marginBottom: 16
-                }}
-              >
+              <div className="profile-mini-stats">
                 <MiniStat
                   theme={theme}
                   label={text.unlockedThemes}
@@ -821,7 +869,8 @@ export default async function ProfilePage({
                     <div
                       style={{
                         fontSize: 20,
-                        fontWeight: 900
+                        fontWeight: 900,
+                        wordBreak: "break-word"
                       }}
                     >
                       {getAchievementIcon(lastUnlocked.id, lastUnlocked.icon)}{" "}
@@ -854,13 +903,7 @@ export default async function ProfilePage({
                   —
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                    gap: 12
-                  }}
-                >
+                <div className="profile-achievements-grid">
                   {achievements.map((achievement) => {
                     const progress = getAchievementProgress(achievement);
                     const unlocked = achievement.unlocked;
@@ -875,7 +918,8 @@ export default async function ProfilePage({
                             ? theme.colors.surfaceAlt
                             : theme.colors.surface,
                           border: `1px solid ${theme.colors.border}`,
-                          boxShadow: theme.shadow.soft
+                          boxShadow: theme.shadow.soft,
+                          minWidth: 0
                         }}
                       >
                         <div
@@ -891,7 +935,8 @@ export default async function ProfilePage({
                             style={{
                               display: "flex",
                               gap: 10,
-                              alignItems: "center"
+                              alignItems: "center",
+                              minWidth: 0
                             }}
                           >
                             <div
@@ -906,7 +951,8 @@ export default async function ProfilePage({
                                   ? theme.colors.gold
                                   : theme.colors.surfaceAlt,
                                 border: `1px solid ${theme.colors.border}`,
-                                fontSize: 20
+                                fontSize: 20,
+                                flexShrink: 0
                               }}
                             >
                               {getAchievementIcon(
@@ -915,12 +961,13 @@ export default async function ProfilePage({
                               )}
                             </div>
 
-                            <div>
+                            <div style={{ minWidth: 0 }}>
                               <div
                                 style={{
                                   fontSize: 15,
                                   fontWeight: 900,
-                                  color: theme.colors.text
+                                  color: theme.colors.text,
+                                  wordBreak: "break-word"
                                 }}
                               >
                                 {prettifyAchievementId(achievement.id, locale)}
@@ -930,7 +977,8 @@ export default async function ProfilePage({
                                 style={{
                                   marginTop: 4,
                                   fontSize: 12,
-                                  color: theme.colors.textMuted
+                                  color: theme.colors.textMuted,
+                                  wordBreak: "break-word"
                                 }}
                               >
                                 {achievementDescription(achievement, locale)}
@@ -951,7 +999,8 @@ export default async function ProfilePage({
                                 ? theme.colors.black
                                 : theme.colors.textMuted,
                               border: `1px solid ${theme.colors.border}`,
-                              whiteSpace: "nowrap"
+                              whiteSpace: "nowrap",
+                              flexShrink: 0
                             }}
                           >
                             {unlocked ? text.unlocked : text.inProgress}
@@ -987,7 +1036,8 @@ export default async function ProfilePage({
                             justifyContent: "space-between",
                             gap: 8,
                             fontSize: 12,
-                            color: theme.colors.textMuted
+                            color: theme.colors.textMuted,
+                            flexWrap: "wrap"
                           }}
                         >
                           <span>
@@ -1003,12 +1053,7 @@ export default async function ProfilePage({
             </section>
           </div>
 
-          <aside
-            style={{
-              display: "grid",
-              gap: 18
-            }}
-          >
+          <aside className="profile-aside">
             <SideCard
               theme={theme}
               title={locale === "es" ? "Tu cuenta" : "Your account"}
@@ -1097,7 +1142,8 @@ function StatCard({
         borderRadius: theme.radius.lg,
         padding: 16,
         background: theme.colors.surface,
-        boxShadow: theme.shadow.soft
+        boxShadow: theme.shadow.soft,
+        minWidth: 0
       }}
     >
       <div
@@ -1115,7 +1161,8 @@ function StatCard({
         style={{
           fontSize: 22,
           fontWeight: 900,
-          marginBottom: 6
+          marginBottom: 6,
+          wordBreak: "break-word"
         }}
       >
         {value}
@@ -1125,7 +1172,8 @@ function StatCard({
         style={{
           fontSize: 12,
           color: theme.colors.textMuted,
-          lineHeight: 1.5
+          lineHeight: 1.5,
+          wordBreak: "break-word"
         }}
       >
         {hint}
@@ -1149,7 +1197,8 @@ function MiniStat({
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.md,
         padding: "12px 14px",
-        background: theme.colors.surfaceAlt
+        background: theme.colors.surfaceAlt,
+        minWidth: 0
       }}
     >
       <div
@@ -1166,7 +1215,8 @@ function MiniStat({
       <div
         style={{
           fontSize: 16,
-          fontWeight: 900
+          fontWeight: 900,
+          wordBreak: "break-word"
         }}
       >
         {value}
@@ -1226,11 +1276,20 @@ function InfoRow({
         gap: 12,
         padding: "10px 0",
         borderBottom: `1px solid ${theme.colors.border}`,
-        fontSize: 14
+        fontSize: 14,
+        flexWrap: "wrap"
       }}
     >
       <span style={{ color: theme.colors.textMuted }}>{label}</span>
-      <span style={{ fontWeight: 800, color: theme.colors.text }}>{value}</span>
+      <span
+        style={{
+          fontWeight: 800,
+          color: theme.colors.text,
+          wordBreak: "break-word"
+        }}
+      >
+        {value}
+      </span>
     </div>
   );
 }
