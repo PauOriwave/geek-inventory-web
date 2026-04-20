@@ -336,9 +336,7 @@ export default async function ItemsPage({
     level: locale === "es" ? "Nivel" : "Level",
     pointsToNext:
       locale === "es" ? "pts para subir" : "pts to level up",
-    marketPro: "Market Pro",
-    marketProLocked:
-      locale === "es" ? "Market Pro" : "Market Pro",
+    marketProLocked: "Market Pro",
     marketProTitle:
       locale === "es"
         ? "Desbloquea movers, gaps y análisis avanzado"
@@ -356,26 +354,137 @@ export default async function ItemsPage({
         padding: 24
       }}
     >
-      <div
-        style={{
-          maxWidth: 1380,
-          margin: "0 auto"
-        }}
-      >
-        <div
-          style={{
-            background: currentTheme.colors.black,
-            color: "white",
-            borderRadius: currentTheme.radius.xl,
-            padding: "16px 20px",
-            marginBottom: 18,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 16,
-            boxShadow: currentTheme.shadow.card
-          }}
-        >
+      <style>{`
+        .items-shell {
+          max-width: 1380px;
+          margin: 0 auto;
+        }
+
+        .items-header {
+          background: ${currentTheme.colors.black};
+          color: white;
+          border-radius: ${currentTheme.radius.xl}px;
+          padding: 16px 20px;
+          margin-bottom: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          box-shadow: ${currentTheme.shadow.card};
+        }
+
+        .items-header-right {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+        }
+
+        .items-layout {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 18px;
+          align-items: start;
+        }
+
+        .items-sidebar {
+          position: static;
+          top: auto;
+        }
+
+        .items-stats {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+
+        .items-controls-row {
+          margin-top: 18px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .items-controls-actions {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .items-table-head {
+          padding: 14px 16px;
+          border-bottom: 1px solid ${currentTheme.colors.border};
+          background: ${currentTheme.colors.surfaceAlt};
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .items-pagination {
+          display: flex;
+          gap: 12px;
+          align-items: center;
+          justify-content: center;
+          margin-top: 16px;
+          flex-wrap: wrap;
+        }
+
+        @media (min-width: 1024px) {
+          .items-layout {
+            grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+          }
+
+          .items-sidebar {
+            position: sticky;
+            top: 16px;
+          }
+        }
+
+        @media (max-width: 767px) {
+          .items-shell {
+            max-width: 100%;
+          }
+
+          .items-header {
+            padding: 14px;
+            border-radius: ${currentTheme.radius.lg}px;
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .items-header-right {
+            width: 100%;
+            justify-content: flex-start;
+          }
+
+          .items-table-head {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .items-controls-row {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .items-controls-actions {
+            width: 100%;
+          }
+
+          .items-pagination {
+            justify-content: flex-start;
+          }
+        }
+      `}</style>
+
+      <div className="items-shell">
+        <div className="items-header">
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div
               style={{
@@ -432,15 +541,7 @@ export default async function ItemsPage({
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexWrap: "wrap",
-              justifyContent: "flex-end"
-            }}
-          >
+          <div className="items-header-right">
             <UserBadge />
 
             <div
@@ -581,14 +682,7 @@ export default async function ItemsPage({
           </div>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) minmax(280px, 320px)",
-            gap: 18,
-            alignItems: "start"
-          }}
-        >
+        <div className="items-layout">
           <div>
             <ActiveFilters
               q={q}
@@ -598,14 +692,7 @@ export default async function ItemsPage({
               locale={locale}
             />
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(160px, 1fr))",
-                gap: 12,
-                marginBottom: 14
-              }}
-            >
+            <div className="items-stats">
               <StatCard
                 label={text.items}
                 value={summary.totalItems}
@@ -643,21 +730,12 @@ export default async function ItemsPage({
             </p>
           </div>
 
-          <div style={{ position: "sticky", top: 16 }}>
+          <div className="items-sidebar">
             <TopItems category={category} locale={locale} />
           </div>
         </div>
 
-        <div
-          style={{
-            marginTop: 18,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap"
-          }}
-        >
+        <div className="items-controls-row">
           <div
             style={{
               fontWeight: 800,
@@ -668,14 +746,7 @@ export default async function ItemsPage({
             {text.collectionControls}
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "center",
-              flexWrap: "wrap"
-            }}
-          >
+          <div className="items-controls-actions">
             <ValuateAllButton locale={locale} />
             <ImportCsvButton />
             <ExportCsvButton />
@@ -704,16 +775,7 @@ export default async function ItemsPage({
             boxShadow: currentTheme.shadow.card
           }}
         >
-          <div
-            style={{
-              padding: "14px 16px",
-              borderBottom: `1px solid ${currentTheme.colors.border}`,
-              background: currentTheme.colors.surfaceAlt,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}
-          >
+          <div className="items-table-head">
             <div style={{ fontWeight: 800, fontSize: 15 }}>
               {text.collectionItems}
             </div>
@@ -722,8 +784,8 @@ export default async function ItemsPage({
             </div>
           </div>
 
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 980 }}>
               <thead>
                 <tr>
                   <Th currentTheme={currentTheme}>{text.name}</Th>
@@ -879,15 +941,7 @@ export default async function ItemsPage({
           </div>
         </section>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-            alignItems: "center",
-            justifyContent: "center",
-            marginTop: 16
-          }}
-        >
+        <div className="items-pagination">
           <a
             href={prevHref}
             style={{
@@ -945,7 +999,8 @@ function StatCard({
         border: `1px solid ${currentTheme.colors.border}`,
         borderRadius: currentTheme.radius.lg,
         padding: "16px 18px",
-        boxShadow: currentTheme.shadow.soft
+        boxShadow: currentTheme.shadow.soft,
+        minWidth: 0
       }}
     >
       <div
@@ -962,7 +1017,8 @@ function StatCard({
         style={{
           fontSize: 24,
           fontWeight: 800,
-          color: currentTheme.colors.text
+          color: currentTheme.colors.text,
+          wordBreak: "break-word"
         }}
       >
         {value}
@@ -988,7 +1044,8 @@ function Th({
         fontSize: 12,
         color: currentTheme.colors.textMuted,
         borderBottom: `1px solid ${currentTheme.colors.border}`,
-        background: currentTheme.colors.surfaceAlt
+        background: currentTheme.colors.surfaceAlt,
+        whiteSpace: "nowrap"
       }}
     >
       {children}
@@ -1012,7 +1069,8 @@ function Td({
         padding: 12,
         borderBottom: `1px solid ${currentTheme.colors.border}`,
         background: currentTheme.colors.surface,
-        verticalAlign: "top"
+        verticalAlign: "top",
+        whiteSpace: "nowrap"
       }}
     >
       {children}

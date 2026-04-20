@@ -195,37 +195,111 @@ export default async function MarketProPage({
         padding: 24
       }}
     >
-      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
-        <div
-          style={{
-            background: theme.colors.black,
-            color: "white",
-            borderRadius: theme.radius.xl,
-            padding: "16px 20px",
-            marginBottom: 18,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 16,
-            flexWrap: "wrap",
-            boxShadow: theme.shadow.card
-          }}
-        >
+      <style>{`
+        .marketpro-shell {
+          max-width: 1320px;
+          margin: 0 auto;
+        }
+
+        .marketpro-header {
+          background: ${theme.colors.black};
+          color: white;
+          border-radius: ${theme.radius.xl}px;
+          padding: 16px 20px;
+          margin-bottom: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          flex-wrap: wrap;
+          box-shadow: ${theme.shadow.card};
+        }
+
+        .marketpro-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .marketpro-teaser-grid {
+          position: relative;
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 22px;
+          align-items: stretch;
+        }
+
+        .marketpro-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 12px;
+          margin-bottom: 18px;
+        }
+
+        .marketpro-panels-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 18px;
+          margin-bottom: 18px;
+        }
+
+        .marketpro-table-wrap {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .marketpro-table {
+          width: 100%;
+          border-collapse: collapse;
+          min-width: 680px;
+        }
+
+        @media (min-width: 1024px) {
+          .marketpro-teaser-grid {
+            grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+          }
+
+          .marketpro-panels-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 767px) {
+          .marketpro-shell {
+            max-width: 100%;
+          }
+
+          .marketpro-header {
+            padding: 14px;
+            border-radius: ${theme.radius.lg}px;
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .marketpro-header-actions {
+            width: 100%;
+            justify-content: flex-start;
+          }
+        }
+      `}</style>
+
+      <div className="marketpro-shell">
+        <div className="marketpro-header">
           <div>
             <div style={{ fontWeight: 900, fontSize: 22 }}>{text.title}</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.76)", marginTop: 4 }}>
+            <div
+              style={{
+                fontSize: 13,
+                color: "rgba(255,255,255,0.76)",
+                marginTop: 4
+              }}
+            >
               {text.subtitle}
             </div>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              flexWrap: "wrap"
-            }}
-          >
+          <div className="marketpro-header-actions">
             <UserBadge />
 
             <a
@@ -271,15 +345,7 @@ export default async function MarketProPage({
               }}
             />
 
-            <div
-              style={{
-                position: "relative",
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1.2fr) minmax(260px, 0.8fr)",
-                gap: 22,
-                alignItems: "stretch"
-              }}
-            >
+            <div className="marketpro-teaser-grid">
               <div>
                 <div
                   style={{
@@ -390,7 +456,11 @@ export default async function MarketProPage({
                   value="+18.4%"
                 />
                 <TeaserMetricCard
-                  title={locale === "es" ? "Valor real mercado" : "Real market value"}
+                  title={
+                    locale === "es"
+                      ? "Valor real mercado"
+                      : "Real market value"
+                  }
                   value="2,431.20 €"
                 />
               </div>
@@ -459,14 +529,7 @@ async function MarketProContent({
 
   return (
     <>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(180px, 1fr))",
-          gap: 12,
-          marginBottom: 18
-        }}
-      >
+      <div className="marketpro-stats-grid">
         <StatCard
           label={text.trackedItems}
           value={data.summary.trackedItems}
@@ -501,14 +564,7 @@ async function MarketProContent({
         />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-          gap: 18,
-          marginBottom: 18
-        }}
-      >
+      <div className="marketpro-panels-grid">
         <Panel theme={theme} title={text.rising}>
           <TrendTable
             rows={data.rising}
@@ -535,8 +591,8 @@ async function MarketProContent({
       </div>
 
       <Panel theme={theme} title={text.biggestGaps}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="marketpro-table-wrap">
+          <table className="marketpro-table">
             <thead>
               <tr>
                 <Th theme={theme}>Item</Th>
@@ -702,7 +758,8 @@ function StatCard({
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.lg,
         padding: "16px 18px",
-        boxShadow: theme.shadow.soft
+        boxShadow: theme.shadow.soft,
+        minWidth: 0
       }}
     >
       <div
@@ -718,13 +775,20 @@ function StatCard({
         style={{
           fontSize: 24,
           fontWeight: 900,
-          color: accent ?? theme.colors.text
+          color: accent ?? theme.colors.text,
+          wordBreak: "break-word"
         }}
       >
         {value}
       </div>
       {subvalue ? (
-        <div style={{ marginTop: 6, fontSize: 12, color: theme.colors.textMuted }}>
+        <div
+          style={{
+            marginTop: 6,
+            fontSize: 12,
+            color: theme.colors.textMuted
+          }}
+        >
           {subvalue}
         </div>
       ) : null}
@@ -785,12 +849,26 @@ function TrendTable({
                 display: "flex",
                 justifyContent: "space-between",
                 gap: 12,
-                alignItems: "center"
+                alignItems: "center",
+                flexWrap: "wrap"
               }}
             >
-              <div>
-                <div style={{ fontWeight: 900 }}>{row.name}</div>
-                <div style={{ fontSize: 12, color: theme.colors.textMuted, marginTop: 2 }}>
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: 900,
+                    wordBreak: "break-word"
+                  }}
+                >
+                  {row.name}
+                </div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: theme.colors.textMuted,
+                    marginTop: 2
+                  }}
+                >
                   {getCategoryLabel(row.category, locale)}
                 </div>
               </div>
@@ -819,13 +897,21 @@ function TrendTable({
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
                 gap: 8,
                 fontSize: 12
               }}
             >
-              <MiniMetric label={firstLabel} value={`${row.firstValue.toFixed(2)} €`} theme={theme} />
-              <MiniMetric label={latestLabel} value={`${row.latestValue.toFixed(2)} €`} theme={theme} />
+              <MiniMetric
+                label={firstLabel}
+                value={`${row.firstValue.toFixed(2)} €`}
+                theme={theme}
+              />
+              <MiniMetric
+                label={latestLabel}
+                value={`${row.latestValue.toFixed(2)} €`}
+                theme={theme}
+              />
               <MiniMetric
                 label={deltaLabel}
                 value={`${row.delta >= 0 ? "+" : ""}${row.delta.toFixed(2)} €`}
@@ -854,13 +940,27 @@ function MiniMetric({
         borderRadius: 12,
         border: `1px solid ${theme.colors.border}`,
         background: theme.colors.surface,
-        padding: "8px 10px"
+        padding: "8px 10px",
+        minWidth: 0
       }}
     >
-      <div style={{ fontSize: 11, color: theme.colors.textMuted, marginBottom: 4 }}>
+      <div
+        style={{
+          fontSize: 11,
+          color: theme.colors.textMuted,
+          marginBottom: 4
+        }}
+      >
         {label}
       </div>
-      <div style={{ fontWeight: 800 }}>{value}</div>
+      <div
+        style={{
+          fontWeight: 800,
+          wordBreak: "break-word"
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
@@ -900,7 +1000,8 @@ function GapBadge({
         borderRadius: 12,
         background: bg,
         color,
-        fontWeight: 800
+        fontWeight: 800,
+        whiteSpace: "nowrap"
       }}
     >
       <span>
@@ -934,7 +1035,8 @@ function Th({
         fontSize: 12,
         color: theme.colors.textMuted,
         borderBottom: `1px solid ${theme.colors.border}`,
-        background: theme.colors.surfaceAlt
+        background: theme.colors.surfaceAlt,
+        whiteSpace: "nowrap"
       }}
     >
       {children}
@@ -957,7 +1059,8 @@ function Td({
         textAlign: align ?? "left",
         padding: 12,
         borderBottom: `1px solid ${theme.colors.border}`,
-        background: theme.colors.surface
+        background: theme.colors.surface,
+        whiteSpace: "nowrap"
       }}
     >
       {children}

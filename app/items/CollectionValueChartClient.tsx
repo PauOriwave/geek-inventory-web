@@ -14,11 +14,6 @@ type CollectionHistoryResponse = {
   market: HistoryPoint[];
 };
 
-type HoverState = {
-  index: number;
-  x: number;
-};
-
 type ChartRange = "7d" | "30d" | "90d" | "all";
 type ChartSeries = "all" | "base" | "market";
 
@@ -49,118 +44,23 @@ export default function CollectionValueChartClient({
 
   const [range, setRange] = useState<ChartRange>(initialRange);
   const [series, setSeries] = useState<ChartSeries>(initialSeries);
-  const [history, setHistory] = useState<CollectionHistoryResponse>(initialHistory);
-  const [loading, setLoading] = useState(false);
-  const [rangeNotice, setRangeNotice] = useState<string | null>(null);
+  const [history, setHistory] = useState(initialHistory);
+
+  // 👉 responsive width REAL
+  const [containerWidth, setContainerWidth] = useState(800);
 
   useEffect(() => {
-    setRange(initialRange);
-  }, [initialRange]);
-
-  useEffect(() => {
-    setSeries(initialSeries);
-  }, [initialSeries]);
-
-  useEffect(() => {
-    setHistory(initialHistory);
-  }, [initialHistory]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadHistory() {
-      if (range === initialRange) {
-        setHistory(initialHistory);
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        const params = new URLSearchParams();
-        if (category) {
-          params.set("category", category);
-        }
-        params.set("range", range);
-
-        const res = await fetch(
-          `${apiBaseUrl}/stats/collection-history?${params.toString()}`,
-          {
-            credentials: "include"
-          }
-        );
-
-        if (!res.ok) {
-          return;
-        }
-
-        const data = await res.json();
-
-        if (!cancelled) {
-          setHistory({
-            base: Array.isArray(data?.base) ? data.base : [],
-            market: Array.isArray(data?.market) ? data.market : []
-          });
-        }
-      } catch {
-        // noop
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+    function handleResize() {
+      setContainerWidth(Math.min(window.innerWidth - 40, 1000));
     }
 
-    loadHistory();
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [apiBaseUrl, category, initialHistory, initialRange, range]);
-
-  useEffect(() => {
-    if (!rangeNotice) return;
-
-    const timeout = window.setTimeout(() => {
-      setRangeNotice(null);
-    }, 3200);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [rangeNotice]);
-
-  const allHistoryDates = useMemo(() => {
-    const allPoints = [...initialHistory.base, ...initialHistory.market].sort((a, b) =>
-      a.date.localeCompare(b.date)
-    );
-
-    return allPoints;
-  }, [initialHistory]);
-
-  const historyAgeDays = useMemo(() => {
-    if (allHistoryDates.length < 2) {
-      return 0;
-    }
-
-    const firstDate = new Date(allHistoryDates[0].date);
-    const lastDate = new Date(allHistoryDates[allHistoryDates.length - 1].date);
-
-    const diffMs = lastDate.getTime() - firstDate.getTime();
-    return diffMs / (1000 * 60 * 60 * 24);
-  }, [allHistoryDates]);
-
-  const hasEnoughFor7d = historyAgeDays >= 1;
-  const hasEnoughFor30d = historyAgeDays >= 7;
-  const hasEnoughFor90d = historyAgeDays >= 30;
-
-  const isRangeAvailable = (value: ChartRange) => {
-    if (value === "all") return true;
-    if (value === "7d") return hasEnoughFor7d;
-    if (value === "30d") return hasEnoughFor30d;
-    if (value === "90d") return hasEnoughFor90d;
-    return true;
-  };
+  // 👉 altura dinámica según dispositivo
+  const height = containerWidth < 500 ? 260 : 400;
 
   function syncChartStateToUrl(nextRange: ChartRange, nextSeries: ChartSeries) {
     const params = new URLSearchParams(searchParams.toString());
@@ -168,261 +68,45 @@ export default function CollectionValueChartClient({
     params.set("chartRange", nextRange);
     params.set("chartSeries", nextSeries);
 
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
-
-  const handleRangeChange = (value: ChartRange) => {
-    if (!isRangeAvailable(value)) {
-      if (value !== "all") {
-        setRangeNotice(getRangeNoticeMessage(value, locale));
-      }
-      return;
-    }
-
-    setRangeNotice(null);
-    setRange(value);
-    syncChartStateToUrl(value, series);
-  };
-
-  const handleSeriesChange = (value: ChartSeries) => {
-    setSeries(value);
-    syncChartStateToUrl(range, value);
-  };
-
-  if (history.base.length === 0 && history.market.length === 0) {
-    return (
-      <section
-        style={{
-          marginTop: 14,
-          background: theme.colors.surface,
-          border: `1px solid ${theme.colors.border}`,
-          borderRadius: theme.radius.xl,
-          padding: 20,
-          boxShadow: theme.shadow.card
-        }}
-      >
-        <div style={{ marginBottom: 12 }}>
-          <div
-            style={{
-              fontWeight: 900,
-              fontSize: 18,
-              color: theme.colors.text
-            }}
-          >
-            {title}
-          </div>
-          <div
-            style={{
-              fontSize: 13,
-              color: theme.colors.textMuted,
-              marginTop: 6
-            }}
-          >
-            {subtitle}
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginTop: 16,
-            border: `1px dashed ${theme.colors.border}`,
-            borderRadius: theme.radius.lg,
-            padding: 28,
-            textAlign: "center",
-            background: theme.colors.surfaceAlt,
-            color: theme.colors.textMuted,
-            lineHeight: 1.7,
-            fontSize: 14
-          }}
-        >
-          {locale === "es"
-            ? "Todavía no hay snapshots para mostrar la evolución. Añade objetos con precio, importa tu CSV o valora tu colección para empezar a construir el histórico."
-            : "There are no snapshots yet to show the evolution. Add priced items, import your CSV or valuate your collection to start building the history."}
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <CollectionChartCard
-      history={history}
-      title={title}
-      subtitle={subtitle}
-      locale={locale}
-      theme={theme}
-      range={range}
-      onRangeChange={handleRangeChange}
-      series={series}
-      onSeriesChange={handleSeriesChange}
-      loading={loading}
-      isRangeAvailable={isRangeAvailable}
-      rangeNotice={rangeNotice}
-    />
-  );
-}
-
-function CollectionChartCard({
-  history,
-  title,
-  subtitle,
-  locale,
-  theme,
-  range,
-  onRangeChange,
-  series,
-  onSeriesChange,
-  loading,
-  isRangeAvailable,
-  rangeNotice
-}: {
-  history: CollectionHistoryResponse;
-  title: string;
-  subtitle: string;
-  locale: "en" | "es";
-  theme: ReturnType<typeof getThemeById>;
-  range: ChartRange;
-  onRangeChange: (value: ChartRange) => void;
-  series: ChartSeries;
-  onSeriesChange: (value: ChartSeries) => void;
-  loading: boolean;
-  isRangeAvailable: (value: ChartRange) => boolean;
-  rangeNotice: string | null;
-}) {
-  const width = 1040;
-  const height = 400;
-  const paddingLeft = 56;
-  const paddingRight = 24;
-  const paddingTop = 24;
-  const paddingBottom = 52;
-
-  const showBase = series === "all" || series === "base";
-  const showMarket = series === "all" || series === "market";
-
-  const allPoints = useMemo(
-    () =>
-      [...history.base, ...history.market].sort((a, b) =>
-        a.date.localeCompare(b.date)
-      ),
-    [history]
-  );
-
-  const basePoints = showBase ? history.base : [];
-  const marketPoints = showMarket ? history.market : [];
-  const visibleSeries = marketPoints.length > 0 ? marketPoints : basePoints;
-
-  const first = visibleSeries[0]?.total ?? 0;
-  const latest = visibleSeries[visibleSeries.length - 1]?.total ?? 0;
-  const delta = latest - first;
-  const percent = first > 0 ? (delta / first) * 100 : 0;
-
-  const positive = delta > 0;
-  const negative = delta < 0;
-
-  const trendColor = positive
-    ? theme.colors.success
-    : negative
-      ? theme.colors.danger
-      : theme.colors.textMuted;
-
-  const trendSurface = positive
-    ? "rgba(2,122,72,0.10)"
-    : negative
-      ? "rgba(180,35,24,0.10)"
-      : theme.colors.surfaceAlt;
 
   const values = [
-    ...basePoints.map((p) => p.total),
-    ...marketPoints.map((p) => p.total)
+    ...history.base.map((p) => p.total),
+    ...history.market.map((p) => p.total)
   ];
 
-  const min = values.length > 0 ? Math.min(...values) : 0;
-  const max = values.length > 0 ? Math.max(...values) : 1;
+  const min = Math.min(...values, 0);
+  const max = Math.max(...values, 1);
 
-  const hasSinglePoint = values.length === 1;
-  const paddedMin = hasSinglePoint
-    ? Math.max(0, min * 0.92)
-    : Math.max(0, min * 0.94);
-  const paddedMax = hasSinglePoint ? max * 1.08 || max + 1 : max * 1.04;
-  const rangeValue = Math.max(1, paddedMax - paddedMin);
+  const padding = containerWidth < 500 ? 30 : 50;
 
-  const datePool = [...new Set([...basePoints, ...marketPoints].map((p) => p.date))].sort();
-  const earliestDate = datePool[0] ?? new Date().toISOString();
-  const latestDate = datePool[datePool.length - 1] ?? earliestDate;
+  const toX = (index: number, length: number) =>
+    padding + (index * (containerWidth - padding * 2)) / (length - 1 || 1);
 
-  const baseByDate = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const point of basePoints) map.set(point.date, point.total);
-    return map;
-  }, [basePoints]);
+  const toY = (value: number) =>
+    padding +
+    (1 - (value - min) / (max - min || 1)) *
+      (height - padding * 2);
 
-  const marketByDate = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const point of marketPoints) map.set(point.date, point.total);
-    return map;
-  }, [marketPoints]);
-
-  const usableWidth = width - paddingLeft - paddingRight;
-  const usableHeight = height - paddingTop - paddingBottom;
-
-  const toXByDate = (date: string) => {
-    if (datePool.length === 1) return paddingLeft + usableWidth / 2;
-    const index = datePool.indexOf(date);
-    return paddingLeft + (index * usableWidth) / (datePool.length - 1);
-  };
-
-  const toY = (value: number) => {
-    return paddingTop + (1 - (value - paddedMin) / rangeValue) * usableHeight;
-  };
-
-  const baseCoords = basePoints.map((point) => ({
-    x: toXByDate(point.date),
-    y: toY(point.total),
-    value: point.total,
-    date: point.date
+  const basePoints = history.base.map((p, i) => ({
+    x: toX(i, history.base.length),
+    y: toY(p.total)
   }));
 
-  const marketCoords = marketPoints.map((point) => ({
-    x: toXByDate(point.date),
-    y: toY(point.total),
-    value: point.total,
-    date: point.date
+  const marketPoints = history.market.map((p, i) => ({
+    x: toX(i, history.market.length),
+    y: toY(p.total)
   }));
 
-  const basePath =
-    baseCoords.length >= 2 ? buildSmoothPath(baseCoords) : "";
-  const marketPath =
-    marketCoords.length >= 2 ? buildSmoothPath(marketCoords) : "";
-
-  const marketAreaPath =
-    marketCoords.length >= 2
-      ? buildAreaPath(marketCoords, height - paddingBottom)
-      : "";
-
-  const yTicks = buildNiceTicks(paddedMin, paddedMax, 4);
-  const baseMarkerIndexes = getMarkerIndexes(baseCoords.length);
-  const marketMarkerIndexes = getMarkerIndexes(marketCoords.length);
-
-  const [hover, setHover] = useState<HoverState | null>(null);
-
-  const hoverData = hover
-    ? (() => {
-        const date = datePool[hover.index];
-        const baseValue = baseByDate.get(date) ?? null;
-        const marketValue = marketByDate.get(date) ?? null;
-        const seriesDelta =
-          baseValue != null && marketValue != null
-            ? marketValue - baseValue
-            : null;
-
-        return {
-          date,
-          baseValue,
-          marketValue,
-          seriesDelta
-        };
-      })()
-    : null;
+  const buildPath = (points: any[]) => {
+    if (points.length < 2) return "";
+    return points.reduce(
+      (acc, p, i) =>
+        i === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`,
+      ""
+    );
+  };
 
   return (
     <section
@@ -431,850 +115,88 @@ function CollectionChartCard({
         background: theme.colors.surface,
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.xl,
-        padding: 20,
-        boxShadow: theme.shadow.card
+        padding: containerWidth < 500 ? 14 : 20
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 18,
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          marginBottom: 18
-        }}
-      >
-        <div style={{ maxWidth: 560 }}>
-          <div
-            style={{
-              fontWeight: 900,
-              fontSize: 20,
-              lineHeight: 1.1,
-              color: theme.colors.text
-            }}
-          >
-            {title}
-          </div>
-
-          <div
-            style={{
-              marginTop: 8,
-              fontSize: 13,
-              color: theme.colors.textMuted,
-              lineHeight: 1.6
-            }}
-          >
-            {subtitle}
-          </div>
-        </div>
-
+      <div style={{ marginBottom: 12 }}>
         <div
           style={{
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap",
-            justifyContent: "flex-end"
+            fontWeight: 900,
+            fontSize: containerWidth < 500 ? 16 : 20
           }}
         >
-          <SummaryChip
-            label={locale === "es" ? "Inicial" : "Initial"}
-            value={`${first.toFixed(2)} €`}
-            theme={theme}
-          />
-          <SummaryChip
-            label={locale === "es" ? "Actual" : "Current"}
-            value={`${latest.toFixed(2)} €`}
-            theme={theme}
-          />
-          <SummaryChip
-            label={locale === "es" ? "Cambio" : "Change"}
-            value={`${positive ? "+" : ""}${delta.toFixed(2)} €`}
-            theme={theme}
-            accentColor={trendColor}
-            accentBg={trendSurface}
-          />
-          <SummaryChip
-            label={locale === "es" ? "Variación" : "Variation"}
-            value={`${percent >= 0 ? "+" : ""}${percent.toFixed(1)}%`}
-            theme={theme}
-            accentColor={trendColor}
-            accentBg={trendSurface}
-          />
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "wrap",
-          marginBottom: 10
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap"
-          }}
-        >
-          <LegendPill
-            label={locale === "es" ? "Base manual/importada" : "Manual/import baseline"}
-            color="#94A3B8"
-            dashed
-            theme={theme}
-          />
-          <LegendPill
-            label={locale === "es" ? "Valoración de mercado" : "Market valuation"}
-            color={theme.colors.gold}
-            theme={theme}
-          />
+          {title}
         </div>
 
         <div
           style={{
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap",
-            alignItems: "center"
-          }}
-        >
-          <ToggleGroup>
-            <ToggleButton
-              active={series === "all"}
-              onClick={() => onSeriesChange("all")}
-              label={locale === "es" ? "Todo" : "All"}
-              theme={theme}
-            />
-            <ToggleButton
-              active={series === "base"}
-              onClick={() => onSeriesChange("base")}
-              label={locale === "es" ? "Base" : "Base"}
-              theme={theme}
-            />
-            <ToggleButton
-              active={series === "market"}
-              onClick={() => onSeriesChange("market")}
-              label={locale === "es" ? "Mercado" : "Market"}
-              theme={theme}
-            />
-          </ToggleGroup>
-
-          <ToggleGroup>
-            <ToggleButton
-              active={range === "7d"}
-              disabled={false}
-              onClick={() => onRangeChange("7d")}
-              label="7D"
-              theme={theme}
-              muted={!isRangeAvailable("7d")}
-            />
-            <ToggleButton
-              active={range === "30d"}
-              disabled={false}
-              onClick={() => onRangeChange("30d")}
-              label="30D"
-              theme={theme}
-              muted={!isRangeAvailable("30d")}
-            />
-            <ToggleButton
-              active={range === "90d"}
-              disabled={false}
-              onClick={() => onRangeChange("90d")}
-              label="90D"
-              theme={theme}
-              muted={!isRangeAvailable("90d")}
-            />
-            <ToggleButton
-              active={range === "all"}
-              disabled={false}
-              onClick={() => onRangeChange("all")}
-              label="All"
-              theme={theme}
-              muted={!isRangeAvailable("all")}
-            />
-          </ToggleGroup>
-        </div>
-      </div>
-
-      {rangeNotice && (
-        <div
-          style={{
-            marginBottom: 14,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "9px 12px",
-            borderRadius: 999,
-            background: "rgba(15,23,42,0.06)",
-            border: `1px solid ${theme.colors.border}`,
+            fontSize: 13,
             color: theme.colors.textMuted,
-            fontSize: 12,
-            fontWeight: 700
+            marginTop: 6
           }}
         >
-          <span style={{ fontSize: 14 }}>ℹ️</span>
-          <span>{rangeNotice}</span>
+          {subtitle}
         </div>
-      )}
+      </div>
 
+      {/* CONTROLES */}
       <div
         style={{
-          position: "relative",
-          borderRadius: 24,
-          overflow: "hidden",
-          border: `1px solid ${theme.colors.border}`,
-          background: `linear-gradient(180deg, ${theme.colors.surface} 0%, ${theme.colors.surfaceAlt} 100%)`
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 8,
+          marginBottom: 12
         }}
       >
-        {loading && (
-          <div
+        {(["all", "base", "market"] as ChartSeries[]).map((s) => (
+          <button
+            key={s}
+            onClick={() => {
+              setSeries(s);
+              syncChartStateToUrl(range, s);
+            }}
             style={{
-              position: "absolute",
-              top: 12,
-              right: 12,
-              zIndex: 3,
               padding: "6px 10px",
               borderRadius: 999,
-              background: "rgba(15,23,42,0.78)",
-              color: "white",
-              fontSize: 12,
-              fontWeight: 800
+              border: "none",
+              background:
+                series === s ? theme.colors.black : theme.colors.surfaceAlt,
+              color: series === s ? "white" : theme.colors.textMuted,
+              fontWeight: 800,
+              fontSize: 12
             }}
           >
-            {locale === "es" ? "Cargando..." : "Loading..."}
-          </div>
-        )}
-
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          style={{
-            width: "100%",
-            height: "auto",
-            display: "block"
-          }}
-          onMouseMove={(event) => {
-            const rect = event.currentTarget.getBoundingClientRect();
-            const clientX = event.clientX - rect.left;
-            const svgX = (clientX / rect.width) * width;
-            const clampedX = Math.max(
-              paddingLeft,
-              Math.min(width - paddingRight, svgX)
-            );
-
-            let nearestIndex = 0;
-            let nearestDistance = Number.POSITIVE_INFINITY;
-
-            for (let i = 0; i < datePool.length; i++) {
-              const x = toXByDate(datePool[i]);
-              const distance = Math.abs(x - clampedX);
-
-              if (distance < nearestDistance) {
-                nearestDistance = distance;
-                nearestIndex = i;
-              }
-            }
-
-            setHover({
-              index: nearestIndex,
-              x: toXByDate(datePool[nearestIndex])
-            });
-          }}
-          onMouseLeave={() => setHover(null)}
-        >
-          <defs>
-            <linearGradient id="marketAreaFillV10" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.26" />
-              <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.09" />
-              <stop offset="100%" stopColor={theme.colors.gold} stopOpacity="0.02" />
-            </linearGradient>
-
-            <filter id="marketGlowV10">
-              <feGaussianBlur stdDeviation="5" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {yTicks.map((tick, index) => {
-            const y = toY(tick);
-
-            return (
-              <g key={`${tick}-${index}`}>
-                <line
-                  x1={paddingLeft}
-                  y1={y}
-                  x2={width - paddingRight}
-                  y2={y}
-                  stroke={theme.colors.border}
-                  strokeDasharray="4 8"
-                />
-                <text
-                  x={paddingLeft}
-                  y={y - 8}
-                  fontSize="11"
-                  fill={theme.colors.textMuted}
-                >
-                  {formatEuroCompact(tick)}
-                </text>
-              </g>
-            );
-          })}
-
-          <line
-            x1={paddingLeft}
-            y1={height - paddingBottom}
-            x2={width - paddingRight}
-            y2={height - paddingBottom}
-            stroke={theme.colors.border}
-          />
-
-          {showMarket && marketAreaPath && (
-            <path d={marketAreaPath} fill="url(#marketAreaFillV10)" stroke="none" />
-          )}
-
-          {showBase && basePath && (
-            <path
-              d={basePath}
-              fill="none"
-              stroke="#94A3B8"
-              strokeWidth="3"
-              strokeDasharray="7 8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={0.95}
-            />
-          )}
-
-          {showMarket && marketPath && (
-            <>
-              <path
-                d={marketPath}
-                fill="none"
-                stroke={theme.colors.gold}
-                strokeOpacity="0.16"
-                strokeWidth="12"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                filter="url(#marketGlowV10)"
-              />
-              <path
-                d={marketPath}
-                fill="none"
-                stroke={theme.colors.gold}
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </>
-          )}
-
-          {showBase && baseCoords.length === 1 && (
-            <>
-              <line
-                x1={paddingLeft}
-                y1={baseCoords[0].y}
-                x2={width - paddingRight}
-                y2={baseCoords[0].y}
-                stroke="#94A3B8"
-                strokeWidth="3"
-                strokeDasharray="8 8"
-                opacity={0.9}
-              />
-              <circle cx={baseCoords[0].x} cy={baseCoords[0].y} r="6" fill="#94A3B8" />
-            </>
-          )}
-
-          {showMarket && marketCoords.length === 1 && (
-            <>
-              <line
-                x1={paddingLeft}
-                y1={marketCoords[0].y}
-                x2={width - paddingRight}
-                y2={marketCoords[0].y}
-                stroke={theme.colors.gold}
-                strokeWidth="3"
-                strokeDasharray="8 8"
-                opacity={0.9}
-              />
-              <circle cx={marketCoords[0].x} cy={marketCoords[0].y} r="7" fill={theme.colors.gold} />
-              <circle
-                cx={marketCoords[0].x}
-                cy={marketCoords[0].y}
-                r="16"
-                fill={theme.colors.gold}
-                opacity="0.12"
-              />
-            </>
-          )}
-
-          {showBase && baseCoords.length > 1 &&
-            baseMarkerIndexes.map((index) => {
-              const point = baseCoords[index];
-
-              return (
-                <g key={`base-marker-${index}`}>
-                  <circle
-                    cx={point.x}
-                    cy={point.y}
-                    r="3"
-                    fill={theme.colors.surface}
-                    stroke="#94A3B8"
-                    strokeWidth="2"
-                  />
-                </g>
-              );
-            })}
-
-          {showMarket && marketCoords.length > 1 &&
-            marketMarkerIndexes.map((index) => {
-              const point = marketCoords[index];
-              const isLast = index === marketCoords.length - 1;
-
-              return (
-                <g key={`market-marker-${index}`}>
-                  <circle
-                    cx={point.x}
-                    cy={point.y}
-                    r={isLast ? "5.5" : "4"}
-                    fill={isLast ? theme.colors.black : theme.colors.surface}
-                    stroke={theme.colors.gold}
-                    strokeWidth="2.5"
-                  />
-                </g>
-              );
-            })}
-
-          {hover && hoverData && (
-            <>
-              <line
-                x1={hover.x}
-                y1={paddingTop}
-                x2={hover.x}
-                y2={height - paddingBottom}
-                stroke={theme.colors.textMuted}
-                strokeOpacity="0.35"
-                strokeDasharray="5 6"
-              />
-
-              {showBase && hoverData.baseValue != null && (
-                <circle
-                  cx={hover.x}
-                  cy={toY(hoverData.baseValue)}
-                  r="5"
-                  fill={theme.colors.surface}
-                  stroke="#94A3B8"
-                  strokeWidth="2.5"
-                />
-              )}
-
-              {showMarket && hoverData.marketValue != null && (
-                <circle
-                  cx={hover.x}
-                  cy={toY(hoverData.marketValue)}
-                  r="6"
-                  fill={theme.colors.surface}
-                  stroke={theme.colors.gold}
-                  strokeWidth="2.5"
-                />
-              )}
-            </>
-          )}
-
-          <text
-            x={paddingLeft}
-            y={height - 14}
-            fontSize="11"
-            fill={theme.colors.textMuted}
-          >
-            {formatChartDate(earliestDate, locale)}
-          </text>
-
-          <text
-            x={width / 2}
-            y={height - 14}
-            fontSize="11"
-            textAnchor="middle"
-            fill={theme.colors.textMuted}
-          >
-            {locale === "es"
-              ? `Base: ${history.base.length} · Mercado: ${history.market.length}`
-              : `Base: ${history.base.length} · Market: ${history.market.length}`}
-          </text>
-
-          <text
-            x={width - paddingRight}
-            y={height - 14}
-            fontSize="11"
-            textAnchor="end"
-            fill={theme.colors.textMuted}
-          >
-            {formatChartDate(latestDate, locale)}
-          </text>
-        </svg>
-
-        {hover && hoverData && (
-          <div
-            style={{
-              position: "absolute",
-              top: 18,
-              left: `calc(${((hover.x / width) * 100).toFixed(3)}% + 8px)`,
-              transform:
-                hover.x > width * 0.72 ? "translateX(-100%)" : "translateX(0)",
-              pointerEvents: "none",
-              zIndex: 2,
-              minWidth: 190,
-              maxWidth: 230,
-              padding: "12px 14px",
-              borderRadius: 16,
-              background: "rgba(15,23,42,0.94)",
-              color: "white",
-              boxShadow: "0 10px 30px rgba(2,6,23,0.28)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              backdropFilter: "blur(8px)"
-            }}
-          >
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 800,
-                marginBottom: 10,
-                color: "rgba(255,255,255,0.86)"
-              }}
-            >
-              {formatChartDate(hoverData.date, locale)}
-            </div>
-
-            {showBase && (
-              <TooltipRow
-                label={locale === "es" ? "Base" : "Baseline"}
-                value={
-                  hoverData.baseValue != null
-                    ? `${hoverData.baseValue.toFixed(2)} €`
-                    : "—"
-                }
-                color="#94A3B8"
-              />
-            )}
-
-            {showMarket && (
-              <TooltipRow
-                label={locale === "es" ? "Mercado" : "Market"}
-                value={
-                  hoverData.marketValue != null
-                    ? `${hoverData.marketValue.toFixed(2)} €`
-                    : "—"
-                }
-                color={theme.colors.gold}
-              />
-            )}
-
-            {showBase && showMarket && (
-              <TooltipRow
-                label="Δ"
-                value={
-                  hoverData.seriesDelta != null
-                    ? `${hoverData.seriesDelta >= 0 ? "+" : ""}${hoverData.seriesDelta.toFixed(2)} €`
-                    : "—"
-                }
-                color={
-                  hoverData.seriesDelta == null
-                    ? "rgba(255,255,255,0.72)"
-                    : hoverData.seriesDelta >= 0
-                      ? "#4ADE80"
-                      : "#FB7185"
-                }
-                strong
-              />
-            )}
-          </div>
-        )}
+            {s}
+          </button>
+        ))}
       </div>
+
+      {/* SVG */}
+      <svg
+        viewBox={`0 0 ${containerWidth} ${height}`}
+        style={{
+          width: "100%",
+          height: "auto",
+          display: "block"
+        }}
+      >
+        {/* BASE */}
+        <path
+          d={buildPath(basePoints)}
+          fill="none"
+          stroke="#94A3B8"
+          strokeWidth="2"
+          strokeDasharray="5 6"
+        />
+
+        {/* MARKET */}
+        <path
+          d={buildPath(marketPoints)}
+          fill="none"
+          stroke={theme.colors.gold}
+          strokeWidth="3"
+        />
+      </svg>
     </section>
   );
-}
-
-function SummaryChip({
-  label,
-  value,
-  theme,
-  accentColor,
-  accentBg
-}: {
-  label: string;
-  value: string;
-  theme: ReturnType<typeof getThemeById>;
-  accentColor?: string;
-  accentBg?: string;
-}) {
-  return (
-    <div
-      style={{
-        padding: "10px 12px",
-        borderRadius: 999,
-        border: `1px solid ${theme.colors.border}`,
-        background: accentBg ?? theme.colors.surfaceAlt,
-        minWidth: 128
-      }}
-    >
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 800,
-          letterSpacing: 0.2,
-          color: theme.colors.textMuted,
-          marginBottom: 4,
-          textTransform: "uppercase"
-        }}
-      >
-        {label}
-      </div>
-
-      <div
-        style={{
-          fontSize: 15,
-          fontWeight: 900,
-          color: accentColor ?? theme.colors.text,
-          lineHeight: 1.1
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function LegendPill({
-  label,
-  color,
-  dashed,
-  theme
-}: {
-  label: string;
-  color: string;
-  dashed?: boolean;
-  theme: ReturnType<typeof getThemeById>;
-}) {
-  return (
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "8px 10px",
-        borderRadius: 999,
-        border: `1px solid ${theme.colors.border}`,
-        background: theme.colors.surfaceAlt,
-        fontSize: 12,
-        color: theme.colors.textMuted,
-        fontWeight: 700
-      }}
-    >
-      <span
-        style={{
-          width: 18,
-          height: 0,
-          borderTop: `3px ${dashed ? "dashed" : "solid"} ${color}`,
-          display: "inline-block"
-        }}
-      />
-      {label}
-    </div>
-  );
-}
-
-function ToggleGroup({
-  children
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        display: "inline-flex",
-        gap: 6,
-        padding: 4,
-        borderRadius: 999,
-        background: "rgba(15,23,42,0.04)",
-        border: "1px solid rgba(148,163,184,0.22)"
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function ToggleButton({
-  active,
-  disabled,
-  muted,
-  onClick,
-  label,
-  theme
-}: {
-  active: boolean;
-  disabled?: boolean;
-  muted?: boolean;
-  onClick: () => void;
-  label: string;
-  theme: ReturnType<typeof getThemeById>;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        border: "none",
-        borderRadius: 999,
-        padding: "8px 12px",
-        background: active ? theme.colors.black : "transparent",
-        color: active ? "white" : theme.colors.textMuted,
-        fontWeight: 800,
-        fontSize: 12,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: muted && !active ? 0.55 : 1
-      }}
-    >
-      {label}
-    </button>
-  );
-}
-
-function TooltipRow({
-  label,
-  value,
-  color,
-  strong
-}: {
-  label: string;
-  value: string;
-  color: string;
-  strong?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        gap: 10,
-        fontSize: 13,
-        marginTop: 6
-      }}
-    >
-      <span style={{ color: "rgba(255,255,255,0.72)" }}>{label}</span>
-      <span
-        style={{
-          color,
-          fontWeight: strong ? 900 : 800
-        }}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function buildNiceTicks(min: number, max: number, steps = 4) {
-  if (min === max) return [min];
-
-  const ticks: number[] = [];
-  for (let i = 0; i <= steps; i++) {
-    ticks.push(min + ((max - min) * i) / steps);
-  }
-  return ticks;
-}
-
-function buildSmoothPath(points: Array<{ x: number; y: number }>) {
-  if (points.length === 0) return "";
-  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-
-  let d = `M ${points[0].x} ${points[0].y}`;
-
-  for (let i = 0; i < points.length - 1; i++) {
-    const current = points[i];
-    const next = points[i + 1];
-    const controlX = (current.x + next.x) / 2;
-
-    d += ` C ${controlX} ${current.y}, ${controlX} ${next.y}, ${next.x} ${next.y}`;
-  }
-
-  return d;
-}
-
-function buildAreaPath(
-  points: Array<{ x: number; y: number }>,
-  bottomY: number
-) {
-  if (points.length < 2) return "";
-  const linePath = buildSmoothPath(points);
-  return `${linePath} L ${points[points.length - 1].x} ${bottomY} L ${points[0].x} ${bottomY} Z`;
-}
-
-function getMarkerIndexes(length: number) {
-  if (length <= 2) {
-    return Array.from({ length }, (_, i) => i);
-  }
-
-  const indexes = new Set<number>();
-  indexes.add(0);
-  indexes.add(length - 1);
-
-  const desiredMarkers = Math.min(6, length);
-  const step = (length - 1) / Math.max(1, desiredMarkers - 1);
-
-  for (let i = 1; i < desiredMarkers - 1; i++) {
-    indexes.add(Math.round(step * i));
-  }
-
-  return [...indexes].sort((a, b) => a - b);
-}
-
-function formatChartDate(value: string, locale: "en" | "es") {
-  const date = new Date(value);
-
-  return new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric"
-  }).format(date);
-}
-
-function formatEuroCompact(value: number) {
-  if (value >= 1000) {
-    return `${Math.round(value).toLocaleString("en-GB")} €`;
-  }
-
-  return `${Math.round(value)} €`;
-}
-
-function getRangeNoticeMessage(
-  range: Exclude<ChartRange, "all">,
-  locale: "en" | "es"
-) {
-  if (locale === "es") {
-    if (range === "7d") {
-      return "Todavía no hay suficiente histórico para mostrar un rango de 7 días con sentido.";
-    }
-
-    if (range === "30d") {
-      return "Todavía no hay suficiente histórico para mostrar un rango de 30 días.";
-    }
-
-    return "Todavía no hay suficiente histórico para mostrar un rango de 90 días.";
-  }
-
-  if (range === "7d") {
-    return "There is not enough history yet to show a meaningful 7-day range.";
-  }
-
-  if (range === "30d") {
-    return "There is not enough history yet to show a 30-day range.";
-  }
-
-  return "There is not enough history yet to show a 90-day range.";
 }
