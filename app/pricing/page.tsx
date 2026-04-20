@@ -24,6 +24,21 @@ async function getMe(cookie: string): Promise<Me | null> {
   }
 }
 
+function normalizePlan(plan?: string | null) {
+  const value = (plan ?? "free").toLowerCase().trim();
+
+  if (value === "premium") return "premium";
+  if (
+    value === "market_pro" ||
+    value === "market-pro" ||
+    value === "marketpro"
+  ) {
+    return "market_pro";
+  }
+
+  return "free";
+}
+
 export default async function PricingPage({
   searchParams
 }: {
@@ -44,7 +59,7 @@ export default async function PricingPage({
   const theme = getThemeById(themeId);
 
   const me = await getMe(cookieHeader);
-  const currentPlan = me?.plan ?? "free";
+  const currentPlan = normalizePlan(me?.plan);
 
   const langEnHref = `/pricing?lang=en`;
   const langEsHref = `/pricing?lang=es`;
@@ -100,11 +115,14 @@ export default async function PricingPage({
     current:
       locale === "es" ? "Plan actual" : "Current plan",
     startFree:
-      locale === "es" ? "Empezar gratis" : "Start free",
+      locale === "es" ? "Seguir en Starter" : "Stay on Starter",
     upgradeCollector:
       locale === "es" ? "Pasar a Collector" : "Upgrade to Collector",
     upgradeMarket:
       locale === "es" ? "Pasar a Market Pro" : "Upgrade to Market Pro",
+    included: locale === "es" ? "Incluido en tu plan" : "Included in your plan",
+    downgrade:
+      locale === "es" ? "Plan inferior" : "Lower tier",
 
     compare:
       locale === "es" ? "Comparativa rápida" : "Quick comparison",
@@ -198,7 +216,20 @@ export default async function PricingPage({
     summaryText:
       locale === "es"
         ? "Free te deja empezar. Collector te da control real sobre tu colección. Market Pro añade la capa premium para quienes quieren usar la wishlist como radar de compra."
-        : "Free gets you started. Collector gives you real control over your collection. Market Pro adds the premium layer for users who want to use wishlist as a buying radar."
+        : "Free gets you started. Collector gives you real control over your collection. Market Pro adds the premium layer for users who want to use wishlist as a buying radar.",
+
+    heroTag:
+      locale === "es"
+        ? "Escala desde organización hasta inteligencia de mercado"
+        : "Scale from organization to market intelligence",
+
+    marketProCallout:
+      locale === "es"
+        ? "Market Pro está pensado como tu capa premium de decisión: movers, gaps y señales para comprar mejor."
+        : "Market Pro is designed as your premium decision layer: movers, gaps and signals to buy smarter.",
+
+    seeMarketPro:
+      locale === "es" ? "Ver teaser Market Pro" : "See Market Pro teaser"
   };
 
   const plans = [
@@ -210,6 +241,7 @@ export default async function PricingPage({
       bestFor: text.freeBest,
       cta: text.startFree,
       highlight: false,
+      accent: false,
       features: text.freeFeatures
     },
     {
@@ -220,6 +252,7 @@ export default async function PricingPage({
       bestFor: text.collectorBest,
       cta: text.upgradeCollector,
       highlight: true,
+      accent: true,
       features: text.collectorFeatures
     },
     {
@@ -230,6 +263,7 @@ export default async function PricingPage({
       bestFor: text.marketBest,
       cta: text.upgradeMarket,
       highlight: false,
+      accent: true,
       features: text.marketFeatures
     }
   ] as const;
@@ -375,7 +409,7 @@ export default async function PricingPage({
             background: theme.colors.black,
             color: "white",
             borderRadius: theme.radius.xl,
-            padding: "20px 22px",
+            padding: "22px 24px",
             marginBottom: 20,
             boxShadow: theme.shadow.card
           }}
@@ -390,6 +424,23 @@ export default async function PricingPage({
             }}
           >
             <div style={{ maxWidth: 820 }}>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "6px 10px",
+                  borderRadius: 999,
+                  background: "rgba(212,175,55,0.14)",
+                  color: theme.colors.gold,
+                  fontWeight: 900,
+                  fontSize: 12,
+                  marginBottom: 12
+                }}
+              >
+                {text.heroTag}
+              </div>
+
               <h1
                 style={{
                   margin: 0,
@@ -412,6 +463,38 @@ export default async function PricingPage({
               >
                 {text.subtitle}
               </p>
+
+              <div
+                style={{
+                  marginTop: 14,
+                  color: "rgba(255,255,255,0.82)",
+                  lineHeight: 1.65,
+                  fontSize: 14,
+                  maxWidth: 760
+                }}
+              >
+                {text.marketProCallout}
+              </div>
+
+              <div style={{ marginTop: 16 }}>
+                <a
+                  href={`/market-pro?lang=${locale}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    textDecoration: "none",
+                    borderRadius: 999,
+                    padding: "10px 14px",
+                    background: "rgba(255,255,255,0.08)",
+                    color: "white",
+                    fontWeight: 900,
+                    border: "1px solid rgba(255,255,255,0.12)"
+                  }}
+                >
+                  {text.seeMarketPro}
+                </a>
+              </div>
             </div>
 
             <div
@@ -430,11 +513,7 @@ export default async function PricingPage({
         </section>
 
         <section style={{ marginBottom: 20 }}>
-          <div
-            style={{
-              marginBottom: 14
-            }}
-          >
+          <div style={{ marginBottom: 14 }}>
             <div
               style={{
                 fontWeight: 900,
@@ -469,27 +548,85 @@ export default async function PricingPage({
                 (currentPlan === "premium" && plan.key === "premium") ||
                 (currentPlan === "market_pro" && plan.key === "market_pro");
 
+              const isLowerTierThanCurrent =
+                (currentPlan === "premium" && plan.key === "free") ||
+                (currentPlan === "market_pro" &&
+                  (plan.key === "free" || plan.key === "premium"));
+
+              const ctaLabel = isCurrent
+                ? text.current
+                : isLowerTierThanCurrent
+                  ? text.included
+                  : plan.cta;
+
+              const ctaHref = isCurrent
+                ? `/profile?lang=${locale}`
+                : plan.key === "market_pro"
+                  ? `/market-pro?lang=${locale}`
+                  : `/profile?lang=${locale}`;
+
               return (
                 <article
                   key={plan.key}
                   style={{
+                    position: "relative",
                     borderRadius: theme.radius.xl,
                     padding: 22,
                     border: `1px solid ${
-                      plan.highlight ? theme.colors.gold : theme.colors.border
+                      plan.highlight
+                        ? theme.colors.gold
+                        : plan.key === "market_pro"
+                          ? "rgba(212,175,55,0.34)"
+                          : theme.colors.border
                     }`,
                     background: plan.highlight
                       ? theme.colors.black
-                      : theme.colors.surface,
+                      : plan.key === "market_pro"
+                        ? "linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(250,250,250,1) 100%)"
+                        : theme.colors.surface,
                     color: plan.highlight ? "white" : theme.colors.text,
                     boxShadow: theme.shadow.card,
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
-                    minHeight: 420
+                    minHeight: 460,
+                    overflow: "hidden"
                   }}
                 >
-                  <div>
+                  {plan.highlight && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 14,
+                        right: 14,
+                        padding: "5px 9px",
+                        borderRadius: 999,
+                        background: "rgba(212,175,55,0.18)",
+                        color: theme.colors.gold,
+                        fontSize: 11,
+                        fontWeight: 900,
+                        border: "1px solid rgba(212,175,55,0.22)"
+                      }}
+                    >
+                      POPULAR
+                    </div>
+                  )}
+
+                  {plan.key === "market_pro" && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: -36,
+                        right: -26,
+                        width: 120,
+                        height: 120,
+                        borderRadius: 999,
+                        background: "rgba(212,175,55,0.10)"
+                      }}
+                    />
+                  )}
+
+                  <div style={{ position: "relative" }}>
                     <div
                       style={{
                         display: "flex",
@@ -504,7 +641,7 @@ export default async function PricingPage({
                         style={{
                           fontSize: 13,
                           fontWeight: 900,
-                          opacity: 0.78
+                          opacity: 0.82
                         }}
                       >
                         {plan.name}
@@ -529,6 +666,20 @@ export default async function PricingPage({
                           }}
                         >
                           {text.current}
+                        </span>
+                      ) : isLowerTierThanCurrent ? (
+                        <span
+                          style={{
+                            padding: "4px 8px",
+                            borderRadius: 999,
+                            background: theme.colors.surfaceAlt,
+                            color: theme.colors.textMuted,
+                            fontSize: 11,
+                            fontWeight: 900,
+                            border: `1px solid ${theme.colors.border}`
+                          }}
+                        >
+                          {text.downgrade}
                         </span>
                       ) : null}
                     </div>
@@ -566,7 +717,7 @@ export default async function PricingPage({
                       style={{
                         fontSize: 14,
                         lineHeight: 1.65,
-                        opacity: 0.82,
+                        opacity: 0.84,
                         marginBottom: 14
                       }}
                     >
@@ -629,7 +780,7 @@ export default async function PricingPage({
                           <span
                             style={{
                               fontWeight: 900,
-                              color: plan.highlight
+                              color: plan.highlight || plan.key === "market_pro"
                                 ? theme.colors.gold
                                 : theme.colors.text
                             }}
@@ -643,7 +794,7 @@ export default async function PricingPage({
                   </div>
 
                   <a
-                    href={`/profile?lang=${locale}`}
+                    href={ctaHref}
                     style={{
                       marginTop: 20,
                       textDecoration: "none",
@@ -651,13 +802,28 @@ export default async function PricingPage({
                       padding: "12px 16px",
                       textAlign: "center",
                       fontWeight: 900,
-                      background: plan.highlight
-                        ? "white"
-                        : theme.colors.black,
-                      color: plan.highlight ? "black" : "white"
+                      background: isCurrent
+                        ? theme.colors.surfaceAlt
+                        : plan.highlight
+                          ? "white"
+                          : plan.key === "market_pro"
+                            ? theme.colors.gold
+                            : theme.colors.black,
+                      color: isCurrent
+                        ? theme.colors.text
+                        : plan.highlight
+                          ? "black"
+                          : plan.key === "market_pro"
+                            ? theme.colors.black
+                            : "white",
+                      border: isCurrent
+                        ? `1px solid ${theme.colors.border}`
+                        : "none",
+                      pointerEvents: isLowerTierThanCurrent ? "none" : "auto",
+                      opacity: isLowerTierThanCurrent ? 0.6 : 1
                     }}
                   >
-                    {isCurrent ? text.current : plan.cta}
+                    {ctaLabel}
                   </a>
                 </article>
               );
