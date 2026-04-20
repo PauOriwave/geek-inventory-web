@@ -338,11 +338,12 @@ export default async function ItemsPage({
       locale === "es" ? "pts para subir" : "pts to level up",
     marketPro: "Market Pro",
     marketProLocked:
-      locale === "es" ? "Market Pro 🔒" : "Market Pro 🔒",
+      locale === "es" ? "Market Pro" : "Market Pro",
     marketProTitle:
       locale === "es"
-        ? "Disponible solo para usuarios Market Pro"
-        : "Available for Market Pro users only"
+        ? "Desbloquea movers, gaps y análisis avanzado"
+        : "Unlock movers, gaps and advanced market insights",
+    pro: "PRO"
   };
 
   return (
@@ -513,37 +514,53 @@ export default async function ItemsPage({
               Wishlist
             </a>
 
-            {marketProAccess ? (
-              <a
-                href={marketProHref}
-                style={{
-                  textDecoration: "none",
-                  borderRadius: 999,
-                  padding: "10px 14px",
-                  background: currentTheme.colors.gold,
-                  color: currentTheme.colors.black,
-                  fontWeight: 900,
-                  border: "1px solid rgba(255,255,255,0.12)"
-                }}
-              >
-                {text.marketPro}
-              </a>
-            ) : (
+            <a
+              href={marketProHref}
+              title={!marketProAccess ? text.marketProTitle : undefined}
+              style={{
+                textDecoration: "none",
+                borderRadius: 999,
+                padding: "8px 12px",
+                background: marketProAccess
+                  ? currentTheme.colors.gold
+                  : "linear-gradient(135deg, rgba(212,175,55,0.18) 0%, rgba(255,255,255,0.06) 100%)",
+                color: marketProAccess
+                  ? currentTheme.colors.black
+                  : "white",
+                fontWeight: 900,
+                border: marketProAccess
+                  ? "1px solid rgba(255,255,255,0.12)"
+                  : "1px solid rgba(212,175,55,0.26)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                boxShadow: marketProAccess
+                  ? "none"
+                  : "inset 0 1px 0 rgba(255,255,255,0.08)"
+              }}
+            >
+              <span>{text.marketProLocked}</span>
               <span
-                title={text.marketProTitle}
                 style={{
+                  fontSize: 10,
+                  fontWeight: 900,
+                  padding: "4px 6px",
                   borderRadius: 999,
-                  padding: "10px 14px",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "rgba(255,255,255,0.58)",
-                  fontWeight: 800,
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  cursor: "not-allowed"
+                  background: marketProAccess
+                    ? "rgba(0,0,0,0.10)"
+                    : "rgba(212,175,55,0.18)",
+                  color: marketProAccess
+                    ? currentTheme.colors.black
+                    : currentTheme.colors.gold,
+                  letterSpacing: 0.4
                 }}
               >
-                {text.marketProLocked}
+                {text.pro}
               </span>
-            )}
+              {!marketProAccess && (
+                <span style={{ fontSize: 12, opacity: 0.86 }}>🔒</span>
+              )}
+            </a>
 
             <a
               href={`/profile?lang=${locale}`}

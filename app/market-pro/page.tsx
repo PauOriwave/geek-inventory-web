@@ -129,12 +129,7 @@ export default async function MarketProPage({
   const category = typeof sp.category === "string" ? sp.category : undefined;
 
   const me = await getMe(cookieHeader);
-
-  if (!hasMarketProAccess(me?.plan)) {
-    redirect(`/items?lang=${locale}`);
-  }
-
-  const data = await getMarketOverview(cookieHeader, category);
+  const hasAccess = hasMarketProAccess(me?.plan);
 
   const text = {
     title: "Market Pro",
@@ -161,7 +156,33 @@ export default async function MarketProPage({
     estimated: locale === "es" ? "Estimado" : "Estimated",
     market: locale === "es" ? "Mercado" : "Market",
     gap: locale === "es" ? "Gap" : "Gap",
-    back: locale === "es" ? "Volver a colección" : "Back to collection"
+    back: locale === "es" ? "Volver a colección" : "Back to collection",
+    teaserTitle:
+      locale === "es"
+        ? "Desbloquea inteligencia de mercado real"
+        : "Unlock real market intelligence",
+    teaserSubtitle:
+      locale === "es"
+        ? "Market Pro te ayuda a detectar oportunidades, riesgos y diferencias entre tu valoración base y el mercado."
+        : "Market Pro helps you spot opportunities, risk and gaps between your baseline value and the market.",
+    feature1:
+      locale === "es"
+        ? "Top subidas y bajadas de tu colección"
+        : "Top rising and dropping items in your collection",
+    feature2:
+      locale === "es"
+        ? "Mayores gaps entre precio estimado y valor de mercado"
+        : "Biggest gaps between estimated price and market value",
+    feature3:
+      locale === "es"
+        ? "Resumen avanzado del valor real de mercado"
+        : "Advanced overview of your real market value",
+    locked:
+      locale === "es"
+        ? "Disponible solo para usuarios Market Pro"
+        : "Available only for Market Pro users",
+    upgrade:
+      locale === "es" ? "Ver planes en perfil" : "See plans in profile"
   };
 
   return (
@@ -226,155 +247,404 @@ export default async function MarketProPage({
           </div>
         </div>
 
-        {!data || data.summary.trackedItems === 0 ? (
+        {!hasAccess ? (
           <section
             style={{
-              background: theme.colors.surface,
-              border: `1px solid ${theme.colors.border}`,
+              position: "relative",
+              overflow: "hidden",
+              background:
+                "linear-gradient(135deg, rgba(15,23,42,1) 0%, rgba(30,41,59,1) 60%, rgba(51,65,85,1) 100%)",
+              border: `1px solid rgba(212,175,55,0.26)`,
               borderRadius: theme.radius.xl,
-              padding: 24,
+              padding: 28,
               boxShadow: theme.shadow.card,
-              color: theme.colors.textMuted
+              color: "white"
             }}
           >
-            {text.noData}
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                background:
+                  "radial-gradient(circle at top right, rgba(212,175,55,0.20), transparent 34%)",
+                pointerEvents: "none"
+              }}
+            />
+
+            <div
+              style={{
+                position: "relative",
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1.2fr) minmax(260px, 0.8fr)",
+                gap: 22,
+                alignItems: "stretch"
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "7px 12px",
+                    borderRadius: 999,
+                    background: "rgba(212,175,55,0.16)",
+                    color: theme.colors.gold,
+                    fontWeight: 900,
+                    fontSize: 12,
+                    marginBottom: 14,
+                    border: "1px solid rgba(212,175,55,0.22)"
+                  }}
+                >
+                  <span>🔒</span>
+                  <span>{text.locked}</span>
+                </div>
+
+                <h1
+                  style={{
+                    margin: 0,
+                    fontSize: 34,
+                    lineHeight: 1.05,
+                    fontWeight: 900
+                  }}
+                >
+                  {text.teaserTitle}
+                </h1>
+
+                <p
+                  style={{
+                    margin: "14px 0 0 0",
+                    maxWidth: 720,
+                    color: "rgba(255,255,255,0.82)",
+                    lineHeight: 1.7,
+                    fontSize: 15
+                  }}
+                >
+                  {text.teaserSubtitle}
+                </p>
+
+                <div
+                  style={{
+                    marginTop: 20,
+                    display: "grid",
+                    gap: 12
+                  }}
+                >
+                  <TeaserBullet text={text.feature1} />
+                  <TeaserBullet text={text.feature2} />
+                  <TeaserBullet text={text.feature3} />
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 22,
+                    display: "flex",
+                    gap: 10,
+                    flexWrap: "wrap"
+                  }}
+                >
+                  <a
+                    href={`/profile?lang=${locale}`}
+                    style={{
+                      textDecoration: "none",
+                      borderRadius: 999,
+                      padding: "12px 16px",
+                      background: theme.colors.gold,
+                      color: theme.colors.black,
+                      fontWeight: 900,
+                      border: "1px solid rgba(255,255,255,0.08)"
+                    }}
+                  >
+                    {text.upgrade}
+                  </a>
+
+                  <a
+                    href={`/items?lang=${locale}`}
+                    style={{
+                      textDecoration: "none",
+                      borderRadius: 999,
+                      padding: "12px 16px",
+                      background: "rgba(255,255,255,0.08)",
+                      color: "white",
+                      fontWeight: 800,
+                      border: "1px solid rgba(255,255,255,0.12)"
+                    }}
+                  >
+                    {text.back}
+                  </a>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "grid",
+                  gap: 12
+                }}
+              >
+                <TeaserMetricCard
+                  title={locale === "es" ? "Top movers" : "Top movers"}
+                  value="+124.80 €"
+                />
+                <TeaserMetricCard
+                  title={locale === "es" ? "Gap detectado" : "Gap detected"}
+                  value="+18.4%"
+                />
+                <TeaserMetricCard
+                  title={locale === "es" ? "Valor real mercado" : "Real market value"}
+                  value="2,431.20 €"
+                />
+              </div>
+            </div>
           </section>
         ) : (
-          <>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4, minmax(180px, 1fr))",
-                gap: 12,
-                marginBottom: 18
-              }}
-            >
-              <StatCard
-                label={text.trackedItems}
-                value={data.summary.trackedItems}
-                theme={theme}
-              />
-              <StatCard
-                label={text.baseValue}
-                value={`${data.summary.baseTotalValue.toFixed(2)} €`}
-                theme={theme}
-              />
-              <StatCard
-                label={text.marketValue}
-                value={`${data.summary.marketTotalValue.toFixed(2)} €`}
-                theme={theme}
-              />
-              <StatCard
-                label={text.totalGap}
-                value={`${data.summary.totalGap >= 0 ? "+" : ""}${data.summary.totalGap.toFixed(2)} €`}
-                theme={theme}
-                accent={
-                  data.summary.totalGap > 0
-                    ? theme.colors.success
-                    : data.summary.totalGap < 0
-                      ? theme.colors.danger
-                      : theme.colors.text
-                }
-                subvalue={
-                  data.summary.totalGapPercent != null
-                    ? `${data.summary.totalGapPercent >= 0 ? "+" : ""}${data.summary.totalGapPercent.toFixed(1)}%`
-                    : undefined
-                }
-              />
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: 18,
-                marginBottom: 18
-              }}
-            >
-              <Panel theme={theme} title={text.rising}>
-                <TrendTable
-                  rows={data.rising}
-                  locale={locale}
-                  theme={theme}
-                  emptyText={text.noData}
-                  firstLabel={text.first}
-                  latestLabel={text.latest}
-                  deltaLabel={text.delta}
-                />
-              </Panel>
-
-              <Panel theme={theme} title={text.dropping}>
-                <TrendTable
-                  rows={data.dropping}
-                  locale={locale}
-                  theme={theme}
-                  emptyText={text.noData}
-                  firstLabel={text.first}
-                  latestLabel={text.latest}
-                  deltaLabel={text.delta}
-                />
-              </Panel>
-            </div>
-
-            <Panel theme={theme} title={text.biggestGaps}>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr>
-                      <Th theme={theme}>Item</Th>
-                      <Th theme={theme}>Category</Th>
-                      <Th theme={theme} align="right">
-                        {text.estimated}
-                      </Th>
-                      <Th theme={theme} align="right">
-                        {text.market}
-                      </Th>
-                      <Th theme={theme} align="right">
-                        {text.gap}
-                      </Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.biggestGaps.map((row) => (
-                      <tr key={row.id}>
-                        <Td theme={theme}>
-                          <a
-                            href={`/items/${row.id}?lang=${locale}`}
-                            style={{
-                              textDecoration: "none",
-                              color: theme.colors.text,
-                              fontWeight: 800
-                            }}
-                          >
-                            {row.name}
-                          </a>
-                        </Td>
-                        <Td theme={theme}>
-                          {getCategoryLabel(row.category, locale)}
-                        </Td>
-                        <Td theme={theme} align="right">
-                          {row.estimatedPrice.toFixed(2)} €
-                        </Td>
-                        <Td theme={theme} align="right">
-                          {row.marketValue.toFixed(2)} €
-                        </Td>
-                        <Td theme={theme} align="right">
-                          <GapBadge
-                            gap={row.gap}
-                            gapPercent={row.gapPercent}
-                            theme={theme}
-                          />
-                        </Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Panel>
-          </>
+          <MarketProContent
+            cookieHeader={cookieHeader}
+            category={category}
+            locale={locale}
+            theme={theme}
+            text={text}
+          />
         )}
       </div>
     </main>
+  );
+}
+
+async function MarketProContent({
+  cookieHeader,
+  category,
+  locale,
+  theme,
+  text
+}: {
+  cookieHeader: string;
+  category?: string;
+  locale: "en" | "es";
+  theme: ReturnType<typeof getThemeById>;
+  text: {
+    trackedItems: string;
+    baseValue: string;
+    marketValue: string;
+    totalGap: string;
+    rising: string;
+    dropping: string;
+    biggestGaps: string;
+    noData: string;
+    first: string;
+    latest: string;
+    delta: string;
+    estimated: string;
+    market: string;
+    gap: string;
+  };
+}) {
+  const data = await getMarketOverview(cookieHeader, category);
+
+  if (!data || data.summary.trackedItems === 0) {
+    return (
+      <section
+        style={{
+          background: theme.colors.surface,
+          border: `1px solid ${theme.colors.border}`,
+          borderRadius: theme.radius.xl,
+          padding: 24,
+          boxShadow: theme.shadow.card,
+          color: theme.colors.textMuted
+        }}
+      >
+        {text.noData}
+      </section>
+    );
+  }
+
+  return (
+    <>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, minmax(180px, 1fr))",
+          gap: 12,
+          marginBottom: 18
+        }}
+      >
+        <StatCard
+          label={text.trackedItems}
+          value={data.summary.trackedItems}
+          theme={theme}
+        />
+        <StatCard
+          label={text.baseValue}
+          value={`${data.summary.baseTotalValue.toFixed(2)} €`}
+          theme={theme}
+        />
+        <StatCard
+          label={text.marketValue}
+          value={`${data.summary.marketTotalValue.toFixed(2)} €`}
+          theme={theme}
+        />
+        <StatCard
+          label={text.totalGap}
+          value={`${data.summary.totalGap >= 0 ? "+" : ""}${data.summary.totalGap.toFixed(2)} €`}
+          theme={theme}
+          accent={
+            data.summary.totalGap > 0
+              ? theme.colors.success
+              : data.summary.totalGap < 0
+                ? theme.colors.danger
+                : theme.colors.text
+          }
+          subvalue={
+            data.summary.totalGapPercent != null
+              ? `${data.summary.totalGapPercent >= 0 ? "+" : ""}${data.summary.totalGapPercent.toFixed(1)}%`
+              : undefined
+          }
+        />
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 18,
+          marginBottom: 18
+        }}
+      >
+        <Panel theme={theme} title={text.rising}>
+          <TrendTable
+            rows={data.rising}
+            locale={locale}
+            theme={theme}
+            emptyText={text.noData}
+            firstLabel={text.first}
+            latestLabel={text.latest}
+            deltaLabel={text.delta}
+          />
+        </Panel>
+
+        <Panel theme={theme} title={text.dropping}>
+          <TrendTable
+            rows={data.dropping}
+            locale={locale}
+            theme={theme}
+            emptyText={text.noData}
+            firstLabel={text.first}
+            latestLabel={text.latest}
+            deltaLabel={text.delta}
+          />
+        </Panel>
+      </div>
+
+      <Panel theme={theme} title={text.biggestGaps}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <Th theme={theme}>Item</Th>
+                <Th theme={theme}>Category</Th>
+                <Th theme={theme} align="right">
+                  {text.estimated}
+                </Th>
+                <Th theme={theme} align="right">
+                  {text.market}
+                </Th>
+                <Th theme={theme} align="right">
+                  {text.gap}
+                </Th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.biggestGaps.map((row) => (
+                <tr key={row.id}>
+                  <Td theme={theme}>
+                    <a
+                      href={`/items/${row.id}?lang=${locale}`}
+                      style={{
+                        textDecoration: "none",
+                        color: theme.colors.text,
+                        fontWeight: 800
+                      }}
+                    >
+                      {row.name}
+                    </a>
+                  </Td>
+                  <Td theme={theme}>
+                    {getCategoryLabel(row.category, locale)}
+                  </Td>
+                  <Td theme={theme} align="right">
+                    {row.estimatedPrice.toFixed(2)} €
+                  </Td>
+                  <Td theme={theme} align="right">
+                    {row.marketValue.toFixed(2)} €
+                  </Td>
+                  <Td theme={theme} align="right">
+                    <GapBadge
+                      gap={row.gap}
+                      gapPercent={row.gapPercent}
+                      theme={theme}
+                    />
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Panel>
+    </>
+  );
+}
+
+function TeaserBullet({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 10,
+        color: "rgba(255,255,255,0.9)"
+      }}
+    >
+      <span style={{ color: "#D4AF37", fontSize: 16, lineHeight: 1.2 }}>✦</span>
+      <span style={{ lineHeight: 1.6 }}>{text}</span>
+    </div>
+  );
+}
+
+function TeaserMetricCard({
+  title,
+  value
+}: {
+  title: string;
+  value: string;
+}) {
+  return (
+    <div
+      style={{
+        borderRadius: 20,
+        padding: "18px 18px",
+        background: "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.10)",
+        backdropFilter: "blur(6px)"
+      }}
+    >
+      <div
+        style={{
+          fontSize: 12,
+          color: "rgba(255,255,255,0.68)",
+          marginBottom: 8
+        }}
+      >
+        {title}
+      </div>
+      <div
+        style={{
+          fontWeight: 900,
+          fontSize: 24,
+          color: "#F8E08E"
+        }}
+      >
+        {value}
+      </div>
+    </div>
   );
 }
 
