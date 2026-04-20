@@ -241,7 +241,6 @@ export default async function PricingPage({
       bestFor: text.freeBest,
       cta: text.startFree,
       highlight: false,
-      accent: false,
       features: text.freeFeatures
     },
     {
@@ -252,7 +251,6 @@ export default async function PricingPage({
       bestFor: text.collectorBest,
       cta: text.upgradeCollector,
       highlight: true,
-      accent: true,
       features: text.collectorFeatures
     },
     {
@@ -263,7 +261,6 @@ export default async function PricingPage({
       bestFor: text.marketBest,
       cta: text.upgradeMarket,
       highlight: false,
-      accent: true,
       features: text.marketFeatures
     }
   ] as const;
@@ -317,14 +314,83 @@ export default async function PricingPage({
         fontFamily: "system-ui"
       }}
     >
-      <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginBottom: 10
-          }}
-        >
+      <style>{`
+        .pricing-shell {
+          max-width: 1180px;
+          margin: 0 auto;
+        }
+
+        .pricing-topbar {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 10px;
+        }
+
+        .pricing-nav {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 18px;
+          flex-wrap: wrap;
+        }
+
+        .pricing-hero {
+          background: ${theme.colors.black};
+          color: white;
+          border-radius: ${theme.radius.xl}px;
+          padding: 22px 24px;
+          margin-bottom: 20px;
+          box-shadow: ${theme.shadow.card};
+        }
+
+        .pricing-hero-inner {
+          display: flex;
+          justify-content: space-between;
+          gap: 16px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .pricing-plans-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 18px;
+        }
+
+        .pricing-compare-wrap {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .pricing-compare-table {
+          width: 100%;
+          border-collapse: collapse;
+          min-width: 680px;
+        }
+
+        @media (min-width: 768px) {
+          .pricing-plans-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          }
+        }
+
+        @media (max-width: 767px) {
+          .pricing-shell {
+            max-width: 100%;
+          }
+
+          .pricing-topbar {
+            justify-content: flex-start;
+          }
+
+          .pricing-hero {
+            padding: 16px;
+            border-radius: ${theme.radius.lg}px;
+          }
+        }
+      `}</style>
+
+      <div className="pricing-shell">
+        <div className="pricing-topbar">
           <div
             style={{
               display: "inline-flex",
@@ -370,14 +436,7 @@ export default async function PricingPage({
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            marginBottom: 18,
-            flexWrap: "wrap"
-          }}
-        >
+        <div className="pricing-nav">
           <a href={`/items?lang=${locale}`} style={navLink(theme)}>
             {text.collection}
           </a>
@@ -404,25 +463,8 @@ export default async function PricingPage({
           </span>
         </div>
 
-        <section
-          style={{
-            background: theme.colors.black,
-            color: "white",
-            borderRadius: theme.radius.xl,
-            padding: "22px 24px",
-            marginBottom: 20,
-            boxShadow: theme.shadow.card
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 16,
-              alignItems: "center",
-              flexWrap: "wrap"
-            }}
-          >
+        <section className="pricing-hero">
+          <div className="pricing-hero-inner">
             <div style={{ maxWidth: 820 }}>
               <div
                 style={{
@@ -535,13 +577,7 @@ export default async function PricingPage({
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: 18
-            }}
-          >
+          <div className="pricing-plans-grid">
             {plans.map((plan) => {
               const isCurrent =
                 (currentPlan === "free" && plan.key === "free") ||
@@ -689,13 +725,15 @@ export default async function PricingPage({
                         display: "flex",
                         alignItems: "baseline",
                         gap: 4,
-                        marginBottom: 8
+                        marginBottom: 8,
+                        flexWrap: "wrap"
                       }}
                     >
                       <div
                         style={{
                           fontSize: 34,
-                          fontWeight: 900
+                          fontWeight: 900,
+                          wordBreak: "break-word"
                         }}
                       >
                         {plan.price}
@@ -780,9 +818,10 @@ export default async function PricingPage({
                           <span
                             style={{
                               fontWeight: 900,
-                              color: plan.highlight || plan.key === "market_pro"
-                                ? theme.colors.gold
-                                : theme.colors.text
+                              color:
+                                plan.highlight || plan.key === "market_pro"
+                                  ? theme.colors.gold
+                                  : theme.colors.text
                             }}
                           >
                             •
@@ -858,13 +897,8 @@ export default async function PricingPage({
             </div>
           </div>
 
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse"
-              }}
-            >
+          <div className="pricing-compare-wrap">
+            <table className="pricing-compare-table">
               <thead>
                 <tr>
                   <PricingTh theme={theme}>{text.feature}</PricingTh>
@@ -948,7 +982,8 @@ function PricingTh({
         fontSize: 12,
         color: theme.colors.textMuted,
         borderBottom: `1px solid ${theme.colors.border}`,
-        background: theme.colors.surfaceAlt
+        background: theme.colors.surfaceAlt,
+        whiteSpace: "nowrap"
       }}
     >
       {children}
@@ -969,7 +1004,8 @@ function PricingTd({
         padding: 14,
         borderBottom: `1px solid ${theme.colors.border}`,
         color: theme.colors.text,
-        fontSize: 14
+        fontSize: 14,
+        whiteSpace: "nowrap"
       }}
     >
       {children}
