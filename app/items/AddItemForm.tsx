@@ -15,6 +15,7 @@ const categories = [
   "tcg",
   "figure",
   "boardgame",
+  "miniature",
   "lego",
   "movie",
   "other"
@@ -59,6 +60,7 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
       { value: "Dreamcast", label: "Dreamcast" },
       { value: "PC", label: "PC" }
     ],
+
     movie: [
       { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
       { value: "DVD", label: "DVD" },
@@ -66,12 +68,14 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
       { value: "4K UHD", label: "4K UHD" },
       { value: "VHS", label: "VHS" }
     ],
+
     book: [
       { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
       { value: "Hardcover", label: "Hardcover" },
       { value: "Paperback", label: "Paperback" },
       { value: "Pocket", label: "Pocket" }
     ],
+
     comic: [
       { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
       { value: "Single Issue", label: "Single Issue" },
@@ -80,12 +84,40 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
       { value: "Omnibus", label: "Omnibus" },
       { value: "Manga", label: "Manga" }
     ],
+
     boardgame: [
       { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
       { value: "Standard", label: "Standard" },
       { value: "Expansion", label: "Expansion" },
       { value: "Collector Edition", label: "Collector Edition" }
     ],
+
+    miniature: [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+
+      { value: "Warhammer 40K", label: "Warhammer 40K" },
+      { value: "Age of Sigmar", label: "Age of Sigmar" },
+      { value: "Kill Team", label: "Kill Team" },
+      { value: "Necromunda", label: "Necromunda" },
+      { value: "Blood Bowl", label: "Blood Bowl" },
+      { value: "Horus Heresy", label: "Horus Heresy" },
+
+      { value: "Warcry", label: "Warcry" },
+      { value: "Middle-earth", label: "Middle-earth" },
+
+      { value: "Infinity", label: "Infinity" },
+      { value: "Malifaux", label: "Malifaux" },
+      { value: "Star Wars Legion", label: "Star Wars Legion" },
+
+      {
+        value: "Other Miniatures",
+        label:
+          locale === "es"
+            ? "Otras miniaturas"
+            : "Other Miniatures"
+      }
+    ],
+
     tcg: [
       { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
       { value: "Pokemon", label: "Pokemon" },
@@ -94,6 +126,7 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
       { value: "One Piece", label: "One Piece" },
       { value: "Lorcana", label: "Lorcana" }
     ],
+
     figure: [
       { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
       { value: "PVC", label: "PVC" },
@@ -102,12 +135,14 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
       { value: "Figma", label: "Figma" },
       { value: "Funko Pop", label: "Funko Pop" }
     ],
+
     lego: [
       { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
       { value: "Set", label: "Set" },
       { value: "Minifigure", label: "Minifigure" },
       { value: "Promotional", label: "Promotional" }
     ],
+
     other: commonOther
   };
 
@@ -160,7 +195,11 @@ function getCompletenessOptions(category: string, locale: "en" | "es") {
     ];
   }
 
-  if (category === "boardgame" || category === "lego") {
+  if (
+    category === "boardgame" ||
+    category === "lego" ||
+    category === "miniature"
+  ) {
     return [
       { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
       { value: "complete", label: locale === "es" ? "Completo" : "Complete" },

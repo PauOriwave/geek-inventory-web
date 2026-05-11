@@ -27,6 +27,10 @@ export function getCategoryLabel(
       en: "Board Game",
       es: "Juegos de mesa"
     },
+    miniature: {
+      en: "Miniatures",
+      es: "Miniaturas"
+    },
     lego: {
       en: "LEGO",
       es: "LEGO"

@@ -13,6 +13,7 @@ type Category =
   | "tcg"
   | "figure"
   | "boardgame"
+  | "miniature"
   | "lego"
   | "movie"
   | "other"
@@ -72,7 +73,31 @@ function getPlatformOptions(category: Category, locale: Locale) {
       empty,
       { value: "Standard", label: locale === "es" ? "Estándar" : "Standard" },
       { value: "Expansion", label: locale === "es" ? "Expansión" : "Expansion" },
-      { value: "Collector Edition", label: locale === "es" ? "Edición coleccionista" : "Collector Edition" }
+      {
+        value: "Collector Edition",
+        label: locale === "es" ? "Edición coleccionista" : "Collector Edition"
+      }
+    ];
+  }
+
+  if (category === "miniature") {
+    return [
+      empty,
+      { value: "Warhammer 40K", label: "Warhammer 40K" },
+      { value: "Age of Sigmar", label: "Age of Sigmar" },
+      { value: "Kill Team", label: "Kill Team" },
+      { value: "Necromunda", label: "Necromunda" },
+      { value: "Blood Bowl", label: "Blood Bowl" },
+      { value: "Horus Heresy", label: "Horus Heresy" },
+      { value: "Warcry", label: "Warcry" },
+      { value: "Middle-earth", label: "Middle-earth" },
+      { value: "Infinity", label: "Infinity" },
+      { value: "Malifaux", label: "Malifaux" },
+      { value: "Star Wars Legion", label: "Star Wars Legion" },
+      {
+        value: "Other Miniatures",
+        label: locale === "es" ? "Otras miniaturas" : "Other Miniatures"
+      }
     ];
   }
 
@@ -138,7 +163,7 @@ function getRegionOptions(category: Category, locale: Locale) {
     label: locale === "es" ? "Sin especificar" : "Not specified"
   };
 
-  if (category === "videogame") {
+  if (category === "videogame" || category === "movie") {
     return [
       empty,
       { value: "PAL", label: "PAL" },
@@ -172,7 +197,20 @@ function getConditionOptions(locale: Locale) {
   ];
 }
 
-function getCompletenessOptions(locale: Locale) {
+function getCompletenessOptions(category: Category, locale: Locale) {
+  if (category === "miniature") {
+    return [
+      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" },
+      { value: "on_sprue", label: locale === "es" ? "En matriz" : "On Sprue" },
+      { value: "assembled", label: locale === "es" ? "Montado" : "Assembled" },
+      { value: "painted", label: locale === "es" ? "Pintado" : "Painted" },
+      { value: "unpainted", label: locale === "es" ? "Sin pintar" : "Unpainted" },
+      { value: "complete", label: locale === "es" ? "Completo" : "Complete" },
+      { value: "incomplete", label: locale === "es" ? "Incompleto" : "Incomplete" }
+    ];
+  }
+
   return [
     { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
     { value: "loose", label: "Loose" },
@@ -181,7 +219,10 @@ function getCompletenessOptions(locale: Locale) {
     { value: "complete", label: locale === "es" ? "Completo" : "Complete" },
     { value: "incomplete", label: locale === "es" ? "Incompleto" : "Incomplete" },
     { value: "standard", label: locale === "es" ? "Estándar" : "Standard" },
-    { value: "special_edition", label: locale === "es" ? "Edición especial" : "Special Edition" },
+    {
+      value: "special_edition",
+      label: locale === "es" ? "Edición especial" : "Special Edition"
+    },
     { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" }
   ];
 }
@@ -235,8 +276,8 @@ export default function ItemActions({
   const conditionOptions = useMemo(() => getConditionOptions(locale), [locale]);
 
   const completenessOptions = useMemo(
-    () => getCompletenessOptions(locale),
-    [locale]
+    () => getCompletenessOptions(category, locale),
+    [category, locale]
   );
 
   const text = {
@@ -256,9 +297,13 @@ export default function ItemActions({
         ? locale === "es"
           ? "Formato"
           : "Format"
-        : locale === "es"
-          ? "Plataforma"
-          : "Platform",
+        : category === "miniature"
+          ? locale === "es"
+            ? "Sistema"
+            : "System"
+          : locale === "es"
+            ? "Plataforma"
+            : "Platform",
     completeness: locale === "es" ? "Completitud" : "Completeness",
     region: locale === "es" ? "Región" : "Region",
     notes: locale === "es" ? "Notas" : "Notes",
@@ -374,7 +419,11 @@ export default function ItemActions({
           flexWrap: "wrap"
         }}
       >
-        <button type="button" onClick={() => setEditing(true)} style={secondaryBtn}>
+        <button
+          type="button"
+          onClick={() => setEditing(true)}
+          style={secondaryBtn}
+        >
           {text.edit}
         </button>
 
@@ -390,7 +439,12 @@ export default function ItemActions({
           {valuating ? text.valuating : text.valuate}
         </button>
 
-        <button type="button" onClick={handleDelete} disabled={deleting} style={dangerBtn}>
+        <button
+          type="button"
+          onClick={handleDelete}
+          disabled={deleting}
+          style={dangerBtn}
+        >
           {deleting ? text.deleting : text.delete}
         </button>
       </div>
@@ -432,7 +486,11 @@ export default function ItemActions({
       </Field>
 
       <Field label={text.condition}>
-        <select value={condition} onChange={(e) => setCondition(e.target.value)} style={inputStyle}>
+        <select
+          value={condition}
+          onChange={(e) => setCondition(e.target.value)}
+          style={inputStyle}
+        >
           {conditionOptions.map((option) => (
             <option key={`condition-${option.value}`} value={option.value}>
               {option.label}
@@ -442,7 +500,11 @@ export default function ItemActions({
       </Field>
 
       <Field label={text.platform}>
-        <select value={platform} onChange={(e) => setPlatform(e.target.value)} style={inputStyle}>
+        <select
+          value={platform}
+          onChange={(e) => setPlatform(e.target.value)}
+          style={inputStyle}
+        >
           {platformOptions.map((option) => (
             <option key={`platform-${option.value}`} value={option.value}>
               {option.label}
@@ -466,7 +528,11 @@ export default function ItemActions({
       </Field>
 
       <Field label={text.region}>
-        <select value={region} onChange={(e) => setRegion(e.target.value)} style={inputStyle}>
+        <select
+          value={region}
+          onChange={(e) => setRegion(e.target.value)}
+          style={inputStyle}
+        >
           {regionOptions.map((option) => (
             <option key={`region-${option.value}`} value={option.value}>
               {option.label}
@@ -495,11 +561,20 @@ export default function ItemActions({
           flexWrap: "wrap"
         }}
       >
-        <button type="button" onClick={() => setEditing(false)} style={secondaryBtn}>
+        <button
+          type="button"
+          onClick={() => setEditing(false)}
+          style={secondaryBtn}
+        >
           {text.cancel}
         </button>
 
-        <button type="button" onClick={handleSave} disabled={saving} style={darkBtn}>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          style={darkBtn}
+        >
           {saving ? text.saving : text.save}
         </button>
       </div>
