@@ -910,6 +910,7 @@ export default async function ItemsPage({
                     <Td align="right" currentTheme={currentTheme}>
                       <ItemActions
                         id={it.id}
+                        category={it.category}
                         initialQty={it.quantity}
                         initialPrice={Number(it.estimatedPrice)}
                         initialCondition={it.condition}

@@ -4,73 +4,152 @@ import { useMemo, useState } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
-function getPlatformOptions(locale: "en" | "es") {
-  return [
-    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
-    { value: "PS1", label: "PS1" },
-    { value: "PS2", label: "PS2" },
-    { value: "PS3", label: "PS3" },
-    { value: "PS4", label: "PS4" },
-    { value: "PS5", label: "PS5" },
-    { value: "PSP", label: "PSP" },
-    { value: "PS Vita", label: "PS Vita" },
-    { value: "Xbox", label: "Xbox" },
-    { value: "Xbox 360", label: "Xbox 360" },
-    { value: "Xbox One", label: "Xbox One" },
-    { value: "Xbox Series", label: "Xbox Series" },
-    { value: "NES", label: "NES" },
-    { value: "SNES", label: "SNES" },
-    { value: "Nintendo 64", label: "Nintendo 64" },
-    { value: "GameCube", label: "GameCube" },
-    { value: "Wii", label: "Wii" },
-    { value: "Wii U", label: "Wii U" },
-    { value: "Switch", label: "Switch" },
-    { value: "Game Boy", label: "Game Boy" },
-    { value: "Game Boy Color", label: "Game Boy Color" },
-    { value: "Game Boy Advance", label: "Game Boy Advance" },
-    { value: "Nintendo DS", label: "Nintendo DS" },
-    { value: "Nintendo 3DS", label: "Nintendo 3DS" },
-    { value: "Mega Drive", label: "Mega Drive" },
-    { value: "Master System", label: "Master System" },
-    { value: "Dreamcast", label: "Dreamcast" },
-    { value: "PC", label: "PC" },
-    { value: "DVD", label: "DVD" },
-    { value: "Blu-ray", label: "Blu-ray" },
-    { value: "4K UHD", label: "4K UHD" },
-    { value: "VHS", label: "VHS" },
-    { value: "Hardcover", label: "Hardcover" },
-    { value: "Paperback", label: "Paperback" },
-    { value: "Pocket", label: "Pocket" },
-    { value: "Single Issue", label: "Single Issue" },
-    { value: "TPB", label: "TPB" },
-    { value: "Omnibus", label: "Omnibus" },
-    { value: "Manga", label: "Manga" },
-    { value: "Standard", label: "Standard" },
-    { value: "Expansion", label: "Expansion" },
-    { value: "Collector Edition", label: "Collector Edition" },
-    { value: "Pokemon", label: "Pokemon" },
-    { value: "Yu-Gi-Oh!", label: "Yu-Gi-Oh!" },
-    { value: "Magic", label: "Magic" },
-    { value: "One Piece", label: "One Piece" },
-    { value: "Lorcana", label: "Lorcana" },
-    { value: "PVC", label: "PVC" },
-    { value: "Statue", label: "Statue" },
-    { value: "Nendoroid", label: "Nendoroid" },
-    { value: "Figma", label: "Figma" },
-    { value: "Funko Pop", label: "Funko Pop" },
-    { value: "Set", label: "Set" },
-    { value: "Minifigure", label: "Minifigure" },
-    { value: "Promotional", label: "Promotional" }
-  ];
+type Locale = "en" | "es";
+
+type Category =
+  | "videogame"
+  | "book"
+  | "comic"
+  | "tcg"
+  | "figure"
+  | "boardgame"
+  | "lego"
+  | "movie"
+  | "other"
+  | string;
+
+function getPlatformOptions(category: Category, locale: Locale) {
+  const empty = {
+    value: "",
+    label: locale === "es" ? "Sin especificar" : "Not specified"
+  };
+
+  if (category === "movie") {
+    return [
+      empty,
+      { value: "DVD", label: "DVD" },
+      { value: "Blu-ray", label: "Blu-ray" },
+      { value: "4K UHD", label: "4K UHD" },
+      { value: "VHS", label: "VHS" }
+    ];
+  }
+
+  if (category === "tcg") {
+    return [
+      empty,
+      { value: "Pokemon", label: "Pokemon" },
+      { value: "Yu-Gi-Oh!", label: "Yu-Gi-Oh!" },
+      { value: "Magic", label: "Magic" },
+      { value: "One Piece", label: "One Piece" },
+      { value: "Lorcana", label: "Lorcana" },
+      { value: "Digimon", label: "Digimon" },
+      { value: "Flesh and Blood", label: "Flesh and Blood" }
+    ];
+  }
+
+  if (category === "book") {
+    return [
+      empty,
+      { value: "Hardcover", label: locale === "es" ? "Tapa dura" : "Hardcover" },
+      { value: "Paperback", label: locale === "es" ? "Tapa blanda" : "Paperback" },
+      { value: "Pocket", label: locale === "es" ? "Bolsillo" : "Pocket" }
+    ];
+  }
+
+  if (category === "comic") {
+    return [
+      empty,
+      { value: "Single Issue", label: locale === "es" ? "Grapa" : "Single Issue" },
+      { value: "TPB", label: "TPB" },
+      { value: "Omnibus", label: "Omnibus" },
+      { value: "Manga", label: "Manga" },
+      { value: "Hardcover", label: locale === "es" ? "Tapa dura" : "Hardcover" }
+    ];
+  }
+
+  if (category === "boardgame") {
+    return [
+      empty,
+      { value: "Standard", label: locale === "es" ? "Estándar" : "Standard" },
+      { value: "Expansion", label: locale === "es" ? "Expansión" : "Expansion" },
+      { value: "Collector Edition", label: locale === "es" ? "Edición coleccionista" : "Collector Edition" }
+    ];
+  }
+
+  if (category === "figure") {
+    return [
+      empty,
+      { value: "PVC", label: "PVC" },
+      { value: "Statue", label: locale === "es" ? "Estatua" : "Statue" },
+      { value: "Nendoroid", label: "Nendoroid" },
+      { value: "Figma", label: "Figma" },
+      { value: "Funko Pop", label: "Funko Pop" }
+    ];
+  }
+
+  if (category === "lego") {
+    return [
+      empty,
+      { value: "Set", label: "Set" },
+      { value: "Minifigure", label: locale === "es" ? "Minifigura" : "Minifigure" },
+      { value: "Promotional", label: locale === "es" ? "Promocional" : "Promotional" }
+    ];
+  }
+
+  if (category === "videogame") {
+    return [
+      empty,
+      { value: "PS1", label: "PS1" },
+      { value: "PS2", label: "PS2" },
+      { value: "PS3", label: "PS3" },
+      { value: "PS4", label: "PS4" },
+      { value: "PS5", label: "PS5" },
+      { value: "PSP", label: "PSP" },
+      { value: "PS Vita", label: "PS Vita" },
+      { value: "Xbox", label: "Xbox" },
+      { value: "Xbox 360", label: "Xbox 360" },
+      { value: "Xbox One", label: "Xbox One" },
+      { value: "Xbox Series", label: "Xbox Series" },
+      { value: "NES", label: "NES" },
+      { value: "SNES", label: "SNES" },
+      { value: "Nintendo 64", label: "Nintendo 64" },
+      { value: "GameCube", label: "GameCube" },
+      { value: "Wii", label: "Wii" },
+      { value: "Wii U", label: "Wii U" },
+      { value: "Switch", label: "Switch" },
+      { value: "Game Boy", label: "Game Boy" },
+      { value: "Game Boy Color", label: "Game Boy Color" },
+      { value: "Game Boy Advance", label: "Game Boy Advance" },
+      { value: "Nintendo DS", label: "Nintendo DS" },
+      { value: "Nintendo 3DS", label: "Nintendo 3DS" },
+      { value: "Mega Drive", label: "Mega Drive" },
+      { value: "Master System", label: "Master System" },
+      { value: "Dreamcast", label: "Dreamcast" },
+      { value: "PC", label: "PC" }
+    ];
+  }
+
+  return [empty];
 }
 
-function getRegionOptions(locale: "en" | "es") {
+function getRegionOptions(category: Category, locale: Locale) {
+  const empty = {
+    value: "",
+    label: locale === "es" ? "Sin especificar" : "Not specified"
+  };
+
+  if (category === "videogame") {
+    return [
+      empty,
+      { value: "PAL", label: "PAL" },
+      { value: "NTSC-U", label: "NTSC-U" },
+      { value: "NTSC-J", label: "NTSC-J" },
+      { value: "Region Free", label: "Region Free" }
+    ];
+  }
+
   return [
-    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
-    { value: "PAL", label: "PAL" },
-    { value: "NTSC-U", label: "NTSC-U" },
-    { value: "NTSC-J", label: "NTSC-J" },
-    { value: "Region Free", label: "Region Free" },
+    empty,
     { value: "ES", label: "ES" },
     { value: "UK", label: "UK" },
     { value: "US", label: "US" },
@@ -80,7 +159,7 @@ function getRegionOptions(locale: "en" | "es") {
   ];
 }
 
-function getConditionOptions(locale: "en" | "es") {
+function getConditionOptions(locale: Locale) {
   return [
     { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
     { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" },
@@ -93,7 +172,7 @@ function getConditionOptions(locale: "en" | "es") {
   ];
 }
 
-function getCompletenessOptions(locale: "en" | "es") {
+function getCompletenessOptions(locale: Locale) {
   return [
     { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
     { value: "loose", label: "Loose" },
@@ -109,6 +188,7 @@ function getCompletenessOptions(locale: "en" | "es") {
 
 export default function ItemActions({
   id,
+  category = "other",
   initialQty,
   initialPrice,
   initialCondition = "",
@@ -119,6 +199,7 @@ export default function ItemActions({
   locale = "en"
 }: {
   id: string;
+  category?: Category;
   initialQty: number;
   initialPrice: number;
   initialCondition?: string | null;
@@ -126,7 +207,7 @@ export default function ItemActions({
   initialCompleteness?: string | null;
   initialRegion?: string | null;
   initialNotes?: string | null;
-  locale?: "en" | "es";
+  locale?: Locale;
   plan?: string;
 }) {
   const [qty, setQty] = useState(String(initialQty));
@@ -141,9 +222,18 @@ export default function ItemActions({
   const [valuating, setValuating] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const platformOptions = useMemo(() => getPlatformOptions(locale), [locale]);
-  const regionOptions = useMemo(() => getRegionOptions(locale), [locale]);
+  const platformOptions = useMemo(
+    () => getPlatformOptions(category, locale),
+    [category, locale]
+  );
+
+  const regionOptions = useMemo(
+    () => getRegionOptions(category, locale),
+    [category, locale]
+  );
+
   const conditionOptions = useMemo(() => getConditionOptions(locale), [locale]);
+
   const completenessOptions = useMemo(
     () => getCompletenessOptions(locale),
     [locale]
@@ -161,7 +251,14 @@ export default function ItemActions({
     qty: locale === "es" ? "Cantidad" : "Quantity",
     price: locale === "es" ? "Precio estimado" : "Estimated price",
     condition: locale === "es" ? "Estado" : "Condition",
-    platform: locale === "es" ? "Plataforma" : "Platform",
+    platform:
+      category === "movie"
+        ? locale === "es"
+          ? "Formato"
+          : "Format"
+        : locale === "es"
+          ? "Plataforma"
+          : "Platform",
     completeness: locale === "es" ? "Completitud" : "Completeness",
     region: locale === "es" ? "Región" : "Region",
     notes: locale === "es" ? "Notas" : "Notes",
@@ -277,11 +374,7 @@ export default function ItemActions({
           flexWrap: "wrap"
         }}
       >
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          style={secondaryBtn}
-        >
+        <button type="button" onClick={() => setEditing(true)} style={secondaryBtn}>
           {text.edit}
         </button>
 
@@ -297,12 +390,7 @@ export default function ItemActions({
           {valuating ? text.valuating : text.valuate}
         </button>
 
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={deleting}
-          style={dangerBtn}
-        >
+        <button type="button" onClick={handleDelete} disabled={deleting} style={dangerBtn}>
           {deleting ? text.deleting : text.delete}
         </button>
       </div>
@@ -344,11 +432,7 @@ export default function ItemActions({
       </Field>
 
       <Field label={text.condition}>
-        <select
-          value={condition}
-          onChange={(e) => setCondition(e.target.value)}
-          style={inputStyle}
-        >
+        <select value={condition} onChange={(e) => setCondition(e.target.value)} style={inputStyle}>
           {conditionOptions.map((option) => (
             <option key={`condition-${option.value}`} value={option.value}>
               {option.label}
@@ -358,11 +442,7 @@ export default function ItemActions({
       </Field>
 
       <Field label={text.platform}>
-        <select
-          value={platform}
-          onChange={(e) => setPlatform(e.target.value)}
-          style={inputStyle}
-        >
+        <select value={platform} onChange={(e) => setPlatform(e.target.value)} style={inputStyle}>
           {platformOptions.map((option) => (
             <option key={`platform-${option.value}`} value={option.value}>
               {option.label}
@@ -386,11 +466,7 @@ export default function ItemActions({
       </Field>
 
       <Field label={text.region}>
-        <select
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          style={inputStyle}
-        >
+        <select value={region} onChange={(e) => setRegion(e.target.value)} style={inputStyle}>
           {regionOptions.map((option) => (
             <option key={`region-${option.value}`} value={option.value}>
               {option.label}
@@ -419,20 +495,11 @@ export default function ItemActions({
           flexWrap: "wrap"
         }}
       >
-        <button
-          type="button"
-          onClick={() => setEditing(false)}
-          style={secondaryBtn}
-        >
+        <button type="button" onClick={() => setEditing(false)} style={secondaryBtn}>
           {text.cancel}
         </button>
 
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          style={darkBtn}
-        >
+        <button type="button" onClick={handleSave} disabled={saving} style={darkBtn}>
           {saving ? text.saving : text.save}
         </button>
       </div>
