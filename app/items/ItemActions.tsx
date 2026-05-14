@@ -6,18 +6,20 @@ const API = process.env.NEXT_PUBLIC_API_URL!;
 
 type Locale = "en" | "es";
 
-type Category =
-  | "videogame"
-  | "book"
-  | "comic"
-  | "tcg"
-  | "figure"
-  | "boardgame"
-  | "miniature"
-  | "lego"
-  | "movie"
-  | "merch"
-  | string;
+const categories = [
+  "videogame",
+  "book",
+  "comic",
+  "tcg",
+  "figure",
+  "boardgame",
+  "miniature",
+  "lego",
+  "movie",
+  "merch"
+] as const;
+
+type Category = (typeof categories)[number] | string;
 
 function getPlatformOptions(category: Category, locale: Locale) {
   const empty = {
@@ -260,6 +262,11 @@ function getCompletenessOptions(category: Category, locale: Locale) {
   ];
 }
 
+function normalizeInitialCategory(category?: Category | null): Category {
+  if (!category || category === "other") return "merch";
+  return category;
+}
+
 export default function ItemActions({
   id,
   category = "merch",
@@ -284,6 +291,9 @@ export default function ItemActions({
   locale?: Locale;
   plan?: string;
 }) {
+  const [selectedCategory, setSelectedCategory] = useState<Category>(
+    normalizeInitialCategory(category)
+  );
   const [qty, setQty] = useState(String(initialQty));
   const [price, setPrice] = useState(String(initialPrice));
   const [condition, setCondition] = useState(initialCondition ?? "");
@@ -297,20 +307,20 @@ export default function ItemActions({
   const [deleting, setDeleting] = useState(false);
 
   const platformOptions = useMemo(
-    () => getPlatformOptions(category, locale),
-    [category, locale]
+    () => getPlatformOptions(selectedCategory, locale),
+    [selectedCategory, locale]
   );
 
   const regionOptions = useMemo(
-    () => getRegionOptions(category, locale),
-    [category, locale]
+    () => getRegionOptions(selectedCategory, locale),
+    [selectedCategory, locale]
   );
 
   const conditionOptions = useMemo(() => getConditionOptions(locale), [locale]);
 
   const completenessOptions = useMemo(
-    () => getCompletenessOptions(category, locale),
-    [category, locale]
+    () => getCompletenessOptions(selectedCategory, locale),
+    [selectedCategory, locale]
   );
 
   const text = {
@@ -322,19 +332,20 @@ export default function ItemActions({
     deleting: locale === "es" ? "Eliminando..." : "Deleting...",
     valuate: locale === "es" ? "Valorar" : "Valuate",
     valuating: locale === "es" ? "Valorando..." : "Valuating...",
+    category: locale === "es" ? "Categoría" : "Category",
     qty: locale === "es" ? "Cantidad" : "Quantity",
     price: locale === "es" ? "Precio estimado" : "Estimated price",
     condition: locale === "es" ? "Estado" : "Condition",
     platform:
-      category === "movie"
+      selectedCategory === "movie"
         ? locale === "es"
           ? "Formato"
           : "Format"
-        : category === "miniature"
+        : selectedCategory === "miniature"
           ? locale === "es"
             ? "Sistema"
             : "System"
-          : category === "merch"
+          : selectedCategory === "merch"
             ? locale === "es"
               ? "Tipo de merch"
               : "Merch type"
@@ -367,6 +378,7 @@ export default function ItemActions({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
+          category: selectedCategory,
           quantity: Number(qty),
           estimatedPrice: Number(price),
           condition: condition || undefined,
@@ -501,6 +513,26 @@ export default function ItemActions({
         gap: 10
       }}
     >
+      <Field label={text.category}>
+        <select
+          value={selectedCategory}
+          onChange={(e) => {
+            const nextCategory = e.target.value;
+            setSelectedCategory(nextCategory);
+            setPlatform("");
+            setCompleteness("");
+            setRegion("");
+          }}
+          style={inputStyle}
+        >
+          {categories.map((item) => (
+            <option key={`category-${item}`} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
+      </Field>
+
       <Field label={text.qty}>
         <input
           type="number"
