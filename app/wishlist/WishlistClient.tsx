@@ -110,16 +110,28 @@ function getDeltaData(
 }
 
 function getPlatformOptions(category: string, locale: "en" | "es") {
-  const commonOther = [
-    {
-      value: "",
-      label: locale === "es" ? "Sin especificar" : "Not specified"
-    }
+  const empty = {
+    value: "",
+    label: locale === "es" ? "Sin especificar" : "Not specified"
+  };
+
+  const merchOptions = [
+    empty,
+    { value: "Poster", label: "Poster" },
+    { value: "Keychain", label: locale === "es" ? "Llavero" : "Keychain" },
+    { value: "Pin", label: "Pin" },
+    { value: "Mug", label: locale === "es" ? "Taza" : "Mug" },
+    { value: "Plush", label: locale === "es" ? "Peluche" : "Plush" },
+    { value: "Apparel", label: locale === "es" ? "Ropa" : "Apparel" },
+    { value: "Art Print", label: "Art Print" },
+    { value: "Acrylic Stand", label: "Acrylic Stand" },
+    { value: "Mousepad", label: "Mousepad" },
+    { value: "Other Merch", label: locale === "es" ? "Otro merch" : "Other Merch" }
   ];
 
   const byCategory: Record<string, { value: string; label: string }[]> = {
     videogame: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "PS1", label: "PS1" },
       { value: "PS2", label: "PS2" },
       { value: "PS3", label: "PS3" },
@@ -149,20 +161,20 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
       { value: "PC", label: "PC" }
     ],
     movie: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "DVD", label: "DVD" },
       { value: "Blu-ray", label: "Blu-ray" },
       { value: "4K UHD", label: "4K UHD" },
       { value: "VHS", label: "VHS" }
     ],
     book: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "Hardcover", label: "Hardcover" },
       { value: "Paperback", label: "Paperback" },
       { value: "Pocket", label: "Pocket" }
     ],
     comic: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "Single Issue", label: "Single Issue" },
       { value: "TPB", label: "TPB" },
       { value: "Hardcover", label: "Hardcover" },
@@ -170,21 +182,23 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
       { value: "Manga", label: "Manga" }
     ],
     boardgame: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "Standard", label: "Standard" },
       { value: "Expansion", label: "Expansion" },
       { value: "Collector Edition", label: "Collector Edition" }
     ],
     tcg: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "Pokemon", label: "Pokemon" },
       { value: "Yu-Gi-Oh!", label: "Yu-Gi-Oh!" },
       { value: "Magic", label: "Magic" },
       { value: "One Piece", label: "One Piece" },
-      { value: "Lorcana", label: "Lorcana" }
+      { value: "Lorcana", label: "Lorcana" },
+      { value: "Digimon", label: "Digimon" },
+      { value: "Flesh and Blood", label: "Flesh and Blood" }
     ],
     figure: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "PVC", label: "PVC" },
       { value: "Statue", label: "Statue" },
       { value: "Nendoroid", label: "Nendoroid" },
@@ -192,21 +206,26 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
       { value: "Funko Pop", label: "Funko Pop" }
     ],
     lego: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "Set", label: "Set" },
-      { value: "Minifigure", label: "Minifigure" },
-      { value: "Promotional", label: "Promotional" }
+      { value: "Minifigure", label: locale === "es" ? "Minifigura" : "Minifigure" },
+      { value: "Promotional", label: locale === "es" ? "Promocional" : "Promotional" }
     ],
-    other: commonOther
+    merch: merchOptions
   };
 
-  return byCategory[category] || commonOther;
+  return byCategory[category] || [empty];
 }
 
 function getRegionOptions(category: string, locale: "en" | "es") {
+  const empty = {
+    value: "",
+    label: locale === "es" ? "Sin especificar" : "Not specified"
+  };
+
   if (category === "videogame" || category === "movie") {
     return [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "PAL", label: "PAL" },
       { value: "NTSC-U", label: "NTSC-U" },
       { value: "NTSC-J", label: "NTSC-J" },
@@ -215,7 +234,7 @@ function getRegionOptions(category: string, locale: "en" | "es") {
   }
 
   return [
-    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    empty,
     { value: "ES", label: "ES" },
     { value: "UK", label: "UK" },
     { value: "US", label: "US" },
@@ -277,6 +296,19 @@ function buildMarketplaceLinks(item: WishlistItem) {
       premium: {
         label: "eBay",
         url: `https://www.ebay.es/sch/i.html?_nkw=${query}`
+      }
+    };
+  }
+
+  if (category === "figure" || category === "miniature" || category === "lego" || category === "merch") {
+    return {
+      primary: {
+        label: "eBay",
+        url: `https://www.ebay.es/sch/i.html?_nkw=${query}`
+      },
+      premium: {
+        label: "Google Shopping",
+        url: `https://www.google.com/search?tbm=shop&q=${query}`
       }
     };
   }
@@ -347,7 +379,18 @@ export default function WishlistClient({
     name: locale === "es" ? "Nombre" : "Name",
     category: locale === "es" ? "Categoría" : "Category",
     targetPrice: locale === "es" ? "Precio objetivo" : "Target price",
-    platform: locale === "es" ? "Plataforma" : "Platform",
+    platform:
+      category === "movie"
+        ? locale === "es"
+          ? "Formato"
+          : "Format"
+        : category === "merch"
+          ? locale === "es"
+            ? "Tipo de merch"
+            : "Merch type"
+          : locale === "es"
+            ? "Plataforma"
+            : "Platform",
     region: locale === "es" ? "Región" : "Region",
     notes: locale === "es" ? "Notas" : "Notes",
     currentValue: locale === "es" ? "Valor actual" : "Current value",
@@ -527,41 +570,12 @@ export default function WishlistClient({
       }}
     >
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            marginBottom: 18,
-            flexWrap: "wrap"
-          }}
-        >
-          <a
-            href={`/items?lang=${locale}`}
-            style={{
-              textDecoration: "none",
-              borderRadius: 999,
-              padding: "10px 14px",
-              background: navTheme.colors.surface,
-              color: navTheme.colors.text,
-              fontWeight: 800,
-              border: `1px solid ${navTheme.colors.border}`
-            }}
-          >
+        <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
+          <a href={`/items?lang=${locale}`} style={navLink(navTheme)}>
             {text.collection}
           </a>
 
-          <a
-            href={`/profile?lang=${locale}`}
-            style={{
-              textDecoration: "none",
-              borderRadius: 999,
-              padding: "10px 14px",
-              background: navTheme.colors.surface,
-              color: navTheme.colors.text,
-              fontWeight: 800,
-              border: `1px solid ${navTheme.colors.border}`
-            }}
-          >
+          <a href={`/profile?lang=${locale}`} style={navLink(navTheme)}>
             {text.profile}
           </a>
 
@@ -589,13 +603,7 @@ export default function WishlistClient({
             boxShadow: theme.shadow.card
           }}
         >
-          <h1
-            style={{
-              fontSize: 30,
-              fontWeight: 900,
-              margin: 0
-            }}
-          >
+          <h1 style={{ fontSize: 30, fontWeight: 900, margin: 0 }}>
             {text.title}
           </h1>
 
@@ -623,35 +631,13 @@ export default function WishlistClient({
               boxShadow: theme.shadow.soft
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 12,
-                alignItems: "center",
-                flexWrap: "wrap"
-              }}
-            >
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
               <div>
-                <div
-                  style={{
-                    fontWeight: 900,
-                    fontSize: 15,
-                    color: theme.colors.text
-                  }}
-                >
+                <div style={{ fontWeight: 900, fontSize: 15, color: theme.colors.text }}>
                   Premium wishlist
                 </div>
 
-                <div
-                  style={{
-                    marginTop: 6,
-                    fontSize: 13,
-                    color: theme.colors.textMuted,
-                    lineHeight: 1.6,
-                    maxWidth: 760
-                  }}
-                >
+                <div style={{ marginTop: 6, fontSize: 13, color: theme.colors.textMuted, lineHeight: 1.6, maxWidth: 760 }}>
                   {text.premiumHint}
                 </div>
               </div>
@@ -688,25 +674,14 @@ export default function WishlistClient({
             {text.wishlistLimitError}{" "}
             <a
               href={`/pricing?lang=${locale}`}
-              style={{
-                color: "#B42318",
-                fontWeight: 900,
-                textDecoration: "none"
-              }}
+              style={{ color: "#B42318", fontWeight: 900, textDecoration: "none" }}
             >
               {text.premiumCta}
             </a>
           </section>
         )}
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "360px minmax(0, 1fr)",
-            gap: 18,
-            alignItems: "start"
-          }}
-        >
+        <div style={{ display: "grid", gridTemplateColumns: "360px minmax(0, 1fr)", gap: 18, alignItems: "start" }}>
           <section
             style={{
               background: theme.colors.surface,
@@ -716,24 +691,11 @@ export default function WishlistClient({
               boxShadow: theme.shadow.card
             }}
           >
-            <div
-              style={{
-                fontWeight: 800,
-                fontSize: 16,
-                marginBottom: 14,
-                color: theme.colors.text
-              }}
-            >
+            <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 14, color: theme.colors.text }}>
               {text.addTitle}
             </div>
 
-            <form
-              onSubmit={handleCreate}
-              style={{
-                display: "grid",
-                gap: 12
-              }}
-            >
+            <form onSubmit={handleCreate} style={{ display: "grid", gap: 12 }}>
               <Field label={text.name}>
                 <input
                   value={name}
@@ -762,9 +724,10 @@ export default function WishlistClient({
                   <option value="tcg">tcg</option>
                   <option value="figure">figure</option>
                   <option value="boardgame">boardgame</option>
+                  <option value="miniature">miniature</option>
                   <option value="lego">lego</option>
                   <option value="movie">movie</option>
-                  <option value="other">other</option>
+                  <option value="merch">merch</option>
                 </select>
               </Field>
 
@@ -788,10 +751,7 @@ export default function WishlistClient({
                   style={inputStyle(theme)}
                 >
                   {platformOptions.map((option) => (
-                    <option
-                      key={`${category}-platform-${option.value}`}
-                      value={option.value}
-                    >
+                    <option key={`${category}-platform-${option.value}`} value={option.value}>
                       {option.label}
                     </option>
                   ))}
@@ -806,10 +766,7 @@ export default function WishlistClient({
                   style={inputStyle(theme)}
                 >
                   {regionOptions.map((option) => (
-                    <option
-                      key={`${category}-region-${option.value}`}
-                      value={option.value}
-                    >
+                    <option key={`${category}-region-${option.value}`} value={option.value}>
                       {option.label}
                     </option>
                   ))}
@@ -821,11 +778,7 @@ export default function WishlistClient({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   disabled={loading || limitReached}
-                  style={{
-                    ...inputStyle(theme),
-                    minHeight: 90,
-                    resize: "vertical"
-                  }}
+                  style={{ ...inputStyle(theme), minHeight: 90, resize: "vertical" }}
                 />
               </Field>
 
@@ -846,25 +799,14 @@ export default function WishlistClient({
               </button>
 
               {message && (
-                <div
-                  style={{
-                    fontSize: 13,
-                    color: theme.colors.textMuted,
-                    lineHeight: 1.6
-                  }}
-                >
+                <div style={{ fontSize: 13, color: theme.colors.textMuted, lineHeight: 1.6 }}>
                   {message}
                 </div>
               )}
             </form>
           </section>
 
-          <section
-            style={{
-              display: "grid",
-              gap: 12
-            }}
-          >
+          <section style={{ display: "grid", gap: 12 }}>
             {items.length === 0 ? (
               <section
                 style={{
@@ -875,40 +817,19 @@ export default function WishlistClient({
                   boxShadow: theme.shadow.card
                 }}
               >
-                <div
-                  style={{
-                    fontSize: 18,
-                    fontWeight: 800,
-                    marginBottom: 8,
-                    color: theme.colors.text
-                  }}
-                >
+                <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: theme.colors.text }}>
                   {text.empty}
                 </div>
 
-                <p
-                  style={{
-                    margin: 0,
-                    color: theme.colors.textMuted,
-                    lineHeight: 1.7
-                  }}
-                >
+                <p style={{ margin: 0, color: theme.colors.textMuted, lineHeight: 1.7 }}>
                   {text.emptyHint}
                 </p>
               </section>
             ) : (
               items.map((item) => {
                 const displayName = getDisplayName(item);
-                const status = getWishlistStatus(
-                  item.targetPrice,
-                  item.currentMarketValue,
-                  locale
-                );
-                const delta = getDeltaData(
-                  item.targetPrice,
-                  item.currentMarketValue,
-                  locale
-                );
+                const status = getWishlistStatus(item.targetPrice, item.currentMarketValue, locale);
+                const delta = getDeltaData(item.targetPrice, item.currentMarketValue, locale);
                 const links = buildMarketplaceLinks(item);
                 const currentDeal = isPremium ? links.premium : links.primary;
 
@@ -923,23 +844,9 @@ export default function WishlistClient({
                       boxShadow: theme.shadow.soft
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        alignItems: "flex-start",
-                        flexWrap: "wrap"
-                      }}
-                    >
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
                       <div>
-                        <div
-                          style={{
-                            fontWeight: 900,
-                            fontSize: 16,
-                            color: theme.colors.text
-                          }}
-                        >
+                        <div style={{ fontWeight: 900, fontSize: 16, color: theme.colors.text }}>
                           {displayName}
                         </div>
 
@@ -955,17 +862,11 @@ export default function WishlistClient({
                             color: theme.colors.textMuted
                           }}
                         >
-                          {item.category || "other"}
+                          {item.category || "merch"}
                         </div>
                       </div>
 
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 8,
-                          flexWrap: "wrap"
-                        }}
-                      >
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         <a
                           href={currentDeal.url}
                           target="_blank"
@@ -996,9 +897,7 @@ export default function WishlistClient({
                             cursor: "pointer"
                           }}
                         >
-                          {movingId === item.id
-                            ? text.moving
-                            : text.moveToCollection}
+                          {movingId === item.id ? text.moving : text.moveToCollection}
                         </button>
 
                         <button
@@ -1020,66 +919,20 @@ export default function WishlistClient({
                       </div>
                     </div>
 
-                    <div
-                      style={{
-                        marginTop: 14,
-                        display: "grid",
-                        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                        gap: 10
-                      }}
-                    >
-                      <MiniInfo
-                        label={text.targetPrice}
-                        value={formatPrice(item.targetPrice)}
-                        theme={theme}
-                      />
-                      <MiniInfo
-                        label={text.currentValue}
-                        value={formatPrice(item.currentMarketValue)}
-                        theme={theme}
-                      />
-                      <MiniInfo
-                        label={text.status}
-                        value={status}
-                        theme={theme}
-                      />
-                      <DeltaInfo
-                        label={text.delta}
-                        value={delta.label}
-                        hint={delta.message}
-                        tone={delta.tone}
-                        theme={theme}
-                      />
+                    <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10 }}>
+                      <MiniInfo label={text.targetPrice} value={formatPrice(item.targetPrice)} theme={theme} />
+                      <MiniInfo label={text.currentValue} value={formatPrice(item.currentMarketValue)} theme={theme} />
+                      <MiniInfo label={text.status} value={status} theme={theme} />
+                      <DeltaInfo label={text.delta} value={delta.label} hint={delta.message} tone={delta.tone} theme={theme} />
                     </div>
 
-                    <div
-                      style={{
-                        marginTop: 10,
-                        display: "grid",
-                        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                        gap: 10
-                      }}
-                    >
-                      <MiniInfo
-                        label={text.platform}
-                        value={item.platform || "—"}
-                        theme={theme}
-                      />
-                      <MiniInfo
-                        label={text.region}
-                        value={item.region || "—"}
-                        theme={theme}
-                      />
+                    <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 }}>
+                      <MiniInfo label={text.platform} value={item.platform || "—"} theme={theme} />
+                      <MiniInfo label={text.region} value={item.region || "—"} theme={theme} />
                     </div>
 
                     {item.createdAt && (
-                      <div
-                        style={{
-                          marginTop: 12,
-                          fontSize: 12,
-                          color: theme.colors.textMuted
-                        }}
-                      >
+                      <div style={{ marginTop: 12, fontSize: 12, color: theme.colors.textMuted }}>
                         {text.created}: {new Date(item.createdAt).toLocaleDateString()}
                       </div>
                     )}
@@ -1094,25 +947,11 @@ export default function WishlistClient({
                           border: `1px solid ${theme.colors.border}`
                         }}
                       >
-                        <div
-                          style={{
-                            fontSize: 12,
-                            fontWeight: 800,
-                            color: theme.colors.textMuted,
-                            marginBottom: 6
-                          }}
-                        >
+                        <div style={{ fontSize: 12, fontWeight: 800, color: theme.colors.textMuted, marginBottom: 6 }}>
                           {text.notes}
                         </div>
 
-                        <div
-                          style={{
-                            fontSize: 14,
-                            color: theme.colors.text,
-                            lineHeight: 1.6,
-                            whiteSpace: "pre-wrap"
-                          }}
-                        >
+                        <div style={{ fontSize: 14, color: theme.colors.text, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>
                           {item.notes}
                         </div>
                       </div>
@@ -1128,6 +967,18 @@ export default function WishlistClient({
   );
 }
 
+function navLink(navTheme: ReturnType<typeof getThemeById>): React.CSSProperties {
+  return {
+    textDecoration: "none",
+    borderRadius: 999,
+    padding: "10px 14px",
+    background: navTheme.colors.surface,
+    color: navTheme.colors.text,
+    fontWeight: 800,
+    border: `1px solid ${navTheme.colors.border}`
+  };
+}
+
 function Field({
   label,
   children
@@ -1136,19 +987,8 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label
-      style={{
-        display: "grid",
-        gap: 6
-      }}
-    >
-      <span
-        style={{
-          fontSize: 12,
-          fontWeight: 800,
-          color: "#6B7280"
-        }}
-      >
+    <label style={{ display: "grid", gap: 6 }}>
+      <span style={{ fontSize: 12, fontWeight: 800, color: "#6B7280" }}>
         {label}
       </span>
       {children}
@@ -1180,32 +1020,12 @@ function MiniInfo({
   theme: ReturnType<typeof getThemeById>;
 }) {
   return (
-    <div
-      style={{
-        background: theme.colors.surfaceAlt,
-        border: `1px solid ${theme.colors.border}`,
-        borderRadius: theme.radius.md,
-        padding: "12px 14px"
-      }}
-    >
-      <div
-        style={{
-          fontSize: 12,
-          color: theme.colors.textMuted,
-          marginBottom: 6,
-          fontWeight: 800
-        }}
-      >
+    <div style={{ background: theme.colors.surfaceAlt, border: `1px solid ${theme.colors.border}`, borderRadius: theme.radius.md, padding: "12px 14px" }}>
+      <div style={{ fontSize: 12, color: theme.colors.textMuted, marginBottom: 6, fontWeight: 800 }}>
         {label}
       </div>
 
-      <div
-        style={{
-          fontSize: 14,
-          color: theme.colors.text,
-          fontWeight: 700
-        }}
-      >
+      <div style={{ fontSize: 14, color: theme.colors.text, fontWeight: 700 }}>
         {value}
       </div>
     </div>
@@ -1251,41 +1071,16 @@ function DeltaInfo({
             };
 
   return (
-    <div
-      style={{
-        borderRadius: theme.radius.md,
-        padding: "12px 14px",
-        ...styles
-      }}
-    >
-      <div
-        style={{
-          fontSize: 12,
-          marginBottom: 6,
-          fontWeight: 800,
-          opacity: 0.9
-        }}
-      >
+    <div style={{ borderRadius: theme.radius.md, padding: "12px 14px", ...styles }}>
+      <div style={{ fontSize: 12, marginBottom: 6, fontWeight: 800, opacity: 0.9 }}>
         {label}
       </div>
 
-      <div
-        style={{
-          fontSize: 14,
-          fontWeight: 800
-        }}
-      >
+      <div style={{ fontSize: 14, fontWeight: 800 }}>
         {value}
       </div>
 
-      <div
-        style={{
-          marginTop: 6,
-          fontSize: 12,
-          lineHeight: 1.45,
-          opacity: 0.9
-        }}
-      >
+      <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.45, opacity: 0.9 }}>
         {hint}
       </div>
     </div>

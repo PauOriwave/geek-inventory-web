@@ -18,20 +18,32 @@ const categories = [
   "miniature",
   "lego",
   "movie",
-  "other"
+  "merch"
 ] as const;
 
 function getPlatformOptions(category: string, locale: "en" | "es") {
-  const commonOther = [
-    {
-      value: "",
-      label: locale === "es" ? "Sin especificar" : "Not specified"
-    }
+  const empty = {
+    value: "",
+    label: locale === "es" ? "Sin especificar" : "Not specified"
+  };
+
+  const merchOptions = [
+    empty,
+    { value: "Poster", label: "Poster" },
+    { value: "Keychain", label: locale === "es" ? "Llavero" : "Keychain" },
+    { value: "Pin", label: "Pin" },
+    { value: "Mug", label: locale === "es" ? "Taza" : "Mug" },
+    { value: "Plush", label: locale === "es" ? "Peluche" : "Plush" },
+    { value: "Apparel", label: locale === "es" ? "Ropa" : "Apparel" },
+    { value: "Art Print", label: "Art Print" },
+    { value: "Acrylic Stand", label: "Acrylic Stand" },
+    { value: "Mousepad", label: "Mousepad" },
+    { value: "Other Merch", label: locale === "es" ? "Otro merch" : "Other Merch" }
   ];
 
   const byCategory: Record<string, { value: string; label: string }[]> = {
     videogame: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "PS1", label: "PS1" },
       { value: "PS2", label: "PS2" },
       { value: "PS3", label: "PS3" },
@@ -60,99 +72,90 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
       { value: "Dreamcast", label: "Dreamcast" },
       { value: "PC", label: "PC" }
     ],
-
     movie: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "DVD", label: "DVD" },
       { value: "Blu-ray", label: "Blu-ray" },
       { value: "4K UHD", label: "4K UHD" },
       { value: "VHS", label: "VHS" }
     ],
-
     book: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "Hardcover", label: "Hardcover" },
       { value: "Paperback", label: "Paperback" },
       { value: "Pocket", label: "Pocket" }
     ],
-
     comic: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "Single Issue", label: "Single Issue" },
       { value: "TPB", label: "TPB" },
       { value: "Hardcover", label: "Hardcover" },
       { value: "Omnibus", label: "Omnibus" },
       { value: "Manga", label: "Manga" }
     ],
-
     boardgame: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "Standard", label: "Standard" },
       { value: "Expansion", label: "Expansion" },
       { value: "Collector Edition", label: "Collector Edition" }
     ],
-
     miniature: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
-
+      empty,
       { value: "Warhammer 40K", label: "Warhammer 40K" },
       { value: "Age of Sigmar", label: "Age of Sigmar" },
       { value: "Kill Team", label: "Kill Team" },
       { value: "Necromunda", label: "Necromunda" },
       { value: "Blood Bowl", label: "Blood Bowl" },
       { value: "Horus Heresy", label: "Horus Heresy" },
-
       { value: "Warcry", label: "Warcry" },
       { value: "Middle-earth", label: "Middle-earth" },
-
       { value: "Infinity", label: "Infinity" },
       { value: "Malifaux", label: "Malifaux" },
       { value: "Star Wars Legion", label: "Star Wars Legion" },
-
       {
         value: "Other Miniatures",
-        label:
-          locale === "es"
-            ? "Otras miniaturas"
-            : "Other Miniatures"
+        label: locale === "es" ? "Otras miniaturas" : "Other Miniatures"
       }
     ],
-
     tcg: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "Pokemon", label: "Pokemon" },
       { value: "Yu-Gi-Oh!", label: "Yu-Gi-Oh!" },
       { value: "Magic", label: "Magic" },
       { value: "One Piece", label: "One Piece" },
-      { value: "Lorcana", label: "Lorcana" }
+      { value: "Lorcana", label: "Lorcana" },
+      { value: "Digimon", label: "Digimon" },
+      { value: "Flesh and Blood", label: "Flesh and Blood" }
     ],
-
     figure: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "PVC", label: "PVC" },
       { value: "Statue", label: "Statue" },
       { value: "Nendoroid", label: "Nendoroid" },
       { value: "Figma", label: "Figma" },
       { value: "Funko Pop", label: "Funko Pop" }
     ],
-
     lego: [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "Set", label: "Set" },
-      { value: "Minifigure", label: "Minifigure" },
-      { value: "Promotional", label: "Promotional" }
+      { value: "Minifigure", label: locale === "es" ? "Minifigura" : "Minifigure" },
+      { value: "Promotional", label: locale === "es" ? "Promocional" : "Promotional" }
     ],
-
-    other: commonOther
+    merch: merchOptions
   };
 
-  return byCategory[category] || commonOther;
+  return byCategory[category] || [empty];
 }
 
 function getRegionOptions(category: string, locale: "en" | "es") {
+  const empty = {
+    value: "",
+    label: locale === "es" ? "Sin especificar" : "Not specified"
+  };
+
   if (category === "videogame" || category === "movie") {
     return [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "PAL", label: "PAL" },
       { value: "NTSC-U", label: "NTSC-U" },
       { value: "NTSC-J", label: "NTSC-J" },
@@ -161,7 +164,7 @@ function getRegionOptions(category: string, locale: "en" | "es") {
   }
 
   return [
-    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    empty,
     { value: "ES", label: "ES" },
     { value: "UK", label: "UK" },
     { value: "US", label: "US" },
@@ -185,9 +188,14 @@ function getConditionOptions(locale: "en" | "es") {
 }
 
 function getCompletenessOptions(category: string, locale: "en" | "es") {
+  const empty = {
+    value: "",
+    label: locale === "es" ? "Sin especificar" : "Not specified"
+  };
+
   if (category === "videogame") {
     return [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "loose", label: "Loose" },
       { value: "boxed", label: locale === "es" ? "Con caja" : "Boxed" },
       { value: "cib", label: "CIB" },
@@ -195,13 +203,22 @@ function getCompletenessOptions(category: string, locale: "en" | "es") {
     ];
   }
 
-  if (
-    category === "boardgame" ||
-    category === "lego" ||
-    category === "miniature"
-  ) {
+  if (category === "miniature") {
     return [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
+      { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" },
+      { value: "on_sprue", label: locale === "es" ? "En matriz" : "On Sprue" },
+      { value: "assembled", label: locale === "es" ? "Montado" : "Assembled" },
+      { value: "painted", label: locale === "es" ? "Pintado" : "Painted" },
+      { value: "unpainted", label: locale === "es" ? "Sin pintar" : "Unpainted" },
+      { value: "complete", label: locale === "es" ? "Completo" : "Complete" },
+      { value: "incomplete", label: locale === "es" ? "Incompleto" : "Incomplete" }
+    ];
+  }
+
+  if (category === "boardgame" || category === "lego" || category === "merch") {
+    return [
+      empty,
       { value: "complete", label: locale === "es" ? "Completo" : "Complete" },
       { value: "incomplete", label: locale === "es" ? "Incompleto" : "Incomplete" },
       { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" }
@@ -210,7 +227,7 @@ function getCompletenessOptions(category: string, locale: "en" | "es") {
 
   if (category === "book" || category === "comic" || category === "movie") {
     return [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "standard", label: locale === "es" ? "Estándar" : "Standard" },
       { value: "special_edition", label: locale === "es" ? "Edición especial" : "Special Edition" },
       { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" }
@@ -218,7 +235,7 @@ function getCompletenessOptions(category: string, locale: "en" | "es") {
   }
 
   return [
-    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    empty,
     { value: "complete", label: locale === "es" ? "Completo" : "Complete" },
     { value: "incomplete", label: locale === "es" ? "Incompleto" : "Incomplete" }
   ];
@@ -277,7 +294,22 @@ export default function AddItemForm({
     estimatedPrice: locale === "es" ? "Precio estimado" : "Estimated price",
     quantity: locale === "es" ? "Cantidad" : "Quantity",
     condition: locale === "es" ? "Estado" : "Condition",
-    platform: locale === "es" ? "Plataforma" : "Platform",
+    platform:
+      category === "movie"
+        ? locale === "es"
+          ? "Formato"
+          : "Format"
+        : category === "miniature"
+          ? locale === "es"
+            ? "Sistema"
+            : "System"
+          : category === "merch"
+            ? locale === "es"
+              ? "Tipo de merch"
+              : "Merch type"
+            : locale === "es"
+              ? "Plataforma"
+              : "Platform",
     completeness: locale === "es" ? "Completitud" : "Completeness",
     region: locale === "es" ? "Región" : "Region",
     notes: locale === "es" ? "Notas" : "Notes",
@@ -295,8 +327,7 @@ export default function AddItemForm({
       locale === "es"
         ? `Has alcanzado el límite de ${itemLimit ?? "∞"} objetos de tu plan actual.`
         : `You reached the ${itemLimit ?? "∞"} item limit for your current plan.`,
-    upgrade:
-      locale === "es" ? "Ver planes" : "See plans",
+    upgrade: locale === "es" ? "Ver planes" : "See plans",
     paidHint:
       locale === "es"
         ? "Tu plan actual permite seguir ampliando la colección."

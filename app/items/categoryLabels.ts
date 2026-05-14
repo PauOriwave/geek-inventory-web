@@ -39,9 +39,15 @@ export function getCategoryLabel(
       en: "Movie / DVD / VHS",
       es: "Películas / VHS / DVD"
     },
+    merch: {
+      en: "Merch",
+      es: "Merchandising"
+    },
+
+    // Compatibilidad temporal por si queda algún registro antiguo en BD.
     other: {
-      en: "Other",
-      es: "Otros"
+      en: "Merch",
+      es: "Merchandising"
     }
   };
 

@@ -36,9 +36,10 @@ export default function Filters() {
     tcg: "TCG",
     figure: locale === "es" ? "Figuras" : "Figure",
     boardgame: locale === "es" ? "Juegos de mesa" : "Board Game",
+    miniature: locale === "es" ? "Miniaturas" : "Miniatures",
     lego: "LEGO",
     movie: locale === "es" ? "Películas / VHS / DVD" : "Movie / DVD / VHS",
-    other: locale === "es" ? "Otros" : "Other"
+    merch: locale === "es" ? "Merchandising" : "Merch"
   };
 
   function applyFilters() {
@@ -95,9 +96,10 @@ export default function Filters() {
         <option value="tcg">{text.tcg}</option>
         <option value="figure">{text.figure}</option>
         <option value="boardgame">{text.boardgame}</option>
+        <option value="miniature">{text.miniature}</option>
         <option value="lego">{text.lego}</option>
         <option value="movie">{text.movie}</option>
-        <option value="other">{text.other}</option>
+        <option value="merch">{text.merch}</option>
       </select>
 
       <input

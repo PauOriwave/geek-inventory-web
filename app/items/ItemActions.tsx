@@ -16,7 +16,7 @@ type Category =
   | "miniature"
   | "lego"
   | "movie"
-  | "other"
+  | "merch"
   | string;
 
 function getPlatformOptions(category: Category, locale: Locale) {
@@ -121,6 +121,22 @@ function getPlatformOptions(category: Category, locale: Locale) {
     ];
   }
 
+  if (category === "merch") {
+    return [
+      empty,
+      { value: "Poster", label: "Poster" },
+      { value: "Keychain", label: locale === "es" ? "Llavero" : "Keychain" },
+      { value: "Pin", label: "Pin" },
+      { value: "Mug", label: locale === "es" ? "Taza" : "Mug" },
+      { value: "Plush", label: locale === "es" ? "Peluche" : "Plush" },
+      { value: "Apparel", label: locale === "es" ? "Ropa" : "Apparel" },
+      { value: "Art Print", label: "Art Print" },
+      { value: "Acrylic Stand", label: "Acrylic Stand" },
+      { value: "Mousepad", label: "Mousepad" },
+      { value: "Other Merch", label: locale === "es" ? "Otro merch" : "Other Merch" }
+    ];
+  }
+
   if (category === "videogame") {
     return [
       empty,
@@ -198,9 +214,14 @@ function getConditionOptions(locale: Locale) {
 }
 
 function getCompletenessOptions(category: Category, locale: Locale) {
+  const empty = {
+    value: "",
+    label: locale === "es" ? "Sin especificar" : "Not specified"
+  };
+
   if (category === "miniature") {
     return [
-      { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+      empty,
       { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" },
       { value: "on_sprue", label: locale === "es" ? "En matriz" : "On Sprue" },
       { value: "assembled", label: locale === "es" ? "Montado" : "Assembled" },
@@ -211,8 +232,20 @@ function getCompletenessOptions(category: Category, locale: Locale) {
     ];
   }
 
+  if (category === "merch") {
+    return [
+      empty,
+      { value: "new", label: locale === "es" ? "Nuevo" : "New" },
+      { value: "used", label: locale === "es" ? "Usado" : "Used" },
+      { value: "sealed", label: locale === "es" ? "Precintado" : "Sealed" },
+      { value: "with_tags", label: locale === "es" ? "Con etiquetas" : "With Tags" },
+      { value: "complete", label: locale === "es" ? "Completo" : "Complete" },
+      { value: "incomplete", label: locale === "es" ? "Incompleto" : "Incomplete" }
+    ];
+  }
+
   return [
-    { value: "", label: locale === "es" ? "Sin especificar" : "Not specified" },
+    empty,
     { value: "loose", label: "Loose" },
     { value: "boxed", label: locale === "es" ? "Con caja" : "Boxed" },
     { value: "cib", label: "CIB" },
@@ -229,7 +262,7 @@ function getCompletenessOptions(category: Category, locale: Locale) {
 
 export default function ItemActions({
   id,
-  category = "other",
+  category = "merch",
   initialQty,
   initialPrice,
   initialCondition = "",
@@ -301,9 +334,13 @@ export default function ItemActions({
           ? locale === "es"
             ? "Sistema"
             : "System"
-          : locale === "es"
-            ? "Plataforma"
-            : "Platform",
+          : category === "merch"
+            ? locale === "es"
+              ? "Tipo de merch"
+              : "Merch type"
+            : locale === "es"
+              ? "Plataforma"
+              : "Platform",
     completeness: locale === "es" ? "Completitud" : "Completeness",
     region: locale === "es" ? "Región" : "Region",
     notes: locale === "es" ? "Notas" : "Notes",
