@@ -18,7 +18,9 @@ const categories = [
   "miniature",
   "lego",
   "movie",
-  "merch"
+  "merch",
+  "guide",
+  "magazine"
 ] as const;
 
 function getPlatformOptions(category: string, locale: "en" | "es") {
@@ -34,11 +36,13 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
     { value: "Pin", label: "Pin" },
     { value: "Mug", label: locale === "es" ? "Taza" : "Mug" },
     { value: "Plush", label: locale === "es" ? "Peluche" : "Plush" },
-    { value: "Apparel", label: locale === "es" ? "Ropa" : "Apparel" },
     { value: "Art Print", label: "Art Print" },
     { value: "Acrylic Stand", label: "Acrylic Stand" },
     { value: "Mousepad", label: "Mousepad" },
-    { value: "Other Merch", label: locale === "es" ? "Otro merch" : "Other Merch" }
+    { value: "Tazo", label: "Tazo" },
+    { value: "Stack", label: "Stack" },
+    { value: "Album", label: locale === "es" ? "Álbum" : "Album" },
+    { value: "Gachapon", label: "Gachapon" }
   ];
 
   const byCategory: Record<string, { value: string; label: string }[]> = {
@@ -84,6 +88,18 @@ function getPlatformOptions(category: string, locale: "en" | "es") {
       { value: "Hardcover", label: "Hardcover" },
       { value: "Paperback", label: "Paperback" },
       { value: "Pocket", label: "Pocket" }
+    ],
+    guide: [
+      empty,
+      { value: "Strategy Guide", label: locale === "es" ? "Guía estratégica" : "Strategy Guide" },
+      { value: "Official Guide", label: locale === "es" ? "Guía oficial" : "Official Guide" },
+      { value: "Artbook", label: "Artbook" }
+    ],
+    magazine: [
+      empty,
+      { value: "Video Game Magazine", label: locale === "es" ? "Revista videojuegos" : "Video Game Magazine" },
+      { value: "Comic Magazine", label: locale === "es" ? "Revista cómic" : "Comic Magazine" },
+      { value: "Anime Magazine", label: locale === "es" ? "Revista anime" : "Anime Magazine" }
     ],
     comic: [
       empty,
@@ -225,7 +241,13 @@ function getCompletenessOptions(category: string, locale: "en" | "es") {
     ];
   }
 
-  if (category === "book" || category === "comic" || category === "movie") {
+  if (
+    category === "book" ||
+    category === "comic" ||
+    category === "movie" ||
+    category === "guide" ||
+    category === "magazine"
+  ) {
     return [
       empty,
       { value: "standard", label: locale === "es" ? "Estándar" : "Standard" },
@@ -307,9 +329,13 @@ export default function AddItemForm({
             ? locale === "es"
               ? "Tipo de merch"
               : "Merch type"
-            : locale === "es"
-              ? "Plataforma"
-              : "Platform",
+            : category === "guide" || category === "magazine"
+              ? locale === "es"
+                ? "Tipo"
+                : "Type"
+              : locale === "es"
+                ? "Plataforma"
+                : "Platform",
     completeness: locale === "es" ? "Completitud" : "Completeness",
     region: locale === "es" ? "Región" : "Region",
     notes: locale === "es" ? "Notas" : "Notes",
