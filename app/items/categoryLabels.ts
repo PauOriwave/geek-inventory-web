@@ -11,6 +11,14 @@ export function getCategoryLabel(
       en: "Book",
       es: "Libros"
     },
+    guide: {
+      en: "Guide",
+      es: "Guías"
+    },
+    magazine: {
+      en: "Magazine",
+      es: "Revistas"
+    },
     comic: {
       en: "Comic",
       es: "Cómics"
