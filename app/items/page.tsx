@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Filters from "./Filters";
@@ -36,6 +36,14 @@ type Item = {
   valuationSource?: string | null;
   valuationConfidence?: number | null;
   lastValuationAt?: string | null;
+};
+
+type Snapshot = {
+  id: string;
+  source: string;
+  marketValue: string | number;
+  confidence?: number | null;
+  recordedAt: string;
 };
 
 type Summary = {
@@ -117,6 +125,29 @@ async function getItems(
   }
 
   return res.json();
+}
+
+async function getItemSnapshots(
+  id: string,
+  cookieHeader: string
+): Promise<Snapshot[]> {
+  try {
+    const res = await fetch(`${API}/items/${id}/snapshots`, {
+      cache: "no-store",
+      headers: {
+        cookie: cookieHeader
+      }
+    });
+
+    if (!res.ok) {
+      return [];
+    }
+
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 }
 
 function buildSummaryFromItems(items: Item[]): Summary {
@@ -254,7 +285,17 @@ export default async function ItemsPage({
     getMe(cookieHeader)
   ]);
 
-  const summary = await getSummary(queryString, cookieHeader, itemsRes.items);
+  const [summary, snapshotEntries] = await Promise.all([
+    getSummary(queryString, cookieHeader, itemsRes.items),
+    Promise.all(
+      itemsRes.items.map(async (item) => [
+        item.id,
+        await getItemSnapshots(item.id, cookieHeader)
+      ] as const)
+    )
+  ]);
+
+  const snapshotsByItemId = new Map<string, Snapshot[]>(snapshotEntries);
 
   const safeAchievements = Array.isArray(achievements) ? achievements : [];
   const unlockedAchievements = safeAchievements.filter((a) => a.unlocked).length;
@@ -341,7 +382,11 @@ export default async function ItemsPage({
       locale === "es"
         ? "Desbloquea movers, gaps y análisis avanzado"
         : "Unlock movers, gaps and advanced market insights",
-    pro: "PRO"
+    pro: "PRO",
+    trend:
+      locale === "es" ? "Tendencia del item" : "Item trend",
+    noTrend:
+      locale === "es" ? "Sin historial suficiente" : "Not enough history"
   };
 
   return (
@@ -424,6 +469,12 @@ export default async function ItemsPage({
           justify-content: space-between;
           align-items: center;
           gap: 12px;
+        }
+
+        .item-chart-row td {
+          padding: 0 12px 12px 12px;
+          background: ${currentTheme.colors.surface};
+          border-bottom: 1px solid ${currentTheme.colors.border};
         }
 
         .items-pagination {
@@ -814,115 +865,133 @@ export default async function ItemsPage({
               </thead>
 
               <tbody>
-                {items.map((it) => (
-                  <tr key={it.id}>
-                    <Td currentTheme={currentTheme}>
-                      <a
-                        href={`/items/${it.id}?lang=${locale}`}
-                        style={{
-                          color: currentTheme.colors.text,
-                          textDecoration: "none",
-                          fontWeight: 700
-                        }}
-                      >
-                        {it.name}
-                      </a>
-                    </Td>
+                {items.map((it) => {
+                  const snapshots = snapshotsByItemId.get(it.id) ?? [];
 
-                    <Td currentTheme={currentTheme}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "4px 8px",
-                          borderRadius: 999,
-                          background: currentTheme.colors.surfaceAlt,
-                          fontSize: 12,
-                          color: currentTheme.colors.textMuted
-                        }}
-                      >
-                        {getCategoryLabel(it.category, locale)}
-                      </span>
-                    </Td>
+                  return (
+                    <Fragment key={it.id}>
+                      <tr>
+                        <Td currentTheme={currentTheme}>
+                          <a
+                            href={`/items/${it.id}?lang=${locale}`}
+                            style={{
+                              color: currentTheme.colors.text,
+                              textDecoration: "none",
+                              fontWeight: 700
+                            }}
+                          >
+                            {it.name}
+                          </a>
+                        </Td>
 
-                    <Td currentTheme={currentTheme}>{it.platform || "—"}</Td>
-                    <Td currentTheme={currentTheme}>{it.region || "—"}</Td>
+                        <Td currentTheme={currentTheme}>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "4px 8px",
+                              borderRadius: 999,
+                              background: currentTheme.colors.surfaceAlt,
+                              fontSize: 12,
+                              color: currentTheme.colors.textMuted
+                            }}
+                          >
+                            {getCategoryLabel(it.category, locale)}
+                          </span>
+                        </Td>
 
-                    <Td currentTheme={currentTheme}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "4px 8px",
-                          borderRadius: 999,
-                          background: currentTheme.colors.surfaceAlt,
-                          fontSize: 12,
-                          color: currentTheme.colors.textMuted,
-                          border: `1px solid ${currentTheme.colors.border}`
-                        }}
-                      >
-                        {formatCondition(it.condition)}
-                      </span>
-                    </Td>
+                        <Td currentTheme={currentTheme}>{it.platform || "—"}</Td>
+                        <Td currentTheme={currentTheme}>{it.region || "—"}</Td>
 
-                    <Td currentTheme={currentTheme}>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "4px 8px",
-                          borderRadius: 999,
-                          background: currentTheme.colors.surfaceAlt,
-                          fontSize: 12,
-                          color: currentTheme.colors.textMuted,
-                          border: `1px solid ${currentTheme.colors.border}`
-                        }}
-                      >
-                        {formatCompleteness(it.completeness)}
-                      </span>
-                    </Td>
+                        <Td currentTheme={currentTheme}>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "4px 8px",
+                              borderRadius: 999,
+                              background: currentTheme.colors.surfaceAlt,
+                              fontSize: 12,
+                              color: currentTheme.colors.textMuted,
+                              border: `1px solid ${currentTheme.colors.border}`
+                            }}
+                          >
+                            {formatCondition(it.condition)}
+                          </span>
+                        </Td>
 
-                    <Td align="right" currentTheme={currentTheme}>
-                      {Number(it.estimatedPrice).toFixed(2)} €
-                    </Td>
+                        <Td currentTheme={currentTheme}>
+                          <span
+                            style={{
+                              display: "inline-block",
+                              padding: "4px 8px",
+                              borderRadius: 999,
+                              background: currentTheme.colors.surfaceAlt,
+                              fontSize: 12,
+                              color: currentTheme.colors.textMuted,
+                              border: `1px solid ${currentTheme.colors.border}`
+                            }}
+                          >
+                            {formatCompleteness(it.completeness)}
+                          </span>
+                        </Td>
 
-                    <Td align="right" currentTheme={currentTheme}>
-                      {it.marketValue != null
-                        ? `${Number(it.marketValue).toFixed(2)} €`
-                        : "—"}
-                    </Td>
+                        <Td align="right" currentTheme={currentTheme}>
+                          {Number(it.estimatedPrice).toFixed(2)} €
+                        </Td>
 
-                    <Td align="right" currentTheme={currentTheme}>
-                      <DeltaBadge
-                        estimatedPrice={Number(it.estimatedPrice)}
-                        marketValue={
-                          it.marketValue != null ? Number(it.marketValue) : null
-                        }
-                        currentTheme={currentTheme}
-                      />
-                    </Td>
+                        <Td align="right" currentTheme={currentTheme}>
+                          {it.marketValue != null
+                            ? `${Number(it.marketValue).toFixed(2)} €`
+                            : "—"}
+                        </Td>
 
-                    <Td align="right" currentTheme={currentTheme}>
-                      {it.quantity}
-                    </Td>
+                        <Td align="right" currentTheme={currentTheme}>
+                          <DeltaBadge
+                            estimatedPrice={Number(it.estimatedPrice)}
+                            marketValue={
+                              it.marketValue != null ? Number(it.marketValue) : null
+                            }
+                            currentTheme={currentTheme}
+                          />
+                        </Td>
 
-                    <Td currentTheme={currentTheme}>
-                      {new Date(it.createdAt).toLocaleString()}
-                    </Td>
+                        <Td align="right" currentTheme={currentTheme}>
+                          {it.quantity}
+                        </Td>
 
-                    <Td align="right" currentTheme={currentTheme}>
-                      <ItemActions
-                        id={it.id}
-                        category={it.category}
-                        initialQty={it.quantity}
-                        initialPrice={Number(it.estimatedPrice)}
-                        initialCondition={it.condition}
-                        initialPlatform={it.platform}
-                        initialCompleteness={it.completeness}
-                        initialRegion={it.region}
-                        initialNotes={it.notes}
-                        locale={locale}
-                      />
-                    </Td>
-                  </tr>
-                ))}
+                        <Td currentTheme={currentTheme}>
+                          {new Date(it.createdAt).toLocaleString()}
+                        </Td>
+
+                        <Td align="right" currentTheme={currentTheme}>
+                          <ItemActions
+                            id={it.id}
+                            category={it.category}
+                            initialQty={it.quantity}
+                            initialPrice={Number(it.estimatedPrice)}
+                            initialCondition={it.condition}
+                            initialPlatform={it.platform}
+                            initialCompleteness={it.completeness}
+                            initialRegion={it.region}
+                            initialNotes={it.notes}
+                            locale={locale}
+                          />
+                        </Td>
+                      </tr>
+
+                      <tr className="item-chart-row">
+                        <td colSpan={12}>
+                          <MiniItemTrendChart
+                            snapshots={snapshots}
+                            currentTheme={currentTheme}
+                            locale={locale}
+                            title={text.trend}
+                            emptyLabel={text.noTrend}
+                          />
+                        </td>
+                      </tr>
+                    </Fragment>
+                  );
+                })}
 
                 {items.length === 0 && (
                   <tr>
@@ -1028,6 +1097,265 @@ function StatCard({
   );
 }
 
+function MiniItemTrendChart({
+  snapshots,
+  currentTheme,
+  locale,
+  title,
+  emptyLabel
+}: {
+  snapshots: Snapshot[];
+  currentTheme: ReturnType<typeof getThemeById>;
+  locale: "en" | "es";
+  title: string;
+  emptyLabel: string;
+}) {
+  const points = [...snapshots]
+    .sort(
+      (a, b) =>
+        new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime()
+    )
+    .map((snapshot) => ({
+      value: Number(snapshot.marketValue),
+      date: snapshot.recordedAt,
+      source: snapshot.source
+    }))
+    .filter((point) => Number.isFinite(point.value));
+
+  const latest = points.at(-1);
+  const first = points[0];
+  const delta = latest && first ? latest.value - first.value : null;
+  const positive = delta != null && delta > 0;
+  const negative = delta != null && delta < 0;
+
+  const color = positive
+    ? currentTheme.colors.success
+    : negative
+      ? currentTheme.colors.danger
+      : currentTheme.colors.gold;
+
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(180px, 240px) minmax(260px, 1fr)",
+        gap: 12,
+        alignItems: "center",
+        border: `1px solid ${currentTheme.colors.border}`,
+        borderRadius: currentTheme.radius.lg,
+        padding: 12,
+        background:
+          "linear-gradient(180deg, rgba(200,164,77,0.08) 0%, rgba(255,255,255,0) 100%)"
+      }}
+    >
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 12,
+            color: currentTheme.colors.textMuted,
+            fontWeight: 800,
+            marginBottom: 6
+          }}
+        >
+          {title}
+        </div>
+
+        {latest ? (
+          <>
+            <div
+              style={{
+                fontSize: 18,
+                fontWeight: 900,
+                color: currentTheme.colors.text
+              }}
+            >
+              {latest.value.toFixed(2)} €
+            </div>
+
+            <div
+              style={{
+                marginTop: 6,
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+                alignItems: "center"
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "4px 8px",
+                  borderRadius: 999,
+                  background: positive
+                    ? "rgba(34,197,94,0.14)"
+                    : negative
+                      ? "rgba(244,63,94,0.14)"
+                      : currentTheme.colors.surfaceAlt,
+                  color,
+                  border: `1px solid ${currentTheme.colors.border}`,
+                  fontSize: 12,
+                  fontWeight: 900
+                }}
+              >
+                {delta != null
+                  ? `${delta > 0 ? "+" : ""}${delta.toFixed(2)} €`
+                  : "—"}
+              </span>
+
+              <span
+                style={{
+                  color: currentTheme.colors.textMuted,
+                  fontSize: 12
+                }}
+              >
+                {points.length} pts · {formatShortDate(latest.date, locale)}
+              </span>
+            </div>
+          </>
+        ) : (
+          <div
+            style={{
+              color: currentTheme.colors.textMuted,
+              fontSize: 13
+            }}
+          >
+            {emptyLabel}
+          </div>
+        )}
+      </div>
+
+      <MiniSparkline
+        points={points}
+        color={color}
+        currentTheme={currentTheme}
+      />
+    </div>
+  );
+}
+
+function MiniSparkline({
+  points,
+  color,
+  currentTheme
+}: {
+  points: { value: number; date: string; source: string }[];
+  color: string;
+  currentTheme: ReturnType<typeof getThemeById>;
+}) {
+  const width = 520;
+  const height = 92;
+  const paddingX = 10;
+  const paddingY = 12;
+
+  if (points.length < 2) {
+    return (
+      <div
+        style={{
+          height,
+          borderRadius: currentTheme.radius.md,
+          border: `1px dashed ${currentTheme.colors.border}`,
+          background: currentTheme.colors.surface,
+          display: "grid",
+          placeItems: "center",
+          color: currentTheme.colors.textMuted,
+          fontSize: 12
+        }}
+      >
+        —
+      </div>
+    );
+  }
+
+  const values = points.map((point) => point.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const coordinates = points.map((point, index) => {
+    const x =
+      paddingX + (index / (points.length - 1)) * (width - paddingX * 2);
+    const y =
+      paddingY +
+      ((max - point.value) / range) * (height - paddingY * 2);
+
+    return { ...point, x, y };
+  });
+
+  const linePath = coordinates
+    .map((point, index) =>
+      index === 0 ? `M ${point.x} ${point.y}` : `L ${point.x} ${point.y}`
+    )
+    .join(" ");
+
+  const areaPath = `${linePath} L ${
+    coordinates[coordinates.length - 1].x
+  } ${height - paddingY} L ${coordinates[0].x} ${height - paddingY} Z`;
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label="Mini item valuation chart"
+      style={{
+        display: "block",
+        width: "100%",
+        height,
+        borderRadius: currentTheme.radius.md,
+        background: currentTheme.colors.surface,
+        border: `1px solid ${currentTheme.colors.border}`
+      }}
+    >
+      <defs>
+        <linearGradient id="miniItemArea" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.22" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+
+      {[0, 1, 2].map((line) => {
+        const y = paddingY + (line / 2) * (height - paddingY * 2);
+
+        return (
+          <line
+            key={line}
+            x1={paddingX}
+            x2={width - paddingX}
+            y1={y}
+            y2={y}
+            stroke={currentTheme.colors.border}
+            strokeDasharray="4 7"
+            strokeOpacity="0.7"
+          />
+        );
+      })}
+
+      <path d={areaPath} fill="url(#miniItemArea)" />
+
+      <path
+        d={linePath}
+        fill="none"
+        stroke={color}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {coordinates.map((point, index) => (
+        <circle
+          key={`${point.date}-${index}`}
+          cx={point.x}
+          cy={point.y}
+          r={index === coordinates.length - 1 ? 4.5 : 3}
+          fill={currentTheme.colors.surface}
+          stroke={color}
+          strokeWidth="2"
+        />
+      ))}
+    </svg>
+  );
+}
+
 function Th({
   children,
   align,
@@ -1092,6 +1420,13 @@ function formatCompleteness(value?: string | null) {
   if (!value) return "—";
 
   return value.toUpperCase();
+}
+
+function formatShortDate(value: string, locale: "en" | "es") {
+  return new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-GB", {
+    day: "2-digit",
+    month: "short"
+  }).format(new Date(value));
 }
 
 function DeltaBadge({
