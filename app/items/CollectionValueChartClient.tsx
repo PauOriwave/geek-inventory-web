@@ -109,7 +109,9 @@ export default function CollectionValueChartClient({
 
   const data = useMemo(() => {
     const preferred =
-      visibleMarket && history.market.length > 0 ? history.market : history.base;
+      visibleMarket && history.market.length > 0
+        ? history.market
+        : history.base;
 
     const first = preferred[0]?.total ?? null;
     const latest = preferred.at(-1)?.total ?? null;
@@ -467,6 +469,7 @@ function CollectionChartSvg({
 
   const basePath = buildSmoothPath(basePoints);
   const marketPath = buildSmoothPath(marketPoints);
+  const marketAreaPath = buildAreaPath(marketPoints, height, paddingBottom);
 
   const firstDate = market[0]?.date ?? base[0]?.date ?? "";
   const lastDate = market.at(-1)?.date ?? base.at(-1)?.date ?? "";
@@ -510,6 +513,20 @@ function CollectionChartSvg({
         touchAction: "none"
       }}
     >
+      <defs>
+        <linearGradient
+          id="collectionMarketGradient"
+          x1="0"
+          x2="0"
+          y1="0"
+          y2="1"
+        >
+          <stop offset="0%" stopColor="#0B84D8" stopOpacity="0.28" />
+          <stop offset="55%" stopColor="#0B84D8" stopOpacity="0.10" />
+          <stop offset="100%" stopColor="#0B84D8" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
       {[0, 0.5, 1].map((step) => {
         const value = max - step * range;
         const y = paddingTop + step * (height - paddingTop - paddingBottom);
@@ -547,6 +564,14 @@ function CollectionChartSvg({
         strokeWidth="1.2"
       />
 
+      {visibleMarket && marketAreaPath && (
+        <path
+          d={marketAreaPath}
+          fill="url(#collectionMarketGradient)"
+          opacity="1"
+        />
+      )}
+
       {visibleBase && basePath && (
         <path
           d={basePath}
@@ -568,7 +593,7 @@ function CollectionChartSvg({
           strokeWidth="3.2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          filter="drop-shadow(0 3px 4px rgba(11,132,216,0.20))"
+          filter="drop-shadow(0 6px 10px rgba(11,132,216,0.22))"
         />
       )}
 
@@ -667,7 +692,9 @@ function HoverLayer({
     visibleBase && visibleMarket && hover.base && hover.market ? 112 : 86;
 
   const tooltipX =
-    hover.x + tooltipWidth + 24 > width ? hover.x - tooltipWidth - 18 : hover.x + 18;
+    hover.x + tooltipWidth + 24 > width
+      ? hover.x - tooltipWidth - 18
+      : hover.x + 18;
 
   const tooltipY = Math.max(
     16,
@@ -878,6 +905,22 @@ function buildSmoothPath(points: { x: number; y: number }[]) {
   }
 
   return path;
+}
+
+function buildAreaPath(
+  points: { x: number; y: number }[],
+  height: number,
+  paddingBottom: number
+) {
+  if (points.length < 2) return "";
+
+  const linePath = buildSmoothPath(points);
+  const lastPoint = points[points.length - 1];
+  const firstPoint = points[0];
+
+  return `${linePath} L ${lastPoint.x} ${height - paddingBottom} L ${
+    firstPoint.x
+  } ${height - paddingBottom} Z`;
 }
 
 function buildDateTicks(
