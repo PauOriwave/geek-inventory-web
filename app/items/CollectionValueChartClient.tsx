@@ -17,6 +17,18 @@ type CollectionHistoryResponse = {
 type ChartRange = "7d" | "30d" | "90d" | "all";
 type ChartSeries = "all" | "base" | "market";
 
+type ChartPoint = HistoryPoint & {
+  x: number;
+  y: number;
+};
+
+type HoverPoint = {
+  x: number;
+  date: string;
+  market?: ChartPoint;
+  base?: ChartPoint;
+};
+
 export default function CollectionValueChartClient({
   initialHistory,
   initialRange,
@@ -96,7 +108,9 @@ export default function CollectionValueChartClient({
   const visibleMarket = series === "all" || series === "market";
 
   const data = useMemo(() => {
-    const preferred = visibleMarket && history.market.length > 0 ? history.market : history.base;
+    const preferred =
+      visibleMarket && history.market.length > 0 ? history.market : history.base;
+
     const first = preferred[0]?.total ?? null;
     const latest = preferred.at(-1)?.total ?? null;
     const delta = first != null && latest != null ? latest - first : null;
@@ -105,8 +119,6 @@ export default function CollectionValueChartClient({
     return {
       latestBase: history.base.at(-1)?.total ?? null,
       latestMarket: history.market.at(-1)?.total ?? null,
-      first,
-      latest,
       delta,
       percent,
       hasData: history.base.length > 0 || history.market.length > 0
@@ -182,7 +194,9 @@ export default function CollectionValueChartClient({
           <MetricBox
             label={text.latestMarket}
             value={
-              data.latestMarket != null ? `${data.latestMarket.toFixed(2)} €` : "—"
+              data.latestMarket != null
+                ? `${data.latestMarket.toFixed(2)} €`
+                : "—"
             }
             theme={theme}
           />
@@ -198,12 +212,20 @@ export default function CollectionValueChartClient({
                 ? `${data.percent > 0 ? "+" : ""}${data.percent.toFixed(1)}%`
                 : undefined
             }
-            tone={data.delta != null && data.delta > 0 ? "up" : data.delta != null && data.delta < 0 ? "down" : "flat"}
+            tone={
+              data.delta != null && data.delta > 0
+                ? "up"
+                : data.delta != null && data.delta < 0
+                  ? "down"
+                  : "flat"
+            }
             theme={theme}
           />
           <MetricBox
             label={text.latestBase}
-            value={data.latestBase != null ? `${data.latestBase.toFixed(2)} €` : "—"}
+            value={
+              data.latestBase != null ? `${data.latestBase.toFixed(2)} €` : "—"
+            }
             theme={theme}
           />
         </div>
@@ -228,7 +250,14 @@ export default function CollectionValueChartClient({
             flexWrap: "wrap"
           }}
         >
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+              flexWrap: "wrap"
+            }}
+          >
             <span style={{ color: theme.colors.textMuted, fontSize: 14 }}>
               {text.zoom}
             </span>
@@ -268,7 +297,14 @@ export default function CollectionValueChartClient({
             ))}
           </div>
 
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              alignItems: "center",
+              flexWrap: "wrap"
+            }}
+          >
             {(["market", "base", "all"] as ChartSeries[]).map((nextSeries) => (
               <button
                 key={nextSeries}
@@ -386,6 +422,8 @@ function CollectionChartSvg({
   theme: ReturnType<typeof getThemeById>;
   locale: "en" | "es";
 }) {
+  const [hover, setHover] = useState<HoverPoint | null>(null);
+
   const width = 1000;
   const height = 390;
   const paddingLeft = 36;
@@ -404,7 +442,7 @@ function CollectionChartSvg({
   const min = Math.min(0, Math.floor(minRaw / 100) * 100);
   const range = max - min || 1;
 
-  function toCoordinates(points: HistoryPoint[]) {
+  function toCoordinates(points: HistoryPoint[]): ChartPoint[] {
     return points
       .filter((point) => Number.isFinite(point.total))
       .map((point, index, arr) => {
@@ -434,23 +472,47 @@ function CollectionChartSvg({
   const lastDate = market.at(-1)?.date ?? base.at(-1)?.date ?? "";
   const latestMarket = marketPoints.at(-1);
 
+  const hoverTargets = buildHoverTargets({
+    basePoints,
+    marketPoints,
+    visibleBase,
+    visibleMarket
+  });
+
+  function handlePointerMove(event: React.PointerEvent<SVGSVGElement>) {
+    if (hoverTargets.length === 0) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const relativeX = ((event.clientX - rect.left) / rect.width) * width;
+
+    const nearest = hoverTargets.reduce((best, current) =>
+      Math.abs(current.x - relativeX) < Math.abs(best.x - relativeX)
+        ? current
+        : best
+    );
+
+    setHover(nearest);
+  }
+
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
       role="img"
       aria-label="Collection value chart"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={() => setHover(null)}
       style={{
         display: "block",
         width: "100%",
         height: "auto",
-        background: theme.colors.surface
+        background: theme.colors.surface,
+        cursor: "crosshair",
+        touchAction: "none"
       }}
     >
       {[0, 0.5, 1].map((step) => {
         const value = max - step * range;
-        const y =
-          paddingTop +
-          step * (height - paddingTop - paddingBottom);
+        const y = paddingTop + step * (height - paddingTop - paddingBottom);
 
         return (
           <g key={step}>
@@ -510,7 +572,7 @@ function CollectionChartSvg({
         />
       )}
 
-      {visibleMarket && latestMarket && (
+      {visibleMarket && latestMarket && !hover && (
         <>
           <circle
             cx={latestMarket.x}
@@ -531,6 +593,20 @@ function CollectionChartSvg({
             {formatMoney(latestMarket.total)}
           </text>
         </>
+      )}
+
+      {hover && (
+        <HoverLayer
+          hover={hover}
+          height={height}
+          paddingTop={paddingTop}
+          paddingBottom={paddingBottom}
+          width={width}
+          theme={theme}
+          locale={locale}
+          visibleBase={visibleBase}
+          visibleMarket={visibleMarket}
+        />
       )}
 
       {buildDateTicks(firstDate, lastDate, locale).map((tick, index, arr) => {
@@ -563,6 +639,168 @@ function CollectionChartSvg({
       })}
     </svg>
   );
+}
+
+function HoverLayer({
+  hover,
+  height,
+  paddingTop,
+  paddingBottom,
+  width,
+  theme,
+  locale,
+  visibleBase,
+  visibleMarket
+}: {
+  hover: HoverPoint;
+  height: number;
+  paddingTop: number;
+  paddingBottom: number;
+  width: number;
+  theme: ReturnType<typeof getThemeById>;
+  locale: "en" | "es";
+  visibleBase: boolean;
+  visibleMarket: boolean;
+}) {
+  const tooltipWidth = 190;
+  const tooltipHeight =
+    visibleBase && visibleMarket && hover.base && hover.market ? 112 : 86;
+
+  const tooltipX =
+    hover.x + tooltipWidth + 24 > width ? hover.x - tooltipWidth - 18 : hover.x + 18;
+
+  const tooltipY = Math.max(
+    16,
+    Math.min(
+      height - tooltipHeight - 16,
+      Math.min(hover.market?.y ?? Infinity, hover.base?.y ?? Infinity) - 38
+    )
+  );
+
+  return (
+    <g>
+      <line
+        x1={hover.x}
+        x2={hover.x}
+        y1={paddingTop}
+        y2={height - paddingBottom}
+        stroke="#94A3B8"
+        strokeWidth="1.2"
+        strokeDasharray="5 6"
+      />
+
+      {visibleMarket && hover.market && (
+        <circle
+          cx={hover.market.x}
+          cy={hover.market.y}
+          r="6"
+          fill="#0B84D8"
+          stroke="white"
+          strokeWidth="3"
+        />
+      )}
+
+      {visibleBase && hover.base && (
+        <circle
+          cx={hover.base.x}
+          cy={hover.base.y}
+          r="5"
+          fill="#6B7280"
+          stroke="white"
+          strokeWidth="3"
+        />
+      )}
+
+      <rect
+        x={tooltipX}
+        y={tooltipY}
+        width={tooltipWidth}
+        height={tooltipHeight}
+        rx="14"
+        fill={theme.colors.black}
+        opacity="0.96"
+      />
+
+      <text
+        x={tooltipX + 14}
+        y={tooltipY + 24}
+        fill="white"
+        fontSize="13"
+        fontWeight="900"
+      >
+        {formatTooltipDate(hover.date, locale)}
+      </text>
+
+      {visibleMarket && hover.market && (
+        <>
+          <circle cx={tooltipX + 16} cy={tooltipY + 50} r="4" fill="#0B84D8" />
+          <text x={tooltipX + 28} y={tooltipY + 55} fill="white" fontSize="13">
+            {locale === "es" ? "Mercado" : "Market"}
+          </text>
+          <text
+            x={tooltipX + tooltipWidth - 14}
+            y={tooltipY + 55}
+            fill="white"
+            fontSize="13"
+            fontWeight="900"
+            textAnchor="end"
+          >
+            {hover.market.total.toFixed(2)} €
+          </text>
+        </>
+      )}
+
+      {visibleBase && hover.base && (
+        <>
+          <circle
+            cx={tooltipX + 16}
+            cy={tooltipY + (visibleMarket && hover.market ? 78 : 50)}
+            r="4"
+            fill="#6B7280"
+          />
+          <text
+            x={tooltipX + 28}
+            y={tooltipY + (visibleMarket && hover.market ? 83 : 55)}
+            fill="white"
+            fontSize="13"
+          >
+            {locale === "es" ? "Base" : "Base"}
+          </text>
+          <text
+            x={tooltipX + tooltipWidth - 14}
+            y={tooltipY + (visibleMarket && hover.market ? 83 : 55)}
+            fill="white"
+            fontSize="13"
+            fontWeight="900"
+            textAnchor="end"
+          >
+            {hover.base.total.toFixed(2)} €
+          </text>
+        </>
+      )}
+    </g>
+  );
+}
+
+function buildHoverTargets({
+  basePoints,
+  marketPoints,
+  visibleBase,
+  visibleMarket
+}: {
+  basePoints: ChartPoint[];
+  marketPoints: ChartPoint[];
+  visibleBase: boolean;
+  visibleMarket: boolean;
+}): HoverPoint[] {
+  const source = visibleMarket && marketPoints.length > 0 ? marketPoints : basePoints;
+
+  return source.map((point, index) => ({
+    x: point.x,
+    date: point.date,
+    market: visibleMarket ? marketPoints[index] : undefined,
+    base: visibleBase ? basePoints[index] : undefined
+  }));
 }
 
 function MetricBox({
@@ -642,7 +880,11 @@ function buildSmoothPath(points: { x: number; y: number }[]) {
   return path;
 }
 
-function buildDateTicks(firstDate: string, lastDate: string, locale: "en" | "es") {
+function buildDateTicks(
+  firstDate: string,
+  lastDate: string,
+  locale: "en" | "es"
+) {
   if (!firstDate || !lastDate) return [];
 
   const start = new Date(firstDate);
@@ -671,4 +913,12 @@ function buildDateTicks(firstDate: string, lastDate: string, locale: "en" | "es"
 
 function formatMoney(value: number) {
   return `${Math.round(value)}€`;
+}
+
+function formatTooltipDate(value: string, locale: "en" | "es") {
+  return new Intl.DateTimeFormat(locale === "es" ? "es-ES" : "en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  }).format(new Date(value));
 }
