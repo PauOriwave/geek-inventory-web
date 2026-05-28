@@ -61,11 +61,11 @@ export default function CompareChart({
   );
 
   const width = 1000;
-  const height = 360;
+  const height = 370;
   const paddingLeft = 42;
-  const paddingRight = 74;
-  const paddingTop = 36;
-  const paddingBottom = 54;
+  const paddingRight = 78;
+  const paddingTop = 34;
+  const paddingBottom = 58;
 
   const values = [...chart.a, ...chart.b].map((point) => point.value);
   const maxRaw = Math.max(...values, mode === "performance" ? 120 : 1);
@@ -132,7 +132,8 @@ export default function CompareChart({
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.xl,
         background: theme.colors.surface,
-        overflow: "hidden"
+        overflow: "hidden",
+        boxShadow: theme.shadow.soft
       }}
     >
       <div
@@ -143,7 +144,9 @@ export default function CompareChart({
           justifyContent: "space-between",
           gap: 12,
           flexWrap: "wrap",
-          alignItems: "center"
+          alignItems: "center",
+          background:
+            "linear-gradient(135deg, rgba(59,130,246,0.06) 0%, rgba(200,164,77,0.08) 100%)"
         }}
       >
         <div
@@ -167,8 +170,8 @@ export default function CompareChart({
         >
           {mode === "performance"
             ? locale === "es"
-              ? "Ambos objetos empiezan en 100%"
-              : "Both items start at 100%"
+              ? "Performance normalizada · base 100%"
+              : "Normalized performance · base 100%"
             : locale === "es"
               ? "Valor de mercado absoluto"
               : "Absolute market value"}
@@ -192,18 +195,23 @@ export default function CompareChart({
       >
         <defs>
           <linearGradient id="compareBlueArea" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#0B84D8" stopOpacity="0.20" />
-            <stop offset="70%" stopColor="#0B84D8" stopOpacity="0.05" />
+            <stop offset="0%" stopColor="#0B84D8" stopOpacity="0.24" />
+            <stop offset="55%" stopColor="#0B84D8" stopOpacity="0.08" />
             <stop offset="100%" stopColor="#0B84D8" stopOpacity="0" />
           </linearGradient>
+
           <linearGradient id="compareGoldArea" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.22" />
-            <stop offset="70%" stopColor={theme.colors.gold} stopOpacity="0.05" />
+            <stop offset="0%" stopColor={theme.colors.gold} stopOpacity="0.24" />
+            <stop offset="55%" stopColor={theme.colors.gold} stopOpacity="0.08" />
             <stop offset="100%" stopColor={theme.colors.gold} stopOpacity="0" />
           </linearGradient>
+
+          <filter id="compareTooltipShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="8" stdDeviation="8" floodOpacity="0.25" />
+          </filter>
         </defs>
 
-        {[0, 0.5, 1].map((step) => {
+        {[0, 0.25, 0.5, 0.75, 1].map((step) => {
           const value = max - step * range;
           const y = paddingTop + step * (height - paddingTop - paddingBottom);
 
@@ -216,14 +224,15 @@ export default function CompareChart({
                 y2={y}
                 stroke={theme.colors.border}
                 strokeDasharray={step === 1 ? "0" : "5 7"}
-                strokeOpacity="0.9"
+                strokeOpacity={step === 1 ? "1" : "0.72"}
               />
               <text
                 x={width - 12}
                 y={y + 5}
-                fill={theme.colors.text}
-                fontSize="13"
+                fill={theme.colors.textMuted}
+                fontSize="12"
                 textAnchor="end"
+                fontWeight="800"
               >
                 {formatAxisValue(value, mode)}
               </text>
@@ -231,14 +240,23 @@ export default function CompareChart({
           );
         })}
 
-        <line
-          x1={paddingLeft}
-          x2={width - paddingRight}
-          y1={height - paddingBottom}
-          y2={height - paddingBottom}
-          stroke={theme.colors.text}
-          strokeWidth="1.1"
-        />
+        {mode === "performance" && min <= 100 && max >= 100 && (
+          <line
+            x1={paddingLeft}
+            x2={width - paddingRight}
+            y1={
+              paddingTop +
+              ((max - 100) / range) * (height - paddingTop - paddingBottom)
+            }
+            y2={
+              paddingTop +
+              ((max - 100) / range) * (height - paddingTop - paddingBottom)
+            }
+            stroke={theme.colors.textMuted}
+            strokeDasharray="3 5"
+            strokeOpacity="0.45"
+          />
+        )}
 
         {pathA && (
           <path
@@ -259,10 +277,11 @@ export default function CompareChart({
             d={pathA}
             fill="none"
             stroke="#0B84D8"
-            strokeWidth="3.2"
+            strokeWidth={hover?.a ? "4" : "3.2"}
             strokeLinecap="round"
             strokeLinejoin="round"
-            filter="drop-shadow(0 6px 10px rgba(11,132,216,0.20))"
+            opacity={hover && !hover.a ? 0.42 : 1}
+            filter="drop-shadow(0 6px 10px rgba(11,132,216,0.22))"
           />
         )}
 
@@ -271,33 +290,20 @@ export default function CompareChart({
             d={pathB}
             fill="none"
             stroke={theme.colors.gold}
-            strokeWidth="3.2"
+            strokeWidth={hover?.b ? "4" : "3.2"}
             strokeLinecap="round"
             strokeLinejoin="round"
-            filter="drop-shadow(0 6px 10px rgba(200,164,77,0.20))"
+            opacity={hover && !hover.b ? 0.42 : 1}
+            filter="drop-shadow(0 6px 10px rgba(200,164,77,0.24))"
           />
         )}
 
         {latestA && !hover && (
-          <circle
-            cx={latestA.x}
-            cy={latestA.y}
-            r="5.5"
-            fill="#0B84D8"
-            stroke="white"
-            strokeWidth="3"
-          />
+          <LatestPoint point={latestA} color="#0B84D8" />
         )}
 
         {latestB && !hover && (
-          <circle
-            cx={latestB.x}
-            cy={latestB.y}
-            r="5.5"
-            fill={theme.colors.gold}
-            stroke="white"
-            strokeWidth="3"
-          />
+          <LatestPoint point={latestB} color={theme.colors.gold} />
         )}
 
         {hover && (
@@ -329,14 +335,15 @@ export default function CompareChart({
                   x2={x}
                   y1={height - paddingBottom}
                   y2={height - paddingBottom + 8}
-                  stroke={theme.colors.text}
+                  stroke={theme.colors.textMuted}
                   strokeWidth="1"
                 />
                 <text
                   x={x}
                   y={height - 18}
-                  fill={theme.colors.text}
+                  fill={theme.colors.textMuted}
                   fontSize="12"
+                  fontWeight="700"
                   textAnchor="middle"
                 >
                   {tick}
@@ -381,11 +388,17 @@ function buildChartData({
   return {
     a: a.map((point) => ({
       ...point,
-      value: mode === "performance" ? (point.rawValue / firstA) * 100 : point.rawValue
+      value:
+        mode === "performance"
+          ? (point.rawValue / firstA) * 100
+          : point.rawValue
     })),
     b: b.map((point) => ({
       ...point,
-      value: mode === "performance" ? (point.rawValue / firstB) * 100 : point.rawValue
+      value:
+        mode === "performance"
+          ? (point.rawValue / firstB) * 100
+          : point.rawValue
     })),
     firstDate: a[0]?.date ?? b[0]?.date ?? "",
     lastDate: a.at(-1)?.date ?? b.at(-1)?.date ?? ""
@@ -415,8 +428,8 @@ function HoverLayer({
   itemAName: string;
   itemBName: string;
 }) {
-  const tooltipWidth = 250;
-  const tooltipHeight = 122;
+  const tooltipWidth = 282;
+  const tooltipHeight = 136;
 
   const tooltipX =
     hover.x + tooltipWidth + 24 > width
@@ -427,9 +440,12 @@ function HoverLayer({
     16,
     Math.min(
       height - tooltipHeight - 16,
-      Math.min(hover.a?.y ?? Infinity, hover.b?.y ?? Infinity) - 36
+      Math.min(hover.a?.y ?? Infinity, hover.b?.y ?? Infinity) - 42
     )
   );
+
+  const aPerf = hover.a ? hover.a.value - 100 : null;
+  const bPerf = hover.b ? hover.b.value - 100 : null;
 
   return (
     <g>
@@ -443,41 +459,23 @@ function HoverLayer({
         strokeDasharray="5 6"
       />
 
-      {hover.a && (
-        <circle
-          cx={hover.a.x}
-          cy={hover.a.y}
-          r="6"
-          fill="#0B84D8"
-          stroke="white"
-          strokeWidth="3"
-        />
-      )}
-
-      {hover.b && (
-        <circle
-          cx={hover.b.x}
-          cy={hover.b.y}
-          r="6"
-          fill={theme.colors.gold}
-          stroke="white"
-          strokeWidth="3"
-        />
-      )}
+      {hover.a && <ActivePoint point={hover.a} color="#0B84D8" />}
+      {hover.b && <ActivePoint point={hover.b} color={theme.colors.gold} />}
 
       <rect
         x={tooltipX}
         y={tooltipY}
         width={tooltipWidth}
         height={tooltipHeight}
-        rx="14"
+        rx="16"
         fill={theme.colors.black}
-        opacity="0.96"
+        opacity="0.97"
+        filter="url(#compareTooltipShadow)"
       />
 
       <text
-        x={tooltipX + 14}
-        y={tooltipY + 24}
+        x={tooltipX + 16}
+        y={tooltipY + 25}
         fill="white"
         fontSize="13"
         fontWeight="900"
@@ -486,48 +484,116 @@ function HoverLayer({
       </text>
 
       {hover.a && (
-        <>
-          <circle cx={tooltipX + 16} cy={tooltipY + 52} r="4" fill="#0B84D8" />
-          <text x={tooltipX + 28} y={tooltipY + 56} fill="white" fontSize="12">
-            {truncateLabel(itemAName)}
-          </text>
-          <text
-            x={tooltipX + tooltipWidth - 14}
-            y={tooltipY + 56}
-            fill="white"
-            fontSize="12"
-            fontWeight="900"
-            textAnchor="end"
-          >
-            {formatChartValue(hover.a.value, hover.a.rawValue, mode)}
-          </text>
-        </>
+        <TooltipRow
+          x={tooltipX}
+          y={tooltipY + 54}
+          color="#0B84D8"
+          label={truncateLabel(itemAName)}
+          mainValue={formatChartValue(hover.a.value, hover.a.rawValue, mode)}
+          subValue={
+            mode === "performance" && aPerf != null
+              ? `${aPerf >= 0 ? "+" : ""}${aPerf.toFixed(1)}%`
+              : `${hover.a.rawValue.toFixed(2)} €`
+          }
+          width={tooltipWidth}
+        />
       )}
 
       {hover.b && (
-        <>
-          <circle
-            cx={tooltipX + 16}
-            cy={tooltipY + 82}
-            r="4"
-            fill={theme.colors.gold}
-          />
-          <text x={tooltipX + 28} y={tooltipY + 86} fill="white" fontSize="12">
-            {truncateLabel(itemBName)}
-          </text>
-          <text
-            x={tooltipX + tooltipWidth - 14}
-            y={tooltipY + 86}
-            fill="white"
-            fontSize="12"
-            fontWeight="900"
-            textAnchor="end"
-          >
-            {formatChartValue(hover.b.value, hover.b.rawValue, mode)}
-          </text>
-        </>
+        <TooltipRow
+          x={tooltipX}
+          y={tooltipY + 88}
+          color={theme.colors.gold}
+          label={truncateLabel(itemBName)}
+          mainValue={formatChartValue(hover.b.value, hover.b.rawValue, mode)}
+          subValue={
+            mode === "performance" && bPerf != null
+              ? `${bPerf >= 0 ? "+" : ""}${bPerf.toFixed(1)}%`
+              : `${hover.b.rawValue.toFixed(2)} €`
+          }
+          width={tooltipWidth}
+        />
       )}
     </g>
+  );
+}
+
+function TooltipRow({
+  x,
+  y,
+  color,
+  label,
+  mainValue,
+  subValue,
+  width
+}: {
+  x: number;
+  y: number;
+  color: string;
+  label: string;
+  mainValue: string;
+  subValue: string;
+  width: number;
+}) {
+  return (
+    <g>
+      <circle cx={x + 18} cy={y - 4} r="4.5" fill={color} />
+      <text x={x + 32} y={y} fill="white" fontSize="12" fontWeight="800">
+        {label}
+      </text>
+      <text
+        x={x + width - 16}
+        y={y}
+        fill="white"
+        fontSize="12"
+        fontWeight="900"
+        textAnchor="end"
+      >
+        {mainValue}
+      </text>
+      <text
+        x={x + width - 16}
+        y={y + 17}
+        fill="rgba(255,255,255,0.68)"
+        fontSize="11"
+        fontWeight="800"
+        textAnchor="end"
+      >
+        {subValue}
+      </text>
+    </g>
+  );
+}
+
+function LatestPoint({ point, color }: { point: ChartPoint; color: string }) {
+  return (
+    <>
+      <circle cx={point.x} cy={point.y} r="9" fill={color} opacity="0.14" />
+      <circle
+        cx={point.x}
+        cy={point.y}
+        r="5.5"
+        fill={color}
+        stroke="white"
+        strokeWidth="3"
+      />
+    </>
+  );
+}
+
+function ActivePoint({ point, color }: { point: ChartPoint; color: string }) {
+  return (
+    <>
+      <circle cx={point.x} cy={point.y} r="12" fill={color} opacity="0.16" />
+      <circle
+        cx={point.x}
+        cy={point.y}
+        r="6"
+        fill={color}
+        stroke="white"
+        strokeWidth="3"
+      />
+    </>
   );
 }
 
@@ -674,5 +740,5 @@ function formatTooltipDate(value: string, locale: "en" | "es") {
 }
 
 function truncateLabel(value: string) {
-  return value.length > 20 ? `${value.slice(0, 20)}…` : value;
+  return value.length > 22 ? `${value.slice(0, 22)}…` : value;
 }
