@@ -7,6 +7,7 @@ import UserBadge from "../components/UserBadge";
 import { getLocale } from "../i18n";
 import { getCategoryLabel } from "../items/categoryLabels";
 import MarketComparePanel from "./components/MarketComparePanel";
+import MarketInsightsPanel from "./components/MarketInsightsPanel";
 
 type MarketOverview = {
   summary: {
@@ -578,6 +579,8 @@ async function MarketProContent({
         theme={theme}
         apiBaseUrl={apiBaseUrl}
       />
+
+      <MarketInsightsPanel data={data} locale={locale} theme={theme} />
 
       <div className="marketpro-panels-grid">
         <Panel theme={theme} title={text.rising}>
