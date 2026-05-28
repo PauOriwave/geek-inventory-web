@@ -60,7 +60,8 @@ export default function MarketInsightsPanel({
     .filter((item) => item.gap < 0)
     .sort((a, b) => a.gap - b.gap)[0];
 
-  const marketScore = calculateMarketScore(data);
+  const scoreBreakdown = calculateMarketScore(data);
+  const marketScore = scoreBreakdown.score;
   const scoreTone = getScoreTone(marketScore);
 
   const text = {
@@ -102,6 +103,36 @@ export default function MarketInsightsPanel({
       locale === "es"
         ? "Calculado con subidas, gaps positivos, riesgo de bajadas y profundidad de datos."
         : "Calculated from risers, positive gaps, downside risk and market data depth.",
+
+    scoreFactors:
+      locale === "es"
+        ? "Factores del score"
+        : "Score factors",
+
+    dataDepth:
+      locale === "es"
+        ? "Profundidad de datos"
+        : "Data depth",
+
+    gapStrength:
+      locale === "es"
+        ? "Fuerza del gap"
+        : "Gap strength",
+
+    opportunity:
+      locale === "es"
+        ? "Oportunidades"
+        : "Opportunities",
+
+    momentum:
+      locale === "es"
+        ? "Momentum"
+        : "Momentum",
+
+    riskPenalty:
+      locale === "es"
+        ? "Penalización riesgo"
+        : "Risk penalty",
 
     topRiser:
       locale === "es"
@@ -218,6 +249,40 @@ export default function MarketInsightsPanel({
     }
   ];
 
+  const factorRows = [
+    {
+      label: text.dataDepth,
+      value: scoreBreakdown.dataDepthScore,
+      max: 25,
+      color: "#0B84D8"
+    },
+    {
+      label: text.gapStrength,
+      value: scoreBreakdown.gapScore,
+      max: 30,
+      color: theme.colors.gold
+    },
+    {
+      label: text.opportunity,
+      value: scoreBreakdown.opportunityScore,
+      max: 20,
+      color: theme.colors.success
+    },
+    {
+      label: text.momentum,
+      value: scoreBreakdown.momentumScore,
+      max: 25,
+      color: "#8B5CF6"
+    },
+    {
+      label: text.riskPenalty,
+      value: scoreBreakdown.riskPenalty,
+      max: 20,
+      color: theme.colors.danger,
+      penalty: true
+    }
+  ];
+
   return (
     <section
       style={{
@@ -261,7 +326,7 @@ export default function MarketInsightsPanel({
         style={{
           padding: 18,
           display: "grid",
-          gridTemplateColumns: "minmax(260px, 0.9fr) minmax(0, 2fr)",
+          gridTemplateColumns: "minmax(280px, 0.95fr) minmax(0, 2fr)",
           gap: 14
         }}
       >
@@ -396,6 +461,46 @@ export default function MarketInsightsPanel({
               {text.scoreDescription}
             </div>
           </div>
+
+          <div
+            style={{
+              marginTop: 18,
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.radius.md,
+              background: theme.colors.surface,
+              padding: 12
+            }}
+          >
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 900,
+                color: theme.colors.text,
+                marginBottom: 10
+              }}
+            >
+              {text.scoreFactors}
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gap: 9
+              }}
+            >
+              {factorRows.map((factor) => (
+                <ScoreFactorRow
+                  key={factor.label}
+                  label={factor.label}
+                  value={factor.value}
+                  max={factor.max}
+                  color={factor.color}
+                  penalty={factor.penalty}
+                  theme={theme}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         <div
@@ -495,6 +600,79 @@ export default function MarketInsightsPanel({
   );
 }
 
+function ScoreFactorRow({
+  label,
+  value,
+  max,
+  color,
+  penalty,
+  theme
+}: {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+  penalty?: boolean;
+  theme: ReturnType<typeof getThemeById>;
+}) {
+  const width = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 8,
+          alignItems: "center",
+          marginBottom: 5
+        }}
+      >
+        <span
+          style={{
+            color: theme.colors.textMuted,
+            fontSize: 11,
+            fontWeight: 800
+          }}
+        >
+          {label}
+        </span>
+
+        <span
+          style={{
+            color: penalty ? theme.colors.danger : theme.colors.text,
+            fontSize: 11,
+            fontWeight: 900
+          }}
+        >
+          {penalty ? "-" : "+"}
+          {Math.round(value)}
+        </span>
+      </div>
+
+      <div
+        style={{
+          height: 7,
+          borderRadius: 999,
+          background: theme.colors.surfaceAlt,
+          border: `1px solid ${theme.colors.border}`,
+          overflow: "hidden"
+        }}
+      >
+        <div
+          style={{
+            width: `${width}%`,
+            height: "100%",
+            borderRadius: 999,
+            background: color,
+            opacity: penalty ? 0.7 : 1
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function calculateMarketScore(data: MarketOverview) {
   const trackedItems = data.summary?.trackedItems ?? 0;
   const totalGapPercent = data.summary?.totalGapPercent ?? 0;
@@ -521,10 +699,17 @@ function calculateMarketScore(data: MarketOverview) {
       ? clamp((positiveMomentum / momentumBase) * 25, 0, 25)
       : 10;
 
-  const score =
+  const rawScore =
     dataDepthScore + gapScore + opportunityScore + momentumScore - riskPenalty;
 
-  return Math.round(clamp(score, 0, 100));
+  return {
+    score: Math.round(clamp(rawScore, 0, 100)),
+    dataDepthScore,
+    gapScore,
+    opportunityScore,
+    momentumScore,
+    riskPenalty
+  };
 }
 
 function getScoreTone(score: number): "strong" | "healthy" | "neutral" | "weak" {
