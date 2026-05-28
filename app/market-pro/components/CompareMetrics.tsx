@@ -40,12 +40,25 @@ export default function CompareMetrics({
   const metricsA = buildMetrics(snapshotsA);
   const metricsB = buildMetrics(snapshotsB);
 
+  const performanceDiff =
+    metricsA.growthPercent != null && metricsB.growthPercent != null
+      ? metricsA.growthPercent - metricsB.growthPercent
+      : null;
+
+  const valueSpread =
+    metricsA.latestValue != null && metricsB.latestValue != null
+      ? metricsA.latestValue - metricsB.latestValue
+      : null;
+
   const winner =
     metricsA.growthPercent != null && metricsB.growthPercent != null
       ? metricsA.growthPercent >= metricsB.growthPercent
         ? itemA.name
         : itemB.name
       : null;
+
+  const stabilityWinner =
+    metricsA.volatility <= metricsB.volatility ? itemA.name : itemB.name;
 
   const text = {
     current: locale === "es" ? "Valor actual" : "Current value",
@@ -54,6 +67,10 @@ export default function CompareMetrics({
     volatility: locale === "es" ? "Volatilidad" : "Volatility",
     dataPoints: locale === "es" ? "Snapshots" : "Snapshots",
     winner: locale === "es" ? "Mejor rendimiento" : "Best performer",
+    stability: locale === "es" ? "Más estable" : "Most stable",
+    spread: locale === "es" ? "Spread actual" : "Current spread",
+    outperform:
+      locale === "es" ? "Diferencia rendimiento" : "Performance gap",
     mode:
       mode === "performance"
         ? locale === "es"
@@ -62,7 +79,18 @@ export default function CompareMetrics({
         : locale === "es"
           ? "Comparación por valor absoluto"
           : "Absolute value comparison",
-    noWinner: locale === "es" ? "Sin ganador claro" : "No clear winner"
+    noWinner: locale === "es" ? "Sin ganador claro" : "No clear winner",
+    low: locale === "es" ? "Baja" : "Low",
+    medium: locale === "es" ? "Media" : "Medium",
+    high: locale === "es" ? "Alta" : "High",
+    explanation:
+      mode === "performance"
+        ? locale === "es"
+          ? "Ambos objetos empiezan en 100%, así puedes comparar cuál ha evolucionado mejor aunque tengan precios distintos."
+          : "Both items start at 100%, so you can compare which one performed better even if prices differ."
+        : locale === "es"
+          ? "Muestra el valor de mercado real en euros para cada objeto."
+          : "Shows the real market value in euros for each item."
   };
 
   return (
@@ -70,7 +98,7 @@ export default function CompareMetrics({
       style={{
         marginTop: 14,
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
         gap: 12
       }}
     >
@@ -119,46 +147,55 @@ export default function CompareMetrics({
             marginBottom: 14
           }}
         >
-          {mode === "performance"
-            ? locale === "es"
-              ? "Ambos objetos empiezan en 100%, así puedes comparar cuál ha evolucionado mejor aunque tengan precios distintos."
-              : "Both items start at 100%, so you can compare which one performed better even if prices differ."
-            : locale === "es"
-              ? "Muestra el valor de mercado real en euros para cada objeto."
-              : "Shows the real market value in euros for each item."}
+          {text.explanation}
         </div>
 
         <div
           style={{
-            border: `1px solid ${theme.colors.border}`,
-            borderRadius: theme.radius.md,
-            background: theme.colors.surface,
-            padding: 12
+            display: "grid",
+            gap: 10
           }}
         >
-          <div
-            style={{
-              fontSize: 12,
-              color: theme.colors.textMuted,
-              marginBottom: 6,
-              fontWeight: 900
-            }}
-          >
-            {text.winner}
-          </div>
+          <InsightMetric
+            label={text.winner}
+            value={winner ?? text.noWinner}
+            theme={theme}
+          />
 
-          <div
-            style={{
-              color: winner ? theme.colors.text : theme.colors.textMuted,
-              fontWeight: 900,
-              fontSize: 16,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap"
-            }}
-          >
-            {winner ?? text.noWinner}
-          </div>
+          <InsightMetric
+            label={text.outperform}
+            value={
+              performanceDiff != null
+                ? `${performanceDiff >= 0 ? "+" : ""}${performanceDiff.toFixed(1)} pts`
+                : "—"
+            }
+            accent={
+              performanceDiff != null
+                ? performanceDiff > 0
+                  ? theme.colors.success
+                  : performanceDiff < 0
+                    ? theme.colors.danger
+                    : theme.colors.text
+                : undefined
+            }
+            theme={theme}
+          />
+
+          <InsightMetric
+            label={text.spread}
+            value={
+              valueSpread != null
+                ? `${valueSpread >= 0 ? "+" : ""}${valueSpread.toFixed(2)} €`
+                : "—"
+            }
+            theme={theme}
+          />
+
+          <InsightMetric
+            label={text.stability}
+            value={stabilityWinner}
+            theme={theme}
+          />
         </div>
       </div>
     </div>
@@ -181,9 +218,19 @@ function ItemMetricCard({
     delta: string;
     volatility: string;
     dataPoints: string;
+    low: string;
+    medium: string;
+    high: string;
   };
   theme: ReturnType<typeof getThemeById>;
 }) {
+  const volatilityLabel =
+    metrics.volatilityLevel === "low"
+      ? text.low
+      : metrics.volatilityLevel === "medium"
+        ? text.medium
+        : text.high;
+
   return (
     <div
       style={{
@@ -279,7 +326,7 @@ function ItemMetricCard({
         />
         <SmallMetric
           label={text.volatility}
-          value={metrics.volatilityLabel}
+          value={`${volatilityLabel} · ${metrics.volatility.toFixed(1)}%`}
           theme={theme}
         />
         <SmallMetric
@@ -340,6 +387,53 @@ function SmallMetric({
   );
 }
 
+function InsightMetric({
+  label,
+  value,
+  accent,
+  theme
+}: {
+  label: string;
+  value: string;
+  accent?: string;
+  theme: ReturnType<typeof getThemeById>;
+}) {
+  return (
+    <div
+      style={{
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.md,
+        background: theme.colors.surface,
+        padding: 12,
+        minWidth: 0
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          color: theme.colors.textMuted,
+          fontWeight: 900,
+          marginBottom: 5
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          color: accent ?? theme.colors.text,
+          fontWeight: 900,
+          fontSize: 15,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap"
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
 function buildMetrics(snapshots: Snapshot[]) {
   const values = snapshots
     .map((snapshot) => Number(snapshot.marketValue))
@@ -355,6 +449,7 @@ function buildMetrics(snapshots: Snapshot[]) {
     firstValue && delta != null ? (delta / firstValue) * 100 : null;
 
   const volatility = calculateVolatility(values);
+  const volatilityLevel = getVolatilityLevel(volatility);
 
   return {
     firstValue,
@@ -363,7 +458,7 @@ function buildMetrics(snapshots: Snapshot[]) {
     growthPercent,
     points: values.length,
     volatility,
-    volatilityLabel: formatVolatility(volatility)
+    volatilityLevel
   };
 }
 
@@ -393,8 +488,8 @@ function calculateVolatility(values: number[]) {
   return Math.sqrt(variance);
 }
 
-function formatVolatility(value: number) {
-  if (value < 3) return "Low";
-  if (value < 10) return "Medium";
-  return "High";
+function getVolatilityLevel(value: number): "low" | "medium" | "high" {
+  if (value < 3) return "low";
+  if (value < 10) return "medium";
+  return "high";
 }
