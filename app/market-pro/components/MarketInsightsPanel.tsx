@@ -72,87 +72,112 @@ export default function MarketInsightsPanel({
         ? "Insights automáticos sobre tu colección"
         : "Automatic insights about your collection",
 
-    scoreTitle: locale === "es" ? "Market Score" : "Market Score",
+    scoreTitle: locale === "es" ? "Collection Power" : "Collection Power",
 
     scoreSubtitle:
       locale === "es"
-        ? "Lectura global del momentum de tu colección"
-        : "Global momentum reading for your collection",
+        ? "Resumen global de cómo se mueve tu colección"
+        : "Overall snapshot of how your collection is moving",
 
     scoreStrong:
       locale === "es"
-        ? "Momentum fuerte"
-        : "Strong collectible momentum",
+        ? "Colección muy fuerte"
+        : "Very strong collection",
 
     scoreHealthy:
       locale === "es"
-        ? "Momentum saludable"
-        : "Healthy collectible momentum",
+        ? "Colección saludable"
+        : "Healthy collection",
 
     scoreNeutral:
       locale === "es"
-        ? "Momentum estable"
-        : "Stable collectible momentum",
+        ? "Colección estable"
+        : "Stable collection",
 
     scoreWeak:
       locale === "es"
-        ? "Momentum débil"
-        : "Weak collectible momentum",
+        ? "Colección enfriándose"
+        : "Collection cooling down",
 
     scoreDescription:
       locale === "es"
-        ? "Calculado con subidas, gaps positivos, riesgo de bajadas y profundidad de datos."
-        : "Calculated from risers, positive gaps, downside risk and market data depth.",
+        ? "El score mezcla tendencia del mercado, objetos raros, revalorizaciones y riesgo."
+        : "The score combines market trends, hidden gems, appreciation and risk.",
 
     scoreFactors:
       locale === "es"
-        ? "Factores del score"
-        : "Score factors",
+        ? "Qué impulsa tu score"
+        : "What drives your score",
 
     dataDepth:
       locale === "es"
-        ? "Profundidad de datos"
-        : "Data depth",
+        ? "Actividad de colección"
+        : "Collection activity",
+
+    dataDepthDescription:
+      locale === "es"
+        ? "Cuantos más objetos y snapshots tienes, más preciso es el análisis."
+        : "More tracked items and snapshots improve analysis quality.",
 
     gapStrength:
       locale === "es"
-        ? "Fuerza del gap"
-        : "Gap strength",
+        ? "Potencial oculto"
+        : "Hidden potential",
+
+    gapStrengthDescription:
+      locale === "es"
+        ? "Objetos cuyo valor real parece superior al valor base."
+        : "Items whose real market value appears higher than expected.",
 
     opportunity:
       locale === "es"
-        ? "Oportunidades"
-        : "Opportunities",
+        ? "Objetos revalorizándose"
+        : "Items gaining value",
+
+    opportunityDescription:
+      locale === "es"
+        ? "Piezas que están aumentando de valor recientemente."
+        : "Pieces that are increasing in market value recently.",
 
     momentum:
       locale === "es"
-        ? "Momentum"
-        : "Momentum",
+        ? "Tendencia del mercado"
+        : "Market trend",
+
+    momentumDescription:
+      locale === "es"
+        ? "La velocidad a la que tu colección gana interés."
+        : "How quickly your collection gains interest and value.",
 
     riskPenalty:
       locale === "es"
-        ? "Penalización riesgo"
-        : "Risk penalty",
+        ? "Objetos perdiendo interés"
+        : "Items losing hype",
+
+    riskPenaltyDescription:
+      locale === "es"
+        ? "Piezas con bajadas recientes o señales de enfriamiento."
+        : "Items showing recent drops or cooling signals.",
 
     topRiser:
       locale === "es"
-        ? "Mejor rendimiento"
-        : "Strongest Performer",
+        ? "Objeto más caliente"
+        : "Hottest Item",
 
     topDropper:
       locale === "es"
-        ? "Mayor caída"
-        : "Biggest Drop",
+        ? "Objeto enfriándose"
+        : "Cooling Down",
 
     hiddenOpportunity:
       locale === "es"
-        ? "Oportunidad oculta"
-        : "Hidden Opportunity",
+        ? "Gema oculta"
+        : "Hidden Gem",
 
     risky:
       locale === "es"
-        ? "Posible sobrevaloración"
-        : "Potential Overvaluation",
+        ? "Posible bajada"
+        : "Possible Drop",
 
     noData:
       locale === "es"
@@ -161,13 +186,13 @@ export default function MarketInsightsPanel({
 
     marketAbove:
       locale === "es"
-        ? "Mercado por encima de tu valoración base"
-        : "Market above your base estimation",
+        ? "El mercado lo valora más alto que tu precio base."
+        : "The market values it higher than your base estimate.",
 
     marketBelow:
       locale === "es"
-        ? "Mercado por debajo de tu valoración base"
-        : "Market below your base estimation"
+        ? "El mercado muestra señales de enfriamiento."
+        : "The market is showing cooling signals."
   };
 
   const scoreLabel =
@@ -181,7 +206,7 @@ export default function MarketInsightsPanel({
 
   const cards = [
     {
-      emoji: "🚀",
+      emoji: "🔥",
       title: text.topRiser,
       accent: "#22C55E",
       item: topRiser
@@ -192,14 +217,14 @@ export default function MarketInsightsPanel({
             )} €`,
             description:
               locale === "es"
-                ? "El objeto con mejor rendimiento reciente."
-                : "Your best recent market performer."
+                ? "La pieza con mejor subida reciente."
+                : "The best recent market performer."
           }
         : null
     },
 
     {
-      emoji: "📉",
+      emoji: "🧊",
       title: text.topDropper,
       accent: "#F43F5E",
       item: topDropper
@@ -208,8 +233,8 @@ export default function MarketInsightsPanel({
             value: `${topDropper.delta.toFixed(2)} €`,
             description:
               locale === "es"
-                ? "La mayor caída detectada en tu colección."
-                : "Largest decline detected in your collection."
+                ? "Objeto perdiendo fuerza en el mercado."
+                : "Item currently losing momentum."
           }
         : null
     },
@@ -252,30 +277,35 @@ export default function MarketInsightsPanel({
   const factorRows = [
     {
       label: text.dataDepth,
+      description: text.dataDepthDescription,
       value: scoreBreakdown.dataDepthScore,
       max: 25,
       color: "#0B84D8"
     },
     {
       label: text.gapStrength,
+      description: text.gapStrengthDescription,
       value: scoreBreakdown.gapScore,
       max: 30,
       color: theme.colors.gold
     },
     {
       label: text.opportunity,
+      description: text.opportunityDescription,
       value: scoreBreakdown.opportunityScore,
       max: 20,
       color: theme.colors.success
     },
     {
       label: text.momentum,
+      description: text.momentumDescription,
       value: scoreBreakdown.momentumScore,
       max: 25,
       color: "#8B5CF6"
     },
     {
       label: text.riskPenalty,
+      description: text.riskPenaltyDescription,
       value: scoreBreakdown.riskPenalty,
       max: 20,
       color: theme.colors.danger,
@@ -485,13 +515,14 @@ export default function MarketInsightsPanel({
             <div
               style={{
                 display: "grid",
-                gap: 9
+                gap: 12
               }}
             >
               {factorRows.map((factor) => (
                 <ScoreFactorRow
                   key={factor.label}
                   label={factor.label}
+                  description={factor.description}
                   value={factor.value}
                   max={factor.max}
                   color={factor.color}
@@ -602,6 +633,7 @@ export default function MarketInsightsPanel({
 
 function ScoreFactorRow({
   label,
+  description,
   value,
   max,
   color,
@@ -609,6 +641,7 @@ function ScoreFactorRow({
   theme
 }: {
   label: string;
+  description: string;
   value: number;
   max: number;
   color: string;
@@ -630,9 +663,9 @@ function ScoreFactorRow({
       >
         <span
           style={{
-            color: theme.colors.textMuted,
-            fontSize: 11,
-            fontWeight: 800
+            color: theme.colors.text,
+            fontSize: 12,
+            fontWeight: 900
           }}
         >
           {label}
@@ -648,6 +681,17 @@ function ScoreFactorRow({
           {penalty ? "-" : "+"}
           {Math.round(value)}
         </span>
+      </div>
+
+      <div
+        style={{
+          color: theme.colors.textMuted,
+          fontSize: 11,
+          lineHeight: 1.5,
+          marginBottom: 7
+        }}
+      >
+        {description}
       </div>
 
       <div
@@ -694,6 +738,7 @@ function calculateMarketScore(data: MarketOverview) {
   const riskPenalty = Math.min(20, negativeGaps * 4);
 
   const momentumBase = positiveMomentum + negativeMomentum;
+
   const momentumScore =
     momentumBase > 0
       ? clamp((positiveMomentum / momentumBase) * 25, 0, 25)
