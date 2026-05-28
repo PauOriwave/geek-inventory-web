@@ -62,10 +62,8 @@ export default function MarketComparePanel({
       locale === "es"
         ? "Buscar objeto de tu colección..."
         : "Search collection item...",
-    noResults:
-      locale === "es" ? "Sin resultados" : "No results",
-    performance:
-      locale === "es" ? "Rendimiento %" : "Performance %",
+    noResults: locale === "es" ? "Sin resultados" : "No results",
+    performance: locale === "es" ? "Rendimiento %" : "Performance %",
     absolute: locale === "es" ? "Valor absoluto" : "Absolute value",
     noSelection:
       locale === "es"
@@ -76,7 +74,8 @@ export default function MarketComparePanel({
         ? "No hay snapshots suficientes para comparar estos objetos."
         : "Not enough snapshots to compare these items.",
     range: locale === "es" ? "Rango" : "Range",
-    mode: locale === "es" ? "Modo" : "Mode"
+    mode: locale === "es" ? "Modo" : "Mode",
+    loading: locale === "es" ? "Cargando comparación..." : "Loading comparison..."
   };
 
   useEffect(() => {
@@ -167,7 +166,6 @@ export default function MarketComparePanel({
     [snapshotsB, range]
   );
 
-  const hasSelection = Boolean(itemA && itemB);
   const hasEnoughData = filteredA.length >= 2 && filteredB.length >= 2;
 
   return (
@@ -298,10 +296,10 @@ export default function MarketComparePanel({
           />
         </div>
 
-        {!hasSelection ? (
+        {!itemA || !itemB ? (
           <EmptyState text={text.noSelection} theme={theme} />
         ) : loading ? (
-          <EmptyState text="Loading..." theme={theme} />
+          <EmptyState text={text.loading} theme={theme} />
         ) : !hasEnoughData ? (
           <EmptyState text={text.noData} theme={theme} />
         ) : (
