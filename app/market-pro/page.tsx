@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppThemeId, getThemeById } from "../theme";
@@ -5,6 +6,7 @@ import LogoutButton from "../items/LogoutButton";
 import UserBadge from "../components/UserBadge";
 import { getLocale } from "../i18n";
 import { getCategoryLabel } from "../items/categoryLabels";
+import MarketComparePanel from "./components/MarketComparePanel";
 
 type MarketOverview = {
   summary: {
@@ -82,9 +84,7 @@ async function getMarketOverview(
   category?: string
 ): Promise<MarketOverview | null> {
   try {
-    const qs = category
-      ? `?category=${encodeURIComponent(category)}`
-      : "";
+    const qs = category ? `?category=${encodeURIComponent(category)}` : "";
 
     const res = await fetch(`${API}/stats/market-overview${qs}`, {
       cache: "no-store",
@@ -144,8 +144,7 @@ export default async function MarketProPage({
     totalGap: locale === "es" ? "Gap total" : "Total gap",
     rising: locale === "es" ? "Top subidas" : "Top rising",
     dropping: locale === "es" ? "Top bajadas" : "Top dropping",
-    biggestGaps:
-      locale === "es" ? "Mayores diferencias" : "Biggest gaps",
+    biggestGaps: locale === "es" ? "Mayores diferencias" : "Biggest gaps",
     noData:
       locale === "es"
         ? "Todavía no hay suficiente market data para esta vista."
@@ -181,8 +180,7 @@ export default async function MarketProPage({
       locale === "es"
         ? "Disponible solo para usuarios Market Pro"
         : "Available only for Market Pro users",
-    upgrade:
-      locale === "es" ? "Ver planes en perfil" : "See plans in profile"
+    upgrade: locale === "es" ? "Ver planes en perfil" : "See plans in profile"
   };
 
   return (
@@ -473,6 +471,7 @@ export default async function MarketProPage({
             locale={locale}
             theme={theme}
             text={text}
+            apiBaseUrl={API}
           />
         )}
       </div>
@@ -485,7 +484,8 @@ async function MarketProContent({
   category,
   locale,
   theme,
-  text
+  text,
+  apiBaseUrl
 }: {
   cookieHeader: string;
   category?: string;
@@ -507,23 +507,32 @@ async function MarketProContent({
     market: string;
     gap: string;
   };
+  apiBaseUrl: string;
 }) {
   const data = await getMarketOverview(cookieHeader, category);
 
   if (!data || data.summary.trackedItems === 0) {
     return (
-      <section
-        style={{
-          background: theme.colors.surface,
-          border: `1px solid ${theme.colors.border}`,
-          borderRadius: theme.radius.xl,
-          padding: 24,
-          boxShadow: theme.shadow.card,
-          color: theme.colors.textMuted
-        }}
-      >
-        {text.noData}
-      </section>
+      <>
+        <MarketComparePanel
+          locale={locale}
+          theme={theme}
+          apiBaseUrl={apiBaseUrl}
+        />
+
+        <section
+          style={{
+            background: theme.colors.surface,
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: theme.radius.xl,
+            padding: 24,
+            boxShadow: theme.shadow.card,
+            color: theme.colors.textMuted
+          }}
+        >
+          {text.noData}
+        </section>
+      </>
     );
   }
 
@@ -563,6 +572,12 @@ async function MarketProContent({
           }
         />
       </div>
+
+      <MarketComparePanel
+        locale={locale}
+        theme={theme}
+        apiBaseUrl={apiBaseUrl}
+      />
 
       <div className="marketpro-panels-grid">
         <Panel theme={theme} title={text.rising}>
@@ -710,7 +725,7 @@ function Panel({
   theme
 }: {
   title: string;
-  children: React.ReactNode;
+  children: ReactNode;
   theme: ReturnType<typeof getThemeById>;
 }) {
   return (
@@ -1023,7 +1038,7 @@ function Th({
   align,
   theme
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   align?: "left" | "right";
   theme: ReturnType<typeof getThemeById>;
 }) {
@@ -1049,7 +1064,7 @@ function Td({
   align,
   theme
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   align?: "left" | "right";
   theme: ReturnType<typeof getThemeById>;
 }) {
