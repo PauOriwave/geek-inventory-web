@@ -139,47 +139,51 @@ export default async function MarketProPage({
         ? "Lectura avanzada de mercado para tu colección"
         : "Advanced market intelligence for your collection",
     trackedItems:
-      locale === "es" ? "Items con market data" : "Items with market data",
+      locale === "es"
+        ? "Piezas con datos de mercado"
+        : "Items with market data",
     baseValue: locale === "es" ? "Valor base" : "Base value",
-    marketValue: locale === "es" ? "Valor mercado" : "Market value",
-    totalGap: locale === "es" ? "Gap total" : "Total gap",
-    rising: locale === "es" ? "Top subidas" : "Top rising",
-    dropping: locale === "es" ? "Top bajadas" : "Top dropping",
-    biggestGaps: locale === "es" ? "Mayores diferencias" : "Biggest gaps",
+    marketValue: locale === "es" ? "Valor de mercado" : "Market value",
+    totalGap:
+      locale === "es" ? "Diferencia total" : "Total difference",
+    rising: locale === "es" ? "Piezas calentándose" : "Heating Up",
+    dropping: locale === "es" ? "Piezas enfriándose" : "Cooling Down",
+    biggestGaps:
+      locale === "es" ? "Mayor potencial oculto" : "Hidden Potential",
     noData:
       locale === "es"
-        ? "Todavía no hay suficiente market data para esta vista."
+        ? "Todavía no hay suficientes datos de mercado para esta vista."
         : "There is not enough market data for this view yet.",
-    first: locale === "es" ? "Inicial" : "Initial",
-    latest: locale === "es" ? "Actual" : "Current",
-    delta: locale === "es" ? "Cambio" : "Change",
-    estimated: locale === "es" ? "Estimado" : "Estimated",
+    first: locale === "es" ? "Valor inicial" : "Initial value",
+    latest: locale === "es" ? "Valor actual" : "Current value",
+    delta: locale === "es" ? "Movimiento" : "Movement",
+    estimated: locale === "es" ? "Valor base" : "Base value",
     market: locale === "es" ? "Mercado" : "Market",
-    gap: locale === "es" ? "Gap" : "Gap",
+    gap: locale === "es" ? "Diferencia" : "Difference",
     actions: locale === "es" ? "Acciones" : "Actions",
     viewItem: locale === "es" ? "Ver objeto" : "View item",
     compare: locale === "es" ? "Comparar" : "Compare",
     back: locale === "es" ? "Volver a colección" : "Back to collection",
     teaserTitle:
       locale === "es"
-        ? "Desbloquea inteligencia de mercado real"
-        : "Unlock real market intelligence",
+        ? "Desbloquea inteligencia real para tu colección"
+        : "Unlock real collection intelligence",
     teaserSubtitle:
       locale === "es"
-        ? "Market Pro te ayuda a detectar oportunidades, riesgos y diferencias entre tu valoración base y el mercado."
-        : "Market Pro helps you spot opportunities, risk and gaps between your baseline value and the market.",
+        ? "Market Pro te ayuda a detectar piezas que se calientan, objetos perdiendo interés y oportunidades ocultas dentro de tu colección."
+        : "Market Pro helps you spot heating items, pieces losing hype and hidden opportunities inside your collection.",
     feature1:
       locale === "es"
-        ? "Top subidas y bajadas de tu colección"
-        : "Top rising and dropping items in your collection",
+        ? "Piezas calentándose y enfriándose"
+        : "Heating up and cooling down items",
     feature2:
       locale === "es"
-        ? "Mayores gaps entre precio estimado y valor de mercado"
-        : "Biggest gaps between estimated price and market value",
+        ? "Potencial oculto entre tu valor base y el mercado"
+        : "Hidden potential between your base value and the market",
     feature3:
       locale === "es"
-        ? "Resumen avanzado del valor real de mercado"
-        : "Advanced overview of your real market value",
+        ? "Resumen avanzado del valor real de tu colección"
+        : "Advanced overview of your real collection value",
     locked:
       locale === "es"
         ? "Disponible solo para usuarios Market Pro"
@@ -450,18 +454,26 @@ export default async function MarketProPage({
                 }}
               >
                 <TeaserMetricCard
-                  title={locale === "es" ? "Top movers" : "Top movers"}
+                  title={
+                    locale === "es"
+                      ? "Piezas calentándose"
+                      : "Heating up"
+                  }
                   value="+124.80 €"
                 />
                 <TeaserMetricCard
-                  title={locale === "es" ? "Gap detectado" : "Gap detected"}
+                  title={
+                    locale === "es"
+                      ? "Potencial oculto"
+                      : "Hidden potential"
+                  }
                   value="+18.4%"
                 />
                 <TeaserMetricCard
                   title={
                     locale === "es"
-                      ? "Valor real mercado"
-                      : "Real market value"
+                      ? "Valor real de colección"
+                      : "Real collection value"
                   }
                   value="2,431.20 €"
                 />
