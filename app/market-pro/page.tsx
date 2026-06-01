@@ -156,6 +156,9 @@ export default async function MarketProPage({
     estimated: locale === "es" ? "Estimado" : "Estimated",
     market: locale === "es" ? "Mercado" : "Market",
     gap: locale === "es" ? "Gap" : "Gap",
+    actions: locale === "es" ? "Acciones" : "Actions",
+    viewItem: locale === "es" ? "Ver objeto" : "View item",
+    compare: locale === "es" ? "Comparar" : "Compare",
     back: locale === "es" ? "Volver a colección" : "Back to collection",
     teaserTitle:
       locale === "es"
@@ -251,7 +254,7 @@ export default async function MarketProPage({
         .marketpro-table {
           width: 100%;
           border-collapse: collapse;
-          min-width: 680px;
+          min-width: 820px;
         }
 
         @media (min-width: 1024px) {
@@ -507,6 +510,9 @@ async function MarketProContent({
     estimated: string;
     market: string;
     gap: string;
+    actions: string;
+    viewItem: string;
+    compare: string;
   };
   apiBaseUrl: string;
 }) {
@@ -592,6 +598,8 @@ async function MarketProContent({
             firstLabel={text.first}
             latestLabel={text.latest}
             deltaLabel={text.delta}
+            viewItemLabel={text.viewItem}
+            compareLabel={text.compare}
           />
         </Panel>
 
@@ -604,6 +612,8 @@ async function MarketProContent({
             firstLabel={text.first}
             latestLabel={text.latest}
             deltaLabel={text.delta}
+            viewItemLabel={text.viewItem}
+            compareLabel={text.compare}
           />
         </Panel>
       </div>
@@ -623,6 +633,9 @@ async function MarketProContent({
                 </Th>
                 <Th theme={theme} align="right">
                   {text.gap}
+                </Th>
+                <Th theme={theme} align="right">
+                  {text.actions}
                 </Th>
               </tr>
             </thead>
@@ -655,6 +668,15 @@ async function MarketProContent({
                       gap={row.gap}
                       gapPercent={row.gapPercent}
                       theme={theme}
+                    />
+                  </Td>
+                  <Td theme={theme} align="right">
+                    <ActionLinks
+                      id={row.id}
+                      locale={locale}
+                      theme={theme}
+                      viewItemLabel={text.viewItem}
+                      compareLabel={text.compare}
                     />
                   </Td>
                 </tr>
@@ -821,7 +843,9 @@ function TrendTable({
   emptyText,
   firstLabel,
   latestLabel,
-  deltaLabel
+  deltaLabel,
+  viewItemLabel,
+  compareLabel
 }: {
   rows: Array<{
     id: string;
@@ -837,6 +861,8 @@ function TrendTable({
   firstLabel: string;
   latestLabel: string;
   deltaLabel: string;
+  viewItemLabel: string;
+  compareLabel: string;
 }) {
   if (rows.length === 0) {
     return <div style={{ color: theme.colors.textMuted }}>{emptyText}</div>;
@@ -848,18 +874,16 @@ function TrendTable({
         const positive = row.delta > 0;
 
         return (
-          <a
+          <div
             key={row.id}
-            href={`/items/${row.id}?lang=${locale}`}
             style={{
-              textDecoration: "none",
               color: theme.colors.text,
               border: `1px solid ${theme.colors.border}`,
               background: theme.colors.surfaceAlt,
               borderRadius: 16,
               padding: 14,
               display: "grid",
-              gap: 8
+              gap: 10
             }}
           >
             <div
@@ -872,14 +896,17 @@ function TrendTable({
               }}
             >
               <div style={{ minWidth: 0 }}>
-                <div
+                <a
+                  href={`/items/${row.id}?lang=${locale}`}
                   style={{
+                    textDecoration: "none",
+                    color: theme.colors.text,
                     fontWeight: 900,
                     wordBreak: "break-word"
                   }}
                 >
                   {row.name}
-                </div>
+                </a>
                 <div
                   style={{
                     fontSize: 12,
@@ -936,9 +963,76 @@ function TrendTable({
                 theme={theme}
               />
             </div>
-          </a>
+
+            <ActionLinks
+              id={row.id}
+              locale={locale}
+              theme={theme}
+              viewItemLabel={viewItemLabel}
+              compareLabel={compareLabel}
+            />
+          </div>
         );
       })}
+    </div>
+  );
+}
+
+function ActionLinks({
+  id,
+  locale,
+  theme,
+  viewItemLabel,
+  compareLabel
+}: {
+  id: string;
+  locale: "en" | "es";
+  theme: ReturnType<typeof getThemeById>;
+  viewItemLabel: string;
+  compareLabel: string;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 8,
+        flexWrap: "wrap"
+      }}
+    >
+      <a
+        href={`/items/${id}?lang=${locale}`}
+        style={{
+          textDecoration: "none",
+          borderRadius: 999,
+          padding: "7px 10px",
+          background: theme.colors.surface,
+          color: theme.colors.text,
+          border: `1px solid ${theme.colors.border}`,
+          fontSize: 12,
+          fontWeight: 900,
+          whiteSpace: "nowrap"
+        }}
+      >
+        {viewItemLabel} →
+      </a>
+
+      <a
+        href={`/market-pro?lang=${locale}&compareA=${id}#market-compare`}
+        style={{
+          textDecoration: "none",
+          borderRadius: 999,
+          padding: "7px 10px",
+          background: theme.colors.black,
+          color: "white",
+          border: `1px solid ${theme.colors.black}`,
+          fontSize: 12,
+          fontWeight: 900,
+          whiteSpace: "nowrap"
+        }}
+      >
+        {compareLabel} →
+      </a>
     </div>
   );
 }
