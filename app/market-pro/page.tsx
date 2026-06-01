@@ -44,6 +44,18 @@ type MarketOverview = {
   }>;
 };
 
+type MarketOpportunity = {
+  id: string;
+  name: string;
+  category: string;
+  emoji: string;
+  title: string;
+  reason: string;
+  value: string;
+  accent: string;
+  score: number;
+};
+
 type Me = {
   id: string;
   email?: string;
@@ -144,12 +156,23 @@ export default async function MarketProPage({
         : "Items with market data",
     baseValue: locale === "es" ? "Valor base" : "Base value",
     marketValue: locale === "es" ? "Valor de mercado" : "Market value",
-    totalGap:
-      locale === "es" ? "Diferencia total" : "Total difference",
+    totalGap: locale === "es" ? "Diferencia total" : "Total difference",
     rising: locale === "es" ? "Piezas calentándose" : "Heating Up",
     dropping: locale === "es" ? "Piezas enfriándose" : "Cooling Down",
     biggestGaps:
       locale === "es" ? "Mayor potencial oculto" : "Hidden Potential",
+    opportunities:
+      locale === "es" ? "Oportunidades detectadas" : "Detected Opportunities",
+    opportunitiesSubtitle:
+      locale === "es"
+        ? "Piezas que merece la pena vigilar ahora mismo"
+        : "Items worth watching right now",
+    opportunityScore:
+      locale === "es" ? "Interés collector" : "Collector interest",
+    noOpportunities:
+      locale === "es"
+        ? "Todavía no hay oportunidades claras. Añade más snapshots para mejorar el análisis."
+        : "No clear opportunities yet. Add more snapshots to improve the analysis.",
     noData:
       locale === "es"
         ? "Todavía no hay suficientes datos de mercado para esta vista."
@@ -241,6 +264,12 @@ export default async function MarketProPage({
           grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
           gap: 12px;
           margin-bottom: 18px;
+        }
+
+        .marketpro-opportunities-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+          gap: 12px;
         }
 
         .marketpro-panels-grid {
@@ -455,17 +484,13 @@ export default async function MarketProPage({
               >
                 <TeaserMetricCard
                   title={
-                    locale === "es"
-                      ? "Piezas calentándose"
-                      : "Heating up"
+                    locale === "es" ? "Piezas calentándose" : "Heating up"
                   }
                   value="+124.80 €"
                 />
                 <TeaserMetricCard
                   title={
-                    locale === "es"
-                      ? "Potencial oculto"
-                      : "Hidden potential"
+                    locale === "es" ? "Potencial oculto" : "Hidden potential"
                   }
                   value="+18.4%"
                 />
@@ -515,6 +540,10 @@ async function MarketProContent({
     rising: string;
     dropping: string;
     biggestGaps: string;
+    opportunities: string;
+    opportunitiesSubtitle: string;
+    opportunityScore: string;
+    noOpportunities: string;
     noData: string;
     first: string;
     latest: string;
@@ -554,6 +583,8 @@ async function MarketProContent({
       </>
     );
   }
+
+  const opportunities = buildMarketOpportunities(data, locale, theme);
 
   return (
     <>
@@ -599,6 +630,18 @@ async function MarketProContent({
       />
 
       <MarketInsightsPanel data={data} locale={locale} theme={theme} />
+
+      <MarketOpportunitiesPanel
+        opportunities={opportunities}
+        locale={locale}
+        theme={theme}
+        title={text.opportunities}
+        subtitle={text.opportunitiesSubtitle}
+        scoreLabel={text.opportunityScore}
+        emptyText={text.noOpportunities}
+        viewItemLabel={text.viewItem}
+        compareLabel={text.compare}
+      />
 
       <div className="marketpro-panels-grid">
         <Panel theme={theme} title={text.rising}>
@@ -701,6 +744,317 @@ async function MarketProContent({
   );
 }
 
+function MarketOpportunitiesPanel({
+  opportunities,
+  locale,
+  theme,
+  title,
+  subtitle,
+  scoreLabel,
+  emptyText,
+  viewItemLabel,
+  compareLabel
+}: {
+  opportunities: MarketOpportunity[];
+  locale: "en" | "es";
+  theme: ReturnType<typeof getThemeById>;
+  title: string;
+  subtitle: string;
+  scoreLabel: string;
+  emptyText: string;
+  viewItemLabel: string;
+  compareLabel: string;
+}) {
+  return (
+    <section
+      style={{
+        marginBottom: 18,
+        background: theme.colors.surface,
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.xl,
+        boxShadow: theme.shadow.card,
+        overflow: "hidden"
+      }}
+    >
+      <div
+        style={{
+          padding: "16px 18px",
+          borderBottom: `1px solid ${theme.colors.border}`,
+          background:
+            "linear-gradient(135deg, rgba(200,164,77,0.14) 0%, rgba(255,255,255,0) 70%)"
+        }}
+      >
+        <div
+          style={{
+            fontWeight: 900,
+            fontSize: 20,
+            color: theme.colors.text
+          }}
+        >
+          🎯 {title}
+        </div>
+
+        <div
+          style={{
+            marginTop: 5,
+            color: theme.colors.textMuted,
+            fontSize: 13
+          }}
+        >
+          {subtitle}
+        </div>
+      </div>
+
+      <div style={{ padding: 16 }}>
+        {opportunities.length === 0 ? (
+          <div
+            style={{
+              border: `1px dashed ${theme.colors.border}`,
+              background: theme.colors.surfaceAlt,
+              borderRadius: theme.radius.lg,
+              padding: 20,
+              color: theme.colors.textMuted,
+              textAlign: "center",
+              fontWeight: 700
+            }}
+          >
+            {emptyText}
+          </div>
+        ) : (
+          <div className="marketpro-opportunities-grid">
+            {opportunities.map((opportunity) => (
+              <div
+                key={`${opportunity.id}-${opportunity.title}`}
+                style={{
+                  border: `1px solid ${theme.colors.border}`,
+                  borderRadius: theme.radius.lg,
+                  background: theme.colors.surfaceAlt,
+                  padding: 16,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  minHeight: 230
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      alignItems: "flex-start",
+                      marginBottom: 12
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 9,
+                        minWidth: 0
+                      }}
+                    >
+                      <span style={{ fontSize: 24 }}>
+                        {opportunity.emoji}
+                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          style={{
+                            color: opportunity.accent,
+                            fontSize: 12,
+                            fontWeight: 900,
+                            marginBottom: 2
+                          }}
+                        >
+                          {opportunity.title}
+                        </div>
+                        <div
+                          style={{
+                            color: theme.colors.textMuted,
+                            fontSize: 11,
+                            fontWeight: 800
+                          }}
+                        >
+                          {getCategoryLabel(opportunity.category, locale)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <span
+                      style={{
+                        borderRadius: 999,
+                        padding: "5px 8px",
+                        background: theme.colors.surface,
+                        border: `1px solid ${theme.colors.border}`,
+                        color: theme.colors.text,
+                        fontSize: 11,
+                        fontWeight: 900,
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {scoreLabel}: {opportunity.score}
+                    </span>
+                  </div>
+
+                  <a
+                    href={`/items/${opportunity.id}?lang=${locale}`}
+                    style={{
+                      color: theme.colors.text,
+                      textDecoration: "none",
+                      fontSize: 18,
+                      fontWeight: 900,
+                      lineHeight: 1.25
+                    }}
+                  >
+                    {opportunity.name}
+                  </a>
+
+                  <div
+                    style={{
+                      marginTop: 10,
+                      color: opportunity.accent,
+                      fontWeight: 900,
+                      fontSize: 22
+                    }}
+                  >
+                    {opportunity.value}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 10,
+                      color: theme.colors.textMuted,
+                      fontSize: 13,
+                      lineHeight: 1.6
+                    }}
+                  >
+                    {opportunity.reason}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 16 }}>
+                  <ActionLinks
+                    id={opportunity.id}
+                    locale={locale}
+                    theme={theme}
+                    viewItemLabel={viewItemLabel}
+                    compareLabel={compareLabel}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function buildMarketOpportunities(
+  data: MarketOverview,
+  locale: "en" | "es",
+  theme: ReturnType<typeof getThemeById>
+): MarketOpportunity[] {
+  const opportunities: MarketOpportunity[] = [];
+
+  for (const item of data.biggestGaps) {
+    if (item.gap > 0 && (item.gapPercent ?? 0) >= 10) {
+      opportunities.push({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        emoji: "💎",
+        title: locale === "es" ? "Gema oculta" : "Hidden Gem",
+        reason:
+          locale === "es"
+            ? "El mercado lo está valorando por encima de tu valor base."
+            : "The market is valuing it above your base estimate.",
+        value: `+${item.gapPercent?.toFixed(1) ?? "0.0"}%`,
+        accent: theme.colors.gold,
+        score: calculateOpportunityScore(item.gapPercent, item.gap)
+      });
+    }
+
+    if (item.gap < 0 && Math.abs(item.gapPercent ?? 0) >= 10) {
+      opportunities.push({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        emoji: "⚠️",
+        title: locale === "es" ? "Vigilar bajada" : "Watch the Drop",
+        reason:
+          locale === "es"
+            ? "El mercado lo está valorando por debajo de tu valor base."
+            : "The market is valuing it below your base estimate.",
+        value: `${item.gapPercent?.toFixed(1) ?? "0.0"}%`,
+        accent: theme.colors.danger,
+        score: calculateOpportunityScore(
+          Math.abs(item.gapPercent ?? 0),
+          Math.abs(item.gap)
+        )
+      });
+    }
+  }
+
+  for (const item of data.rising) {
+    opportunities.push({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      emoji: "🔥",
+      title: locale === "es" ? "Se está calentando" : "Heating Up",
+      reason:
+        locale === "es"
+          ? "Su valor está subiendo según los snapshots guardados."
+          : "Its value is rising based on saved snapshots.",
+      value: `${item.delta >= 0 ? "+" : ""}${item.delta.toFixed(2)} €`,
+      accent: theme.colors.success,
+      score: calculateOpportunityScore(null, item.delta)
+    });
+  }
+
+  for (const item of data.dropping) {
+    opportunities.push({
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      emoji: "🧊",
+      title: locale === "es" ? "Perdiendo hype" : "Losing Hype",
+      reason:
+        locale === "es"
+          ? "Muestra una caída reciente y conviene seguir su evolución."
+          : "It shows a recent drop and may be worth tracking.",
+      value: `${item.delta.toFixed(2)} €`,
+      accent: theme.colors.danger,
+      score: calculateOpportunityScore(null, Math.abs(item.delta))
+    });
+  }
+
+  const deduped = new Map<string, MarketOpportunity>();
+
+  for (const opportunity of opportunities.sort((a, b) => b.score - a.score)) {
+    if (!deduped.has(opportunity.id)) {
+      deduped.set(opportunity.id, opportunity);
+    }
+  }
+
+  return [...deduped.values()].slice(0, 6);
+}
+
+function calculateOpportunityScore(
+  percentValue: number | null | undefined,
+  absoluteValue: number
+) {
+  const percentScore =
+    percentValue != null && Number.isFinite(percentValue)
+      ? Math.min(45, Math.abs(percentValue) * 1.4)
+      : 0;
+
+  const absoluteScore = Math.min(35, Math.abs(absoluteValue) / 3);
+
+  return Math.round(Math.min(99, Math.max(40, 45 + percentScore + absoluteScore)));
+}
+
 function TeaserBullet({ text }: { text: string }) {
   return (
     <div
@@ -711,7 +1065,9 @@ function TeaserBullet({ text }: { text: string }) {
         color: "rgba(255,255,255,0.9)"
       }}
     >
-      <span style={{ color: "#D4AF37", fontSize: 16, lineHeight: 1.2 }}>✦</span>
+      <span style={{ color: "#D4AF37", fontSize: 16, lineHeight: 1.2 }}>
+        ✦
+      </span>
       <span style={{ lineHeight: 1.6 }}>{text}</span>
     </div>
   );
