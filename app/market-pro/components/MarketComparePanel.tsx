@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { getThemeById } from "../../theme";
 import CompareSelector from "./CompareSelector";
 import CompareChart from "./CompareChart";
@@ -38,6 +39,9 @@ export default function MarketComparePanel({
   theme: ReturnType<typeof getThemeById>;
   apiBaseUrl: string;
 }) {
+  const searchParams = useSearchParams();
+  const hasAppliedUrlCompare = useRef(false);
+
   const [items, setItems] = useState<CompareItem[]>([]);
   const [itemAId, setItemAId] = useState("");
   const [itemBId, setItemBId] = useState("");
@@ -46,6 +50,7 @@ export default function MarketComparePanel({
   const [range, setRange] = useState<ChartRange>("all");
   const [mode, setMode] = useState<CompareMode>("performance");
   const [loading, setLoading] = useState(false);
+  const [insightCompareActive, setInsightCompareActive] = useState(false);
 
   const itemA = items.find((item) => item.id === itemAId) ?? null;
   const itemB = items.find((item) => item.id === itemBId) ?? null;
@@ -75,7 +80,18 @@ export default function MarketComparePanel({
         : "Not enough snapshots to compare these items.",
     range: locale === "es" ? "Rango" : "Range",
     mode: locale === "es" ? "Modo" : "Mode",
-    loading: locale === "es" ? "Cargando comparación..." : "Loading comparison..."
+    loading:
+      locale === "es" ? "Cargando comparación..." : "Loading comparison...",
+    insightActive:
+      locale === "es"
+        ? "Comparación sugerida desde Market Intelligence"
+        : "Suggested comparison from Market Intelligence",
+    insightDescription:
+      locale === "es"
+        ? "Hemos seleccionado esta pieza y una alternativa similar para ayudarte a leer mejor su evolución."
+        : "We selected this item and a similar alternative to help you read its movement more clearly.",
+    suggested:
+      locale === "es" ? "Sugerido automáticamente" : "Auto-suggested"
   };
 
   useEffect(() => {
@@ -105,6 +121,44 @@ export default function MarketComparePanel({
       cancelled = true;
     };
   }, [apiBaseUrl]);
+
+  useEffect(() => {
+    if (hasAppliedUrlCompare.current || items.length === 0) return;
+
+    const compareA = searchParams.get("compareA");
+    const compareB = searchParams.get("compareB");
+
+    if (!compareA && !compareB) return;
+
+    const validA = compareA
+      ? items.find((item) => item.id === compareA) ?? null
+      : null;
+
+    const validB = compareB
+      ? items.find((item) => item.id === compareB) ?? null
+      : null;
+
+    if (validA) {
+      setItemAId(validA.id);
+      setInsightCompareActive(true);
+    }
+
+    if (validB && validB.id !== validA?.id) {
+      setItemBId(validB.id);
+      setInsightCompareActive(true);
+    }
+
+    if (validA && !validB) {
+      const suggested = findSuggestedRival(validA, items);
+
+      if (suggested) {
+        setItemBId(suggested.id);
+        setInsightCompareActive(true);
+      }
+    }
+
+    hasAppliedUrlCompare.current = true;
+  }, [items, searchParams]);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,7 +224,9 @@ export default function MarketComparePanel({
 
   return (
     <section
+      id="market-compare"
       style={{
+        scrollMarginTop: 24,
         background: theme.colors.surface,
         border: `1px solid ${theme.colors.border}`,
         borderRadius: theme.radius.xl,
@@ -261,6 +317,65 @@ export default function MarketComparePanel({
       </div>
 
       <div style={{ padding: 18 }}>
+        {insightCompareActive && itemA ? (
+          <div
+            style={{
+              marginBottom: 16,
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.radius.lg,
+              background:
+                "linear-gradient(135deg, rgba(200,164,77,0.16) 0%, rgba(59,130,246,0.08) 100%)",
+              padding: 14,
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
+              alignItems: "center"
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 900,
+                  color: theme.colors.text
+                }}
+              >
+                ✨ {text.insightActive}
+              </div>
+
+              <div
+                style={{
+                  marginTop: 4,
+                  fontSize: 12,
+                  color: theme.colors.textMuted,
+                  lineHeight: 1.5
+                }}
+              >
+                {text.insightDescription}
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                borderRadius: 999,
+                padding: "7px 10px",
+                background: theme.colors.surface,
+                border: `1px solid ${theme.colors.border}`,
+                color: theme.colors.textMuted,
+                fontSize: 12,
+                fontWeight: 900,
+                whiteSpace: "nowrap"
+              }}
+            >
+              {text.suggested}
+            </div>
+          </div>
+        ) : null}
+
         <div
           style={{
             display: "grid",
@@ -275,7 +390,10 @@ export default function MarketComparePanel({
             noResultsLabel={text.noResults}
             items={items}
             value={itemAId}
-            onChange={setItemAId}
+            onChange={(value) => {
+              setItemAId(value);
+              setInsightCompareActive(false);
+            }}
             disabledId={itemBId}
             locale={locale}
             theme={theme}
@@ -288,7 +406,10 @@ export default function MarketComparePanel({
             noResultsLabel={text.noResults}
             items={items}
             value={itemBId}
-            onChange={setItemBId}
+            onChange={(value) => {
+              setItemBId(value);
+              setInsightCompareActive(false);
+            }}
             disabledId={itemAId}
             locale={locale}
             theme={theme}
@@ -328,6 +449,46 @@ export default function MarketComparePanel({
       </div>
     </section>
   );
+}
+
+function findSuggestedRival(
+  selectedItem: CompareItem,
+  items: CompareItem[]
+): CompareItem | null {
+  const selectedValue =
+    selectedItem.marketValue != null ? Number(selectedItem.marketValue) : null;
+
+  const sameCategory = items.filter(
+    (item) =>
+      item.id !== selectedItem.id && item.category === selectedItem.category
+  );
+
+  const pool =
+    sameCategory.length > 0
+      ? sameCategory
+      : items.filter((item) => item.id !== selectedItem.id);
+
+  if (pool.length === 0) return null;
+
+  if (selectedValue != null && Number.isFinite(selectedValue)) {
+    const withComparableValue = pool
+      .map((item) => ({
+        item,
+        value: item.marketValue != null ? Number(item.marketValue) : null
+      }))
+      .filter((entry) => entry.value != null && Number.isFinite(entry.value))
+      .sort(
+        (a, b) =>
+          Math.abs((a.value ?? 0) - selectedValue) -
+          Math.abs((b.value ?? 0) - selectedValue)
+      );
+
+    if (withComparableValue[0]) {
+      return withComparableValue[0].item;
+    }
+  }
+
+  return pool[0] ?? null;
 }
 
 function filterSnapshotsByRange(snapshots: Snapshot[], range: ChartRange) {

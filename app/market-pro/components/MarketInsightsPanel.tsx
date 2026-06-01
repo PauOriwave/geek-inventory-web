@@ -80,24 +80,15 @@ export default function MarketInsightsPanel({
         : "Overall snapshot of how your collection is moving",
 
     scoreStrong:
-      locale === "es"
-        ? "Colección muy fuerte"
-        : "Very strong collection",
+      locale === "es" ? "Colección muy fuerte" : "Very strong collection",
 
     scoreHealthy:
-      locale === "es"
-        ? "Colección saludable"
-        : "Healthy collection",
+      locale === "es" ? "Colección saludable" : "Healthy collection",
 
-    scoreNeutral:
-      locale === "es"
-        ? "Colección estable"
-        : "Stable collection",
+    scoreNeutral: locale === "es" ? "Colección estable" : "Stable collection",
 
     scoreWeak:
-      locale === "es"
-        ? "Colección enfriándose"
-        : "Collection cooling down",
+      locale === "es" ? "Colección enfriándose" : "Collection cooling down",
 
     scoreDescription:
       locale === "es"
@@ -105,24 +96,17 @@ export default function MarketInsightsPanel({
         : "The score combines market trends, hidden gems, appreciation and risk.",
 
     scoreFactors:
-      locale === "es"
-        ? "Qué impulsa tu score"
-        : "What drives your score",
+      locale === "es" ? "Qué impulsa tu score" : "What drives your score",
 
     dataDepth:
-      locale === "es"
-        ? "Actividad de colección"
-        : "Collection activity",
+      locale === "es" ? "Actividad de colección" : "Collection activity",
 
     dataDepthDescription:
       locale === "es"
         ? "Cuantos más objetos y snapshots tienes, más preciso es el análisis."
         : "More tracked items and snapshots improve analysis quality.",
 
-    gapStrength:
-      locale === "es"
-        ? "Potencial oculto"
-        : "Hidden potential",
+    gapStrength: locale === "es" ? "Potencial oculto" : "Hidden potential",
 
     gapStrengthDescription:
       locale === "es"
@@ -130,19 +114,14 @@ export default function MarketInsightsPanel({
         : "Items whose real market value appears higher than expected.",
 
     opportunity:
-      locale === "es"
-        ? "Objetos revalorizándose"
-        : "Items gaining value",
+      locale === "es" ? "Objetos revalorizándose" : "Items gaining value",
 
     opportunityDescription:
       locale === "es"
         ? "Piezas que están aumentando de valor recientemente."
         : "Pieces that are increasing in market value recently.",
 
-    momentum:
-      locale === "es"
-        ? "Tendencia del mercado"
-        : "Market trend",
+    momentum: locale === "es" ? "Tendencia del mercado" : "Market trend",
 
     momentumDescription:
       locale === "es"
@@ -150,34 +129,20 @@ export default function MarketInsightsPanel({
         : "How quickly your collection gains interest and value.",
 
     riskPenalty:
-      locale === "es"
-        ? "Objetos perdiendo interés"
-        : "Items losing hype",
+      locale === "es" ? "Objetos perdiendo interés" : "Items losing hype",
 
     riskPenaltyDescription:
       locale === "es"
         ? "Piezas con bajadas recientes o señales de enfriamiento."
         : "Items showing recent drops or cooling signals.",
 
-    topRiser:
-      locale === "es"
-        ? "Objeto más caliente"
-        : "Hottest Item",
+    topRiser: locale === "es" ? "Objeto más caliente" : "Hottest Item",
 
-    topDropper:
-      locale === "es"
-        ? "Objeto enfriándose"
-        : "Cooling Down",
+    topDropper: locale === "es" ? "Objeto enfriándose" : "Cooling Down",
 
-    hiddenOpportunity:
-      locale === "es"
-        ? "Gema oculta"
-        : "Hidden Gem",
+    hiddenOpportunity: locale === "es" ? "Gema oculta" : "Hidden Gem",
 
-    risky:
-      locale === "es"
-        ? "Posible bajada"
-        : "Possible Drop",
+    risky: locale === "es" ? "Posible bajada" : "Possible Drop",
 
     noData:
       locale === "es"
@@ -192,7 +157,11 @@ export default function MarketInsightsPanel({
     marketBelow:
       locale === "es"
         ? "El mercado muestra señales de enfriamiento."
-        : "The market is showing cooling signals."
+        : "The market is showing cooling signals.",
+
+    viewItem: locale === "es" ? "Ver objeto" : "View item",
+
+    compare: locale === "es" ? "Comparar" : "Compare"
   };
 
   const scoreLabel =
@@ -211,6 +180,7 @@ export default function MarketInsightsPanel({
       accent: "#22C55E",
       item: topRiser
         ? {
+            id: topRiser.id,
             name: topRiser.name,
             value: `${topRiser.delta >= 0 ? "+" : ""}${topRiser.delta.toFixed(
               2
@@ -229,6 +199,7 @@ export default function MarketInsightsPanel({
       accent: "#F43F5E",
       item: topDropper
         ? {
+            id: topDropper.id,
             name: topDropper.name,
             value: `${topDropper.delta.toFixed(2)} €`,
             description:
@@ -245,6 +216,7 @@ export default function MarketInsightsPanel({
       accent: theme.colors.gold,
       item: hiddenOpportunity
         ? {
+            id: hiddenOpportunity.id,
             name: hiddenOpportunity.name,
             value: `+${
               hiddenOpportunity.gapPercent != null
@@ -262,6 +234,7 @@ export default function MarketInsightsPanel({
       accent: "#F97316",
       item: riskyItem
         ? {
+            id: riskyItem.id,
             name: riskyItem.name,
             value: `${
               riskyItem.gapPercent != null
@@ -549,7 +522,7 @@ export default function MarketInsightsPanel({
                 borderRadius: theme.radius.lg,
                 background: theme.colors.surfaceAlt,
                 padding: 16,
-                minHeight: 180,
+                minHeight: 210,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between"
@@ -623,6 +596,49 @@ export default function MarketInsightsPanel({
                   </div>
                 )}
               </div>
+
+              {card.item ? (
+                <div
+                  style={{
+                    marginTop: 16,
+                    display: "flex",
+                    gap: 8,
+                    flexWrap: "wrap"
+                  }}
+                >
+                  <a
+                    href={`/items/${card.item.id}?lang=${locale}`}
+                    style={{
+                      textDecoration: "none",
+                      borderRadius: 999,
+                      padding: "8px 11px",
+                      background: theme.colors.surface,
+                      color: theme.colors.text,
+                      border: `1px solid ${theme.colors.border}`,
+                      fontSize: 12,
+                      fontWeight: 900
+                    }}
+                  >
+                    {text.viewItem} →
+                  </a>
+
+                  <a
+                    href={`/market-pro?lang=${locale}&compareA=${card.item.id}#market-compare`}
+                    style={{
+                      textDecoration: "none",
+                      borderRadius: 999,
+                      padding: "8px 11px",
+                      background: theme.colors.black,
+                      color: "white",
+                      border: `1px solid ${theme.colors.black}`,
+                      fontSize: 12,
+                      fontWeight: 900
+                    }}
+                  >
+                    {text.compare} →
+                  </a>
+                </div>
+              ) : null}
             </div>
           ))}
         </div>
