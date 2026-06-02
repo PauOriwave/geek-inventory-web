@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { getThemeById, AppThemeId } from "../theme";
 import { getCategoryLabel } from "./categoryLabels";
+import { getCategoryVisual } from "./categoryVisuals";
 
 type TopItem = {
   id: string;
@@ -88,7 +89,8 @@ export default async function TopItems({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "baseline"
+          alignItems: "baseline",
+          gap: 12
         }}
       >
         <div style={{ fontWeight: 800 }}>{text.title}</div>
@@ -106,71 +108,111 @@ export default async function TopItems({
           gap: 8
         }}
       >
-        {items.map((it, idx) => (
-          <a
-            key={it.id}
-            href={`/items/${it.id}${locale === "es" ? "?lang=es" : "?lang=en"}`}
-            style={{
-              textDecoration: "none",
-              color: theme.colors.text
-            }}
-          >
-            <div
+        {items.map((it, idx) => {
+          const visual = getCategoryVisual(it.category);
+
+          return (
+            <a
+              key={it.id}
+              href={`/items/${it.id}${locale === "es" ? "?lang=es" : "?lang=en"}`}
               style={{
-                display: "grid",
-                gridTemplateColumns: "28px 1fr auto",
-                gap: 10,
-                alignItems: "center",
-                padding: "8px 10px",
-                borderRadius: 10,
-                background: idx < 3 ? "#FAFAF8" : "transparent",
-                border:
-                  idx < 3
-                    ? `1px solid ${theme.colors.border}`
-                    : "1px solid transparent"
+                textDecoration: "none",
+                color: theme.colors.text
               }}
             >
               <div
                 style={{
-                  fontSize: 12,
-                  color: theme.colors.textMuted,
-                  fontWeight: 700
+                  display: "grid",
+                  gridTemplateColumns: "28px 1fr auto",
+                  gap: 10,
+                  alignItems: "center",
+                  padding: "8px 10px",
+                  borderRadius: 10,
+                  background: idx < 3 ? visual.background : "transparent",
+                  border:
+                    idx < 3
+                      ? `1px solid ${visual.color}33`
+                      : "1px solid transparent"
                 }}
               >
-                #{idx + 1}
-              </div>
-
-              <div style={{ minWidth: 0 }}>
                 <div
                   style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis"
+                    fontSize: 12,
+                    color: idx < 3 ? visual.color : theme.colors.textMuted,
+                    fontWeight: 900
                   }}
-                  title={it.name}
                 >
-                  {it.name}
+                  #{idx + 1}
                 </div>
 
-                <div style={{ fontSize: 12, color: theme.colors.textMuted }}>
-                  {getCategoryLabel(it.category, locale)} · {it.quantity} ×{" "}
-                  {it.estimatedPrice.toFixed(2)} €
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    minWidth: 0
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 10,
+                      background: visual.background,
+                      color: visual.color,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 18,
+                      flexShrink: 0,
+                      border: `1px solid ${visual.color}33`
+                    }}
+                  >
+                    {visual.icon}
+                  </span>
+
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 800,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis"
+                      }}
+                      title={it.name}
+                    >
+                      {it.name}
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: theme.colors.textMuted,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis"
+                      }}
+                    >
+                      {getCategoryLabel(it.category, locale)} · {it.quantity} ×{" "}
+                      {it.estimatedPrice.toFixed(2)} €
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    fontWeight: 900,
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {it.totalValue.toFixed(2)} €
                 </div>
               </div>
-
-              <div
-                style={{
-                  fontWeight: 800,
-                  whiteSpace: "nowrap"
-                }}
-              >
-                {it.totalValue.toFixed(2)} €
-              </div>
-            </div>
-          </a>
-        ))}
+            </a>
+          );
+        })}
 
         {items.length === 0 && (
           <div style={{ color: theme.colors.textMuted }}>{text.noItems}</div>
