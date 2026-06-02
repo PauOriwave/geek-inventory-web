@@ -15,6 +15,7 @@ import TrendingItems from "./TrendingItems";
 import LogoutButton from "./LogoutButton";
 import { getLocale } from "../i18n";
 import { getCategoryLabel } from "./categoryLabels";
+import { getCategoryVisual } from "./categoryVisuals";
 import { AppThemeId, getThemeById } from "../theme";
 import { getCollectorLevelData } from "../lib/collector-level";
 import UserBadge from "../components/UserBadge";
@@ -836,7 +837,9 @@ export default async function ItemsPage({
           </div>
 
           <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 980 }}>
+            <table
+              style={{ width: "100%", borderCollapse: "collapse", minWidth: 980 }}
+            >
               <thead>
                 <tr>
                   <Th currentTheme={currentTheme}>{text.name}</Th>
@@ -867,6 +870,8 @@ export default async function ItemsPage({
               <tbody>
                 {items.map((it) => {
                   const snapshots = snapshotsByItemId.get(it.id) ?? [];
+                  const categoryVisual = getCategoryVisual(it.category);
+                  const categoryLabel = getCategoryLabel(it.category, locale);
 
                   return (
                     <Fragment key={it.id}>
@@ -877,26 +882,42 @@ export default async function ItemsPage({
                             style={{
                               color: currentTheme.colors.text,
                               textDecoration: "none",
-                              fontWeight: 700
+                              fontWeight: 800,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 9,
+                              minWidth: 0
                             }}
                           >
-                            {it.name}
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: 10,
+                                background: categoryVisual.background,
+                                color: categoryVisual.color,
+                                border: `1px solid ${categoryVisual.color}33`,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 16,
+                                flexShrink: 0
+                              }}
+                            >
+                              {categoryVisual.icon}
+                            </span>
+
+                            <span>{it.name}</span>
                           </a>
                         </Td>
 
                         <Td currentTheme={currentTheme}>
-                          <span
-                            style={{
-                              display: "inline-block",
-                              padding: "4px 8px",
-                              borderRadius: 999,
-                              background: currentTheme.colors.surfaceAlt,
-                              fontSize: 12,
-                              color: currentTheme.colors.textMuted
-                            }}
-                          >
-                            {getCategoryLabel(it.category, locale)}
-                          </span>
+                          <CategoryBadge
+                            category={it.category}
+                            label={categoryLabel}
+                            currentTheme={currentTheme}
+                          />
                         </Td>
 
                         <Td currentTheme={currentTheme}>{it.platform || "—"}</Td>
@@ -1050,6 +1071,40 @@ export default async function ItemsPage({
         </div>
       </div>
     </main>
+  );
+}
+
+function CategoryBadge({
+  category,
+  label,
+  currentTheme
+}: {
+  category: string;
+  label: string;
+  currentTheme: ReturnType<typeof getThemeById>;
+}) {
+  const visual = getCategoryVisual(category);
+
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "5px 9px",
+        borderRadius: 999,
+        background: visual.background,
+        color: visual.color,
+        border: `1px solid ${visual.color}33`,
+        fontSize: 12,
+        fontWeight: 900,
+        whiteSpace: "nowrap",
+        boxShadow: `inset 0 1px 0 ${currentTheme.colors.surface}`
+      }}
+    >
+      <span aria-hidden="true">{visual.icon}</span>
+      <span>{label}</span>
+    </span>
   );
 }
 
