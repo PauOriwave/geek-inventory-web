@@ -23,9 +23,7 @@ async function getByCategory(cookieHeader: string): Promise<Row[]> {
       }
     });
 
-    if (!res.ok) {
-      return [];
-    }
+    if (!res.ok) return [];
 
     const data = await res.json();
     return Array.isArray(data) ? data : [];
@@ -71,7 +69,7 @@ export default async function CategoryStats({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
           gap: 10
         }}
       >
@@ -93,99 +91,73 @@ export default async function CategoryStats({
                 padding: 12,
                 background: theme.colors.surface,
                 boxShadow: theme.shadow.soft,
-                display: "block",
-                position: "relative",
-                overflow: "hidden"
+                display: "block"
               }}
             >
               <div
-                aria-hidden="true"
                 style={{
-                  position: "absolute",
-                  inset: 0,
-                  background: `linear-gradient(135deg, ${visual.background} 0%, rgba(255,255,255,0) 58%)`,
-                  pointerEvents: "none"
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  alignItems: "flex-start",
+                  marginBottom: 10
                 }}
-              />
-
-              <div style={{ position: "relative" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    alignItems: "center",
-                    marginBottom: 8
-                  }}
-                >
+              >
+                <div style={{ minWidth: 0 }}>
                   <div
                     style={{
-                      display: "flex",
+                      display: "inline-flex",
                       alignItems: "center",
-                      gap: 8,
-                      minWidth: 0
+                      gap: 7,
+                      maxWidth: "100%",
+                      padding: "5px 9px",
+                      borderRadius: 999,
+                      background: visual.background,
+                      color: visual.color,
+                      border: `1px solid ${visual.color}33`,
+                      fontSize: 12,
+                      fontWeight: 900,
+                      whiteSpace: "nowrap"
                     }}
                   >
+                    <span aria-hidden="true">{visual.icon}</span>
                     <span
-                      aria-hidden="true"
                       style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 12,
-                        background: visual.background,
-                        color: visual.color,
-                        border: `1px solid ${visual.color}33`,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 17,
-                        flexShrink: 0
-                      }}
-                    >
-                      {visual.icon}
-                    </span>
-
-                    <div
-                      style={{
-                        fontSize: 13,
-                        color: theme.colors.text,
-                        fontWeight: 900,
                         overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
+                        textOverflow: "ellipsis"
                       }}
                     >
                       {label}
-                    </div>
+                    </span>
                   </div>
-
-                  <TrendBadge
-                    trend={r.trend}
-                    delta={r.trendDelta}
-                    locale={locale}
-                    theme={theme}
-                  />
                 </div>
 
-                <div
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 900,
-                    color: theme.colors.text
-                  }}
-                >
-                  {r.value.toFixed(2)} €
-                </div>
+                <TrendBadge
+                  trend={r.trend}
+                  delta={r.trendDelta}
+                  locale={locale}
+                  theme={theme}
+                />
+              </div>
 
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: theme.colors.textMuted,
-                    marginTop: 6
-                  }}
-                >
-                  {text.units}: {r.units} · {text.items}: {r.items}
-                </div>
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 900,
+                  color: theme.colors.text
+                }}
+              >
+                {r.value.toFixed(2)} €
+              </div>
+
+              <div
+                style={{
+                  fontSize: 12,
+                  color: theme.colors.textMuted,
+                  marginTop: 7
+                }}
+              >
+                {text.units}: {r.units} · {text.items}: {r.items}
               </div>
             </a>
           );
@@ -225,19 +197,6 @@ function TrendBadge({
       ? theme.colors.danger
       : theme.colors.textMuted;
 
-  const label =
-    trend === "rising"
-      ? locale === "es"
-        ? "Subiendo"
-        : "Rising"
-      : trend === "dropping"
-        ? locale === "es"
-          ? "Bajando"
-          : "Dropping"
-        : locale === "es"
-          ? "Estable"
-          : "Stable";
-
   const icon = positive ? "↗" : negative ? "↘" : "→";
 
   const formattedDelta =
@@ -248,19 +207,19 @@ function TrendBadge({
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 6,
+        gap: 5,
         padding: "4px 8px",
         borderRadius: 999,
         border: `1px solid ${theme.colors.border}`,
         background: bg,
         color,
-        fontSize: 12,
-        fontWeight: 800,
-        whiteSpace: "nowrap"
+        fontSize: 11,
+        fontWeight: 900,
+        whiteSpace: "nowrap",
+        flexShrink: 0
       }}
     >
       <span aria-hidden="true">{icon}</span>
-      <span>{label}</span>
       <span>{formattedDelta}</span>
     </span>
   );

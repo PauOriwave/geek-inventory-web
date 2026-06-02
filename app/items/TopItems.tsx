@@ -22,20 +22,14 @@ async function getTopItems(
     const qs = new URLSearchParams();
     qs.set("limit", "10");
 
-    if (category) {
-      qs.set("category", category);
-    }
+    if (category) qs.set("category", category);
 
     const res = await fetch(`${API}/stats/top-items?${qs.toString()}`, {
       cache: "no-store",
-      headers: {
-        cookie: cookieHeader
-      }
+      headers: { cookie: cookieHeader }
     });
 
-    if (!res.ok) {
-      return [];
-    }
+    if (!res.ok) return [];
 
     const data = await res.json();
     return Array.isArray(data) ? data : [];
@@ -110,11 +104,12 @@ export default async function TopItems({
       >
         {items.map((it, idx) => {
           const visual = getCategoryVisual(it.category);
+          const categoryLabel = getCategoryLabel(it.category, locale);
 
           return (
             <a
               key={it.id}
-              href={`/items/${it.id}${locale === "es" ? "?lang=es" : "?lang=en"}`}
+              href={`/items/${it.id}?lang=${locale}`}
               style={{
                 textDecoration: "none",
                 color: theme.colors.text
@@ -123,15 +118,14 @@ export default async function TopItems({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "28px 1fr auto",
+                  gridTemplateColumns: "28px minmax(0, 1fr)",
                   gap: 10,
-                  alignItems: "center",
-                  padding: "8px 10px",
-                  borderRadius: 10,
-                  background: idx < 3 ? visual.background : "transparent",
+                  padding: "10px",
+                  borderRadius: 12,
+                  background: idx < 3 ? theme.colors.surfaceAlt : "transparent",
                   border:
                     idx < 3
-                      ? `1px solid ${visual.color}33`
+                      ? `1px solid ${theme.colors.border}`
                       : "1px solid transparent"
                 }}
               >
@@ -139,47 +133,30 @@ export default async function TopItems({
                   style={{
                     fontSize: 12,
                     color: idx < 3 ? visual.color : theme.colors.textMuted,
-                    fontWeight: 900
+                    fontWeight: 900,
+                    paddingTop: 2
                   }}
                 >
                   #{idx + 1}
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    minWidth: 0
-                  }}
-                >
-                  <span
-                    aria-hidden="true"
+                <div style={{ minWidth: 0 }}>
+                  <div
                     style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 10,
-                      background: visual.background,
-                      color: visual.color,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 18,
-                      flexShrink: 0,
-                      border: `1px solid ${visual.color}33`
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      alignItems: "flex-start"
                     }}
                   >
-                    {visual.icon}
-                  </span>
-
-                  <div style={{ minWidth: 0 }}>
                     <div
                       style={{
                         fontSize: 13,
-                        fontWeight: 800,
-                        whiteSpace: "nowrap",
+                        fontWeight: 850,
                         overflow: "hidden",
-                        textOverflow: "ellipsis"
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        minWidth: 0
                       }}
                       title={it.name}
                     >
@@ -188,26 +165,55 @@ export default async function TopItems({
 
                     <div
                       style={{
-                        fontSize: 12,
-                        color: theme.colors.textMuted,
+                        fontWeight: 900,
                         whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis"
+                        fontSize: 13
                       }}
                     >
-                      {getCategoryLabel(it.category, locale)} · {it.quantity} ×{" "}
-                      {it.estimatedPrice.toFixed(2)} €
+                      {it.totalValue.toFixed(2)} €
                     </div>
                   </div>
-                </div>
 
-                <div
-                  style={{
-                    fontWeight: 900,
-                    whiteSpace: "nowrap"
-                  }}
-                >
-                  {it.totalValue.toFixed(2)} €
+                  <div
+                    style={{
+                      marginTop: 7,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      flexWrap: "wrap"
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        maxWidth: "100%",
+                        padding: "4px 8px",
+                        borderRadius: 999,
+                        background: visual.background,
+                        color: visual.color,
+                        border: `1px solid ${visual.color}33`,
+                        fontSize: 11,
+                        fontWeight: 900,
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      <span aria-hidden="true">{visual.icon}</span>
+                      <span>{categoryLabel}</span>
+                    </span>
+
+                    <span
+                      style={{
+                        fontSize: 12,
+                        color: theme.colors.textMuted,
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {it.quantity} × {it.estimatedPrice.toFixed(2)} €
+                    </span>
+                  </div>
                 </div>
               </div>
             </a>
