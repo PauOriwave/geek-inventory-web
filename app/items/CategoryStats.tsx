@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { getThemeById, AppThemeId } from "../theme";
 import { getCategoryLabel } from "./categoryLabels";
+import { getCategoryVisual } from "./categoryVisuals";
 
 type Row = {
   category: string;
@@ -74,70 +75,121 @@ export default async function CategoryStats({
           gap: 10
         }}
       >
-        {rows.map((r) => (
-          <a
-            key={r.category}
-            href={`/items?category=${encodeURIComponent(
-              r.category
-            )}&page=1&pageSize=25&lang=${locale}`}
-            style={{
-              textDecoration: "none",
-              color: "inherit",
-              border: `1px solid ${theme.colors.border}`,
-              borderRadius: theme.radius.md,
-              padding: 12,
-              background: theme.colors.surface,
-              boxShadow: theme.shadow.soft,
-              display: "block"
-            }}
-          >
-            <div
+        {rows.map((r) => {
+          const visual = getCategoryVisual(r.category);
+          const label = getCategoryLabel(r.category, locale);
+
+          return (
+            <a
+              key={r.category}
+              href={`/items?category=${encodeURIComponent(
+                r.category
+              )}&page=1&pageSize=25&lang=${locale}`}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                gap: 8,
-                alignItems: "center",
-                marginBottom: 6
+                textDecoration: "none",
+                color: "inherit",
+                border: `1px solid ${theme.colors.border}`,
+                borderRadius: theme.radius.md,
+                padding: 12,
+                background: theme.colors.surface,
+                boxShadow: theme.shadow.soft,
+                display: "block",
+                position: "relative",
+                overflow: "hidden"
               }}
             >
               <div
+                aria-hidden="true"
                 style={{
-                  fontSize: 12,
-                  color: theme.colors.textMuted
+                  position: "absolute",
+                  inset: 0,
+                  background: `linear-gradient(135deg, ${visual.background} 0%, rgba(255,255,255,0) 58%)`,
+                  pointerEvents: "none"
                 }}
-              >
-                {getCategoryLabel(r.category, locale)}
-              </div>
-
-              <TrendBadge
-                trend={r.trend}
-                delta={r.trendDelta}
-                locale={locale}
-                theme={theme}
               />
-            </div>
 
-            <div
-              style={{
-                fontSize: 18,
-                fontWeight: 800,
-                color: theme.colors.text
-              }}
-            >
-              {r.value.toFixed(2)} €
-            </div>
+              <div style={{ position: "relative" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    alignItems: "center",
+                    marginBottom: 8
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      minWidth: 0
+                    }}
+                  >
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 12,
+                        background: visual.background,
+                        color: visual.color,
+                        border: `1px solid ${visual.color}33`,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 17,
+                        flexShrink: 0
+                      }}
+                    >
+                      {visual.icon}
+                    </span>
 
-            <div
-              style={{
-                fontSize: 12,
-                color: theme.colors.textMuted,
-                marginTop: 6
-              }}
-            >
-              {text.units}: {r.units} · {text.items}: {r.items}
-            </div>
-          </a>
-        ))}
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: theme.colors.text,
+                        fontWeight: 900,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {label}
+                    </div>
+                  </div>
+
+                  <TrendBadge
+                    trend={r.trend}
+                    delta={r.trendDelta}
+                    locale={locale}
+                    theme={theme}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 900,
+                    color: theme.colors.text
+                  }}
+                >
+                  {r.value.toFixed(2)} €
+                </div>
+
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: theme.colors.textMuted,
+                    marginTop: 6
+                  }}
+                >
+                  {text.units}: {r.units} · {text.items}: {r.items}
+                </div>
+              </div>
+            </a>
+          );
+        })}
 
         {rows.length === 0 && (
           <div style={{ color: theme.colors.textMuted }}>{text.noData}</div>
@@ -161,11 +213,16 @@ function TrendBadge({
   const positive = trend === "rising";
   const negative = trend === "dropping";
 
-  const bg = positive ? "#ECFDF3" : negative ? "#FEF3F2" : "#F9FAFB";
-  const color = positive
-    ? "#027A48"
+  const bg = positive
+    ? "rgba(34,197,94,0.14)"
     : negative
-      ? "#B42318"
+      ? "rgba(244,63,94,0.14)"
+      : theme.colors.surfaceAlt;
+
+  const color = positive
+    ? theme.colors.success
+    : negative
+      ? theme.colors.danger
       : theme.colors.textMuted;
 
   const label =
@@ -180,6 +237,8 @@ function TrendBadge({
         : locale === "es"
           ? "Estable"
           : "Stable";
+
+  const icon = positive ? "↗" : negative ? "↘" : "→";
 
   const formattedDelta =
     delta === 0 ? "0.00€" : `${delta > 0 ? "+" : ""}${delta.toFixed(2)}€`;
@@ -196,10 +255,11 @@ function TrendBadge({
         background: bg,
         color,
         fontSize: 12,
-        fontWeight: 700,
+        fontWeight: 800,
         whiteSpace: "nowrap"
       }}
     >
+      <span aria-hidden="true">{icon}</span>
       <span>{label}</span>
       <span>{formattedDelta}</span>
     </span>
