@@ -143,6 +143,7 @@ export default async function PublicUserPage({
     : "—";
 
   const topCategories = getTopCategories(profile.itemsPreview);
+  const collectorRank = getCollectorRank(profile);
 
   return (
     <main
@@ -154,19 +155,117 @@ export default async function PublicUserPage({
         fontFamily: "system-ui"
       }}
     >
-      <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-        <section
-          style={{
-            position: "relative",
-            overflow: "hidden",
-            background: theme.colors.black,
-            color: "white",
-            borderRadius: theme.radius.xl,
-            padding: "28px 30px",
-            marginBottom: 18,
-            boxShadow: theme.shadow.card
-          }}
-        >
+      <style>{`
+        .public-shell {
+          max-width: 1180px;
+          margin: 0 auto;
+        }
+
+        .public-hero {
+          position: relative;
+          overflow: hidden;
+          background: ${theme.colors.black};
+          color: white;
+          border-radius: ${theme.radius.xl}px;
+          padding: 28px 30px;
+          margin-bottom: 18px;
+          box-shadow: ${theme.shadow.card};
+        }
+
+        .public-hero-inner {
+          position: relative;
+          display: flex;
+          justify-content: space-between;
+          gap: 20px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
+
+        .public-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 12px;
+          margin-bottom: 18px;
+        }
+
+        .public-layout {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) 320px;
+          gap: 18px;
+          align-items: start;
+        }
+
+        .public-preview-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        .public-achievements-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+        }
+
+        @media (max-width: 1100px) {
+          .public-stats-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+
+          .public-layout {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 768px) {
+          main {
+            padding: 16px !important;
+          }
+
+          .public-hero {
+            padding: 22px 20px;
+            border-radius: ${theme.radius.lg}px;
+          }
+
+          .public-hero-inner {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .public-hero h1 {
+            font-size: 30px !important;
+          }
+
+          .public-stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .public-preview-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .public-achievements-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 520px) {
+          .public-stats-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .public-achievements-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .public-hero h1 {
+            font-size: 26px !important;
+          }
+        }
+      `}</style>
+
+      <div className="public-shell">
+        <section className="public-hero">
           <div
             aria-hidden="true"
             style={{
@@ -178,16 +277,7 @@ export default async function PublicUserPage({
             }}
           />
 
-          <div
-            style={{
-              position: "relative",
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 20,
-              alignItems: "center",
-              flexWrap: "wrap"
-            }}
-          >
+          <div className="public-hero-inner">
             <div style={{ minWidth: 0 }}>
               <div
                 style={{
@@ -231,6 +321,25 @@ export default async function PublicUserPage({
                 <span>{profile.stats.totalValue.toFixed(2)} €</span>
                 <span>•</span>
                 <span>{profile.achievements.totalUnlocked} achievements</span>
+              </div>
+
+              <div
+                style={{
+                  marginTop: 14,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 12px",
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.10)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  color: "white",
+                  fontSize: 13,
+                  fontWeight: 900
+                }}
+              >
+                <span aria-hidden="true">{collectorRank.icon}</span>
+                <span>Collector Rank: {collectorRank.label}</span>
               </div>
 
               {topCategories.length > 0 && (
@@ -316,14 +425,13 @@ export default async function PublicUserPage({
           </div>
         </section>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-            gap: 12,
-            marginBottom: 18
-          }}
-        >
+        <div className="public-stats-grid">
+          <StatCard
+            theme={theme}
+            label="Collector Rank"
+            value={collectorRank.label}
+            hint={collectorRank.description}
+          />
           <StatCard
             theme={theme}
             label="Collection"
@@ -350,14 +458,7 @@ export default async function PublicUserPage({
           />
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "minmax(0, 1fr) 320px",
-            gap: 18,
-            alignItems: "start"
-          }}
-        >
+        <div className="public-layout">
           <div>
             <section
               style={{
@@ -421,13 +522,7 @@ export default async function PublicUserPage({
                   No public items yet.
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                    gap: 12
-                  }}
-                >
+                <div className="public-preview-grid">
                   {profile.itemsPreview.map((item) => {
                     const visual = getCategoryVisual(item.category);
                     const categoryLabel = getCategoryLabel(item.category, "en");
@@ -621,13 +716,7 @@ export default async function PublicUserPage({
                   No public highlights yet.
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                    gap: 12
-                  }}
-                >
+                <div className="public-achievements-grid">
                   {profile.achievements.highlights.map((achievement) => (
                     <article
                       key={achievement.id}
@@ -679,6 +768,11 @@ export default async function PublicUserPage({
             }}
           >
             <SideCard theme={theme} title="Collector identity">
+              <InfoRow
+                theme={theme}
+                label="Rank"
+                value={`${collectorRank.icon} ${collectorRank.label}`}
+              />
               <InfoRow
                 theme={theme}
                 label="Plan"
@@ -747,6 +841,52 @@ function getTopCategories(items: PublicProfileItem[]) {
     .map(([category, count]) => ({ category, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
+}
+
+function getCollectorRank(profile: PublicProfile) {
+  const score =
+    profile.stats.totalItems * 2 +
+    profile.stats.valuedItems * 2 +
+    profile.achievements.totalUnlocked * 8 +
+    Math.min(200, profile.stats.totalValue / 25);
+
+  if (score >= 500) {
+    return {
+      label: "Mythic Collector",
+      icon: "👑",
+      description: "Elite vault status"
+    };
+  }
+
+  if (score >= 300) {
+    return {
+      label: "Vault Master",
+      icon: "🏛️",
+      description: "High-end collector"
+    };
+  }
+
+  if (score >= 180) {
+    return {
+      label: "Rare Hunter",
+      icon: "💎",
+      description: "Strong collector profile"
+    };
+  }
+
+  if (score >= 90) {
+    return {
+      label: "Shelf Builder",
+      icon: "📦",
+      description: "Growing collection"
+    };
+  }
+
+  return {
+    label: "New Collector",
+    icon: "🧩",
+    description: "Starting the vault"
+  };
 }
 
 function StatCard({
