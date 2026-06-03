@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getThemeById, AppThemeId } from "../../theme";
 import { getUnlockedThemes } from "../../lib/themes";
 import { formatPlanLabel, normalizePlan } from "../../lib/plans";
+import { getCategoryLabel } from "../../items/categoryLabels";
+import { getCategoryVisual } from "../../items/categoryVisuals";
 
 type PublicProfileItem = {
   id: string;
@@ -62,7 +64,10 @@ function getShowcaseThemeId(
   premiumStartedAt?: string | null,
   plan?: string | null
 ): AppThemeId {
-  const unlockedThemes = getUnlockedThemes(premiumStartedAt ?? null, plan ?? "free");
+  const unlockedThemes = getUnlockedThemes(
+    premiumStartedAt ?? null,
+    plan ?? "free"
+  );
 
   if (unlockedThemes.includes("retro")) return "retro";
   if (unlockedThemes.includes("fantasy")) return "fantasy";
@@ -70,12 +75,6 @@ function getShowcaseThemeId(
   if (unlockedThemes.includes("dark")) return "dark";
 
   return "classic";
-}
-
-function formatCategory(value: string) {
-  return value
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
 export async function generateMetadata({
@@ -143,6 +142,8 @@ export default async function PublicUserPage({
     ? new Date(profile.createdAt).toLocaleDateString()
     : "—";
 
+  const topCategories = getTopCategories(profile.itemsPreview);
+
   return (
     <main
       style={{
@@ -156,30 +157,46 @@ export default async function PublicUserPage({
       <div style={{ maxWidth: 1180, margin: "0 auto" }}>
         <section
           style={{
+            position: "relative",
+            overflow: "hidden",
             background: theme.colors.black,
             color: "white",
             borderRadius: theme.radius.xl,
-            padding: "24px 26px",
+            padding: "28px 30px",
             marginBottom: 18,
             boxShadow: theme.shadow.card
           }}
         >
           <div
+            aria-hidden="true"
             style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(circle at top right, rgba(212,175,55,0.24), transparent 34%)",
+              pointerEvents: "none"
+            }}
+          />
+
+          <div
+            style={{
+              position: "relative",
               display: "flex",
               justifyContent: "space-between",
-              gap: 16,
+              gap: 20,
               alignItems: "center",
               flexWrap: "wrap"
             }}
           >
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div
                 style={{
                   fontSize: 12,
-                  fontWeight: 800,
-                  color: "rgba(255,255,255,0.72)",
-                  marginBottom: 8
+                  fontWeight: 900,
+                  color: theme.colors.gold,
+                  marginBottom: 10,
+                  letterSpacing: 0.4,
+                  textTransform: "uppercase"
                 }}
               >
                 Public collector profile
@@ -188,9 +205,10 @@ export default async function PublicUserPage({
               <h1
                 style={{
                   margin: 0,
-                  fontSize: 34,
-                  lineHeight: 1.05,
-                  fontWeight: 900
+                  fontSize: 38,
+                  lineHeight: 1.04,
+                  fontWeight: 950,
+                  overflowWrap: "anywhere"
                 }}
               >
                 {profile.displayName}
@@ -198,7 +216,7 @@ export default async function PublicUserPage({
 
               <div
                 style={{
-                  marginTop: 10,
+                  marginTop: 12,
                   display: "flex",
                   gap: 10,
                   flexWrap: "wrap",
@@ -211,23 +229,89 @@ export default async function PublicUserPage({
                 <span>{profile.stats.totalItems} items</span>
                 <span>•</span>
                 <span>{profile.stats.totalValue.toFixed(2)} €</span>
+                <span>•</span>
+                <span>{profile.achievements.totalUnlocked} achievements</span>
               </div>
+
+              {topCategories.length > 0 && (
+                <div
+                  style={{
+                    marginTop: 16,
+                    display: "flex",
+                    gap: 8,
+                    flexWrap: "wrap"
+                  }}
+                >
+                  {topCategories.map((category) => {
+                    const visual = getCategoryVisual(category.category);
+                    const label = getCategoryLabel(category.category, "en");
+
+                    return (
+                      <span
+                        key={category.category}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 7,
+                          padding: "6px 10px",
+                          borderRadius: 999,
+                          background: "rgba(255,255,255,0.08)",
+                          border: "1px solid rgba(255,255,255,0.12)",
+                          color: "white",
+                          fontSize: 12,
+                          fontWeight: 900
+                        }}
+                      >
+                        <span aria-hidden="true">{visual.icon}</span>
+                        <span>{label}</span>
+                        <span style={{ color: "rgba(255,255,255,0.64)" }}>
+                          {category.count}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "10px 14px",
-                borderRadius: 999,
-                background: theme.colors.gold,
-                color: theme.colors.black,
-                fontWeight: 900,
-                fontSize: 13
+                display: "grid",
+                gap: 10,
+                justifyItems: "end"
               }}
             >
-              {formatPlanLabel(normalizedPlan, "en")}
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 14px",
+                  borderRadius: 999,
+                  background: theme.colors.gold,
+                  color: theme.colors.black,
+                  fontWeight: 900,
+                  fontSize: 13
+                }}
+              >
+                {formatPlanLabel(normalizedPlan, "en")}
+              </div>
+
+              <a
+                href="/register"
+                style={{
+                  textDecoration: "none",
+                  borderRadius: 999,
+                  padding: "10px 14px",
+                  background: "rgba(255,255,255,0.10)",
+                  color: "white",
+                  fontWeight: 900,
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  fontSize: 13
+                }}
+              >
+                Create your own vault →
+              </a>
             </div>
           </div>
         </section>
@@ -327,12 +411,15 @@ export default async function PublicUserPage({
                     fontSize: 12
                   }}
                 >
-                  Showing {profile.itemsPreview.length} / {profile.stats.totalItems}
+                  Showing {profile.itemsPreview.length} /{" "}
+                  {profile.stats.totalItems}
                 </div>
               </div>
 
               {profile.itemsPreview.length === 0 ? (
-                <div style={{ color: theme.colors.textMuted }}>No public items yet.</div>
+                <div style={{ color: theme.colors.textMuted }}>
+                  No public items yet.
+                </div>
               ) : (
                 <div
                   style={{
@@ -341,92 +428,153 @@ export default async function PublicUserPage({
                     gap: 12
                   }}
                 >
-                  {profile.itemsPreview.map((item) => (
-                    <article
-                      key={item.id}
-                      style={{
-                        border: `1px solid ${theme.colors.border}`,
-                        borderRadius: theme.radius.lg,
-                        padding: 14,
-                        background: theme.colors.surfaceAlt,
-                        boxShadow: theme.shadow.soft
-                      }}
-                    >
-                      <div
+                  {profile.itemsPreview.map((item) => {
+                    const visual = getCategoryVisual(item.category);
+                    const categoryLabel = getCategoryLabel(item.category, "en");
+
+                    return (
+                      <article
+                        key={item.id}
                         style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 10,
-                          marginBottom: 10,
-                          alignItems: "flex-start"
+                          position: "relative",
+                          overflow: "hidden",
+                          border: `1px solid ${theme.colors.border}`,
+                          borderRadius: theme.radius.lg,
+                          padding: 14,
+                          background: theme.colors.surfaceAlt,
+                          boxShadow: theme.shadow.soft
                         }}
                       >
-                        <div style={{ minWidth: 0 }}>
-                          <div
-                            style={{
-                              fontWeight: 900,
-                              fontSize: 15,
-                              color: theme.colors.text,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap"
-                            }}
-                            title={item.name}
-                          >
-                            {item.name}
-                          </div>
-
-                          <div
-                            style={{
-                              marginTop: 6,
-                              display: "inline-block",
-                              padding: "4px 8px",
-                              borderRadius: 999,
-                              background: theme.colors.surface,
-                              border: `1px solid ${theme.colors.border}`,
-                              fontSize: 12,
-                              color: theme.colors.textMuted
-                            }}
-                          >
-                            {formatCategory(item.category)}
-                          </div>
-                        </div>
-
                         <div
+                          aria-hidden="true"
                           style={{
-                            fontWeight: 800,
-                            fontSize: 13,
-                            color: theme.colors.textMuted
+                            position: "absolute",
+                            inset: 0,
+                            background: `linear-gradient(135deg, ${visual.background} 0%, rgba(255,255,255,0) 64%)`,
+                            pointerEvents: "none"
                           }}
-                        >
-                          x{item.quantity}
-                        </div>
-                      </div>
+                        />
 
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                          gap: 10
-                        }}
-                      >
-                        <MiniInfo
-                          theme={theme}
-                          label="Est."
-                          value={`${item.estimatedPrice.toFixed(2)} €`}
-                        />
-                        <MiniInfo
-                          theme={theme}
-                          label="Market"
-                          value={
-                            item.marketValue != null
-                              ? `${item.marketValue.toFixed(2)} €`
-                              : "—"
-                          }
-                        />
-                      </div>
-                    </article>
-                  ))}
+                        <div style={{ position: "relative" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              gap: 10,
+                              marginBottom: 10,
+                              alignItems: "flex-start"
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                gap: 10,
+                                minWidth: 0,
+                                alignItems: "flex-start"
+                              }}
+                            >
+                              <span
+                                aria-hidden="true"
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 12,
+                                  background: visual.background,
+                                  color: visual.color,
+                                  border: `1px solid ${visual.color}33`,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: 18,
+                                  flexShrink: 0
+                                }}
+                              >
+                                {visual.icon}
+                              </span>
+
+                              <div style={{ minWidth: 0 }}>
+                                <div
+                                  style={{
+                                    fontWeight: 900,
+                                    fontSize: 15,
+                                    color: theme.colors.text,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap"
+                                  }}
+                                  title={item.name}
+                                >
+                                  {item.name}
+                                </div>
+
+                                <div
+                                  style={{
+                                    marginTop: 7,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    maxWidth: "100%",
+                                    padding: "4px 8px",
+                                    borderRadius: 999,
+                                    background: theme.colors.surface,
+                                    border: `1px solid ${theme.colors.border}`,
+                                    fontSize: 12,
+                                    color: visual.color,
+                                    fontWeight: 900,
+                                    whiteSpace: "nowrap"
+                                  }}
+                                >
+                                  <span aria-hidden="true">{visual.icon}</span>
+                                  <span
+                                    style={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis"
+                                    }}
+                                  >
+                                    {categoryLabel}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div
+                              style={{
+                                fontWeight: 900,
+                                fontSize: 13,
+                                color: theme.colors.textMuted,
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              x{item.quantity}
+                            </div>
+                          </div>
+
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                              gap: 10
+                            }}
+                          >
+                            <MiniInfo
+                              theme={theme}
+                              label="Est."
+                              value={`${item.estimatedPrice.toFixed(2)} €`}
+                            />
+                            <MiniInfo
+                              theme={theme}
+                              label="Market"
+                              value={
+                                item.marketValue != null
+                                  ? `${item.marketValue.toFixed(2)} €`
+                                  : "—"
+                              }
+                            />
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               )}
 
@@ -443,7 +591,8 @@ export default async function PublicUserPage({
                     lineHeight: 1.6
                   }}
                 >
-                  {profile.stats.hiddenItems} more items are hidden in the public preview for this plan.
+                  {profile.stats.hiddenItems} more items are hidden in the
+                  public preview for this plan.
                 </div>
               )}
             </section>
@@ -545,6 +694,11 @@ export default async function PublicUserPage({
                 label="Showcase theme"
                 value={showcaseThemeId}
               />
+              <InfoRow
+                theme={theme}
+                label="Vault size"
+                value={`${profile.stats.totalItems} items`}
+              />
             </SideCard>
 
             <SideCard theme={theme} title="Join DrakoryVault">
@@ -556,7 +710,8 @@ export default async function PublicUserPage({
                   marginBottom: 12
                 }}
               >
-                Build your own vault, track value, unlock themes and grow your collector profile.
+                Build your own vault, track value, unlock themes and grow your
+                collector profile.
               </div>
 
               <a
@@ -579,6 +734,19 @@ export default async function PublicUserPage({
       </div>
     </main>
   );
+}
+
+function getTopCategories(items: PublicProfileItem[]) {
+  const map = new Map<string, number>();
+
+  for (const item of items) {
+    map.set(item.category, (map.get(item.category) ?? 0) + 1);
+  }
+
+  return [...map.entries()]
+    .map(([category, count]) => ({ category, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 4);
 }
 
 function StatCard({
