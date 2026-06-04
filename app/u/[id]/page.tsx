@@ -22,6 +22,14 @@ type PublicAchievement = {
   icon: string;
 };
 
+type PublicProfileCategory = {
+  category: string;
+  items: number;
+  units: number;
+  totalValue: number;
+  marketTotalValue: number;
+};
+
 type PublicProfile = {
   id: string;
   displayName: string;
@@ -32,6 +40,7 @@ type PublicProfile = {
     totalItems: number;
     totalUnits: number;
     totalValue: number;
+    marketTotalValue?: number;
     previewLimit: number;
     hiddenItems: number;
     valuedItems: number;
@@ -40,6 +49,9 @@ type PublicProfile = {
     totalUnlocked: number;
     highlights: PublicAchievement[];
   };
+  favoriteCategory?: PublicProfileCategory | null;
+  mostValuableItem?: PublicProfileItem | null;
+  categoryBreakdown?: PublicProfileCategory[];
   itemsPreview: PublicProfileItem[];
 };
 
@@ -142,8 +154,26 @@ export default async function PublicUserPage({
     ? new Date(profile.createdAt).toLocaleDateString()
     : "—";
 
-  const topCategories = getTopCategories(profile.itemsPreview);
   const collectorRank = getCollectorRank(profile);
+  const topCategories =
+    profile.categoryBreakdown && profile.categoryBreakdown.length > 0
+      ? profile.categoryBreakdown.slice(0, 4).map((category) => ({
+          category: category.category,
+          count: category.items
+        }))
+      : getTopCategories(profile.itemsPreview);
+
+  const collectionDNA =
+    profile.categoryBreakdown && profile.categoryBreakdown.length > 0
+      ? getCollectionDNAFromBreakdown(profile.categoryBreakdown)
+      : getCollectionDNAFromItems(profile.itemsPreview);
+
+  const showcaseItems = getShowcaseItems(profile);
+  const biggestTreasure =
+    profile.mostValuableItem ?? profile.itemsPreview[0] ?? null;
+
+  const marketTotalValue =
+    profile.stats.marketTotalValue ?? profile.stats.totalValue;
 
   return (
     <main
@@ -195,6 +225,12 @@ export default async function PublicUserPage({
           align-items: start;
         }
 
+        .public-showcase-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 12px;
+        }
+
         .public-preview-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -238,6 +274,10 @@ export default async function PublicUserPage({
 
           .public-stats-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
+          .public-showcase-grid {
+            grid-template-columns: 1fr;
           }
 
           .public-preview-grid {
@@ -318,7 +358,7 @@ export default async function PublicUserPage({
                 <span>•</span>
                 <span>{profile.stats.totalItems} items</span>
                 <span>•</span>
-                <span>{profile.stats.totalValue.toFixed(2)} €</span>
+                <span>{marketTotalValue.toFixed(2)} € market value</span>
                 <span>•</span>
                 <span>{profile.achievements.totalUnlocked} achievements</span>
               </div>
@@ -440,8 +480,8 @@ export default async function PublicUserPage({
           />
           <StatCard
             theme={theme}
-            label="Estimated value"
-            value={`${profile.stats.totalValue.toFixed(2)} €`}
+            label="Market value"
+            value={`${marketTotalValue.toFixed(2)} €`}
             hint={`${profile.stats.valuedItems} valued items`}
           />
           <StatCard
@@ -457,6 +497,76 @@ export default async function PublicUserPage({
             hint={`Showcase theme: ${showcaseThemeId}`}
           />
         </div>
+
+        {showcaseItems.length > 0 && (
+          <section
+            style={{
+              border: `1px solid ${theme.colors.border}`,
+              borderRadius: theme.radius.xl,
+              padding: 18,
+              background: theme.colors.surface,
+              boxShadow: theme.shadow.card,
+              marginBottom: 18
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                alignItems: "center",
+                flexWrap: "wrap",
+                marginBottom: 14
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontWeight: 950,
+                    fontSize: 20
+                  }}
+                >
+                  ⭐ Showcase Collection
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 6,
+                    fontSize: 14,
+                    color: theme.colors.textMuted,
+                    lineHeight: 1.6
+                  }}
+                >
+                  The strongest pieces from this public vault.
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 999,
+                  background: theme.colors.surfaceAlt,
+                  border: `1px solid ${theme.colors.border}`,
+                  fontWeight: 900,
+                  fontSize: 12
+                }}
+              >
+                Top {showcaseItems.length}
+              </div>
+            </div>
+
+            <div className="public-showcase-grid">
+              {showcaseItems.map((item, index) => (
+                <ShowcaseCard
+                  key={`${item.id}-${index}`}
+                  item={item}
+                  rank={index + 1}
+                  theme={theme}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="public-layout">
           <div>
@@ -795,6 +905,17 @@ export default async function PublicUserPage({
               />
             </SideCard>
 
+            {biggestTreasure && (
+              <BiggestTreasureCard item={biggestTreasure} theme={theme} />
+            )}
+
+            {collectionDNA.length > 0 && (
+              <CollectionDNACard
+                rows={collectionDNA}
+                theme={theme}
+              />
+            )}
+
             <SideCard theme={theme} title="Join DrakoryVault">
               <div
                 style={{
@@ -830,6 +951,353 @@ export default async function PublicUserPage({
   );
 }
 
+function ShowcaseCard({
+  item,
+  rank,
+  theme
+}: {
+  item: PublicProfileItem;
+  rank: number;
+  theme: ReturnType<typeof getThemeById>;
+}) {
+  const visual = getCategoryVisual(item.category);
+  const categoryLabel = getCategoryLabel(item.category, "en");
+  const value = getBestItemValue(item);
+
+  return (
+    <article
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        border: `1px solid ${theme.colors.border}`,
+        borderRadius: theme.radius.lg,
+        padding: 16,
+        background: theme.colors.surfaceAlt,
+        boxShadow: theme.shadow.soft,
+        minHeight: 190
+      }}
+    >
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: `linear-gradient(135deg, ${visual.background} 0%, rgba(255,255,255,0) 68%)`,
+          pointerEvents: "none"
+        }}
+      />
+
+      <div style={{ position: "relative" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            marginBottom: 16
+          }}
+        >
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              padding: "6px 10px",
+              borderRadius: 999,
+              background: theme.colors.surface,
+              border: `1px solid ${theme.colors.border}`,
+              fontSize: 12,
+              fontWeight: 900,
+              color: theme.colors.text
+            }}
+          >
+            #{rank} Showcase
+          </span>
+
+          <span
+            aria-hidden="true"
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 14,
+              background: visual.background,
+              color: visual.color,
+              border: `1px solid ${visual.color}33`,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 22,
+              flexShrink: 0
+            }}
+          >
+            {visual.icon}
+          </span>
+        </div>
+
+        <div
+          style={{
+            fontSize: 17,
+            fontWeight: 950,
+            color: theme.colors.text,
+            lineHeight: 1.25,
+            marginBottom: 10
+          }}
+          title={item.name}
+        >
+          {item.name}
+        </div>
+
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "4px 8px",
+            borderRadius: 999,
+            background: theme.colors.surface,
+            border: `1px solid ${theme.colors.border}`,
+            color: visual.color,
+            fontSize: 12,
+            fontWeight: 900,
+            marginBottom: 14
+          }}
+        >
+          <span aria-hidden="true">{visual.icon}</span>
+          <span>{categoryLabel}</span>
+        </div>
+
+        <div
+          style={{
+            fontSize: 24,
+            fontWeight: 950,
+            color: theme.colors.text
+          }}
+        >
+          {value.toFixed(2)} €
+        </div>
+
+        <div
+          style={{
+            marginTop: 5,
+            fontSize: 12,
+            color: theme.colors.textMuted,
+            fontWeight: 800
+          }}
+        >
+          {item.marketValue != null ? "Market value" : "Estimated value"} · x
+          {item.quantity}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function BiggestTreasureCard({
+  item,
+  theme
+}: {
+  item: PublicProfileItem;
+  theme: ReturnType<typeof getThemeById>;
+}) {
+  const visual = getCategoryVisual(item.category);
+  const categoryLabel = getCategoryLabel(item.category, "en");
+  const value = getBestItemValue(item);
+
+  return (
+    <SideCard theme={theme} title="Biggest Treasure">
+      <div
+        style={{
+          display: "flex",
+          gap: 12,
+          alignItems: "flex-start"
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 14,
+            background: visual.background,
+            color: visual.color,
+            border: `1px solid ${visual.color}33`,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 22,
+            flexShrink: 0
+          }}
+        >
+          {visual.icon}
+        </span>
+
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              fontWeight: 950,
+              fontSize: 15,
+              color: theme.colors.text,
+              lineHeight: 1.3,
+              marginBottom: 7
+            }}
+            title={item.name}
+          >
+            {item.name}
+          </div>
+
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "4px 8px",
+              borderRadius: 999,
+              background: visual.background,
+              color: visual.color,
+              border: `1px solid ${visual.color}33`,
+              fontSize: 12,
+              fontWeight: 900,
+              marginBottom: 10
+            }}
+          >
+            <span aria-hidden="true">{visual.icon}</span>
+            <span>{categoryLabel}</span>
+          </div>
+
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 950,
+              color: theme.colors.text
+            }}
+          >
+            {value.toFixed(2)} €
+          </div>
+
+          <div
+            style={{
+              marginTop: 4,
+              color: theme.colors.textMuted,
+              fontSize: 12
+            }}
+          >
+            {item.marketValue != null ? "Market value" : "Estimated value"}
+          </div>
+        </div>
+      </div>
+    </SideCard>
+  );
+}
+
+function CollectionDNACard({
+  rows,
+  theme
+}: {
+  rows: Array<{
+    category: string;
+    percent: number;
+    count: number;
+  }>;
+  theme: ReturnType<typeof getThemeById>;
+}) {
+  return (
+    <SideCard theme={theme} title="Collection DNA">
+      <div style={{ display: "grid", gap: 12 }}>
+        {rows.map((row) => {
+          const visual = getCategoryVisual(row.category);
+          const label = getCategoryLabel(row.category, "en");
+
+          return (
+            <div key={row.category}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  alignItems: "center",
+                  marginBottom: 6
+                }}
+              >
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 7,
+                    minWidth: 0,
+                    fontSize: 13,
+                    fontWeight: 900,
+                    color: theme.colors.text
+                  }}
+                >
+                  <span aria-hidden="true">{visual.icon}</span>
+                  <span
+                    style={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    {label}
+                  </span>
+                </span>
+
+                <span
+                  style={{
+                    color: theme.colors.textMuted,
+                    fontSize: 12,
+                    fontWeight: 900,
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {row.percent}% · {row.count}
+                </span>
+              </div>
+
+              <div
+                style={{
+                  height: 8,
+                  borderRadius: 999,
+                  background: theme.colors.surfaceAlt,
+                  border: `1px solid ${theme.colors.border}`,
+                  overflow: "hidden"
+                }}
+              >
+                <div
+                  style={{
+                    width: `${row.percent}%`,
+                    height: "100%",
+                    borderRadius: 999,
+                    background: visual.color
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </SideCard>
+  );
+}
+
+function getShowcaseItems(profile: PublicProfile): PublicProfileItem[] {
+  const map = new Map<string, PublicProfileItem>();
+
+  if (profile.mostValuableItem) {
+    map.set(profile.mostValuableItem.id, profile.mostValuableItem);
+  }
+
+  for (const item of profile.itemsPreview) {
+    map.set(item.id, item);
+  }
+
+  return [...map.values()]
+    .sort((a, b) => getBestItemValue(b) - getBestItemValue(a))
+    .slice(0, 3);
+}
+
+function getBestItemValue(item: PublicProfileItem) {
+  return item.marketValue ?? item.estimatedPrice;
+}
+
 function getTopCategories(items: PublicProfileItem[]) {
   const map = new Map<string, number>();
 
@@ -841,6 +1309,42 @@ function getTopCategories(items: PublicProfileItem[]) {
     .map(([category, count]) => ({ category, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
+}
+
+function getCollectionDNAFromBreakdown(categories: PublicProfileCategory[]) {
+  const total = categories.reduce((acc, category) => acc + category.items, 0);
+
+  if (total === 0) return [];
+
+  return categories
+    .map((category) => ({
+      category: category.category,
+      count: category.items,
+      percent: Math.max(1, Math.round((category.items / total) * 100))
+    }))
+    .sort((a, b) => b.percent - a.percent)
+    .slice(0, 5);
+}
+
+function getCollectionDNAFromItems(items: PublicProfileItem[]) {
+  const map = new Map<string, number>();
+
+  for (const item of items) {
+    map.set(item.category, (map.get(item.category) ?? 0) + 1);
+  }
+
+  const total = items.length;
+
+  if (total === 0) return [];
+
+  return [...map.entries()]
+    .map(([category, count]) => ({
+      category,
+      count,
+      percent: Math.max(1, Math.round((count / total) * 100))
+    }))
+    .sort((a, b) => b.percent - a.percent)
+    .slice(0, 5);
 }
 
 function getCollectorRank(profile: PublicProfile) {
